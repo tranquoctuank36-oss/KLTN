@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer";
 import BackToTop from "@/components/back-to-top";
 import GuaranteeSection from "@/components/guarantee-section";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
+import Navbar from "@/components/navbar/MainNavbar";
 
 export const metadata: Metadata = {
   title: "Shop Glasses Online | Save up to 50% OFF + Free Shipping",

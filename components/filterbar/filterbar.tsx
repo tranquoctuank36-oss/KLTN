@@ -156,7 +156,7 @@ export default function FilterBar() {
       </div>
 
       {/* Active tags */}
-      {Object.entries(selected).some(([_, set]) => set.size > 0) && (
+      {Object.entries(selected).some(([, set]) => set.size > 0) && (
         <div className="flex flex-wrap gap-2 p-3">
           {Object.entries(selected).map(([groupKey, set]) =>
             Array.from(set).map((optionId) => {

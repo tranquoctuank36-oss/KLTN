@@ -69,6 +69,10 @@ export default function LoginDialog({
     }
   };
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[80vh] rounded-xl overflow-y-auto px-8">
@@ -81,7 +85,7 @@ export default function LoginDialog({
           </p>
         </DialogHeader>
 
-        <form onSubmit={(e) => e.preventDefault()} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-3">
           {/* Email */}
           <FloatingInput
             id="email"

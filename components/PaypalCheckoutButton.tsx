@@ -3,15 +3,36 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
+type PayPalActions = {
+  order: {
+    create: (opts: { purchase_units: { amount: { value: string } }[] }) => Promise<string> | string;
+    capture: () => Promise<unknown>;
+  };
+};
+
+type PayPalOnApproveActions = {
+  order: {
+    capture: () => Promise<unknown>;
+  };
+};
+
+type PayPalButtonsOptions = {
+  style?: Record<string, string>;
+  createOrder: (data: unknown, actions: PayPalActions) => Promise<string> | string;
+  onApprove: (data: { orderID?: string } , actions: PayPalOnApproveActions) => Promise<void>;
+  onError?: (err: unknown) => void;
+};
+
 declare global {
   interface Window {
-    paypal: any;
+    paypal?: {
+      Buttons: (opts: PayPalButtonsOptions) => { render: (el: string | Element) => void };
+    };
   }
 }
 
 export default function PaypalCheckoutButton() {
   useEffect(() => {
-    // Load PayPal SDK script 1 lần duy nhất
     const script = document.createElement("script");
     script.src =
       "https://www.paypal.com/sdk/js?client-id=YOUR_CLIENT_ID&currency=USD";
@@ -36,28 +57,28 @@ export default function PaypalCheckoutButton() {
           shape: "rect",
           label: "paypal",
         },
-        createOrder: async (data: any, actions: any) => {
+        createOrder: async (data, actions) => {
           return actions.order.create({
             purchase_units: [
               {
                 amount: {
-                  value: "10.00", // 💵 số tiền test
+                  value: "10.00", // test amount
                 },
               },
             ],
           });
         },
-        onApprove: async (data: any, actions: any) => {
+        onApprove: async (data, actions) => {
           const details = await actions.order.capture();
           console.log("Thanh toán thành công:", details);
           alert("Thanh toán thành công!");
         },
-        onError: (err: any) => {
+        onError: (err) => {
           console.error("PayPal error:", err);
           alert("Có lỗi xảy ra khi thanh toán");
         },
       })
-      .render("body"); // mở popup PayPal
+      .render("body");
   };
 
   return (

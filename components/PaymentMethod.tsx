@@ -1,7 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import PaypalCheckoutButton from "./PaypalCheckoutButton";
 
 type PaymentMethodsProps = {
@@ -44,8 +42,8 @@ export default function PaymentMethods({
               Click the button to be redirected to PayPal & complete your
               purchase.
             </p>
-            
-            <PaypalCheckoutButton/>
+
+            <PaypalCheckoutButton />
           </div>
         )}
       </div>

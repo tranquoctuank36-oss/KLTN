@@ -1,15 +1,13 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Image from "next/image";
-import { Product } from "@/data/products-data";
+import { Product } from "@/types/product";
 
 type Props = {
   product: Product;
 };
 
 export default function ProductTabs({ product }: Props) {
-
   return (
     <div className="mt-8">
       <Tabs defaultValue="about" className="w-full">

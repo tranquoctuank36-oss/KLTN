@@ -16,6 +16,7 @@ export default function ProductGallery({ product, selected, isSale }: Props) {
   const [showAll, setShowAll] = useState(false);
 
   const fixedIds = ["sideAngle", "sideProfile", "case"] as const;
+  type FixedId = typeof fixedIds[number];
   const COLLAPSED_COUNT = 2;
 
   const fixedImages = useMemo(
@@ -23,15 +24,15 @@ export default function ProductGallery({ product, selected, isSale }: Props) {
       fixedIds
         .map((id) => selected.images.find((img) => img.id === id))
         .filter(Boolean) as { id: string; url: string }[],
-    [selected]
+    [selected, fixedIds]
   );
 
   const extraImages = useMemo(
     () =>
       selected.images.filter(
-        (img) => img.id !== "front" && !fixedIds.includes(img.id as any)
+        (img) => img.id !== "front" && !fixedIds.includes(img.id as FixedId)
       ),
-    [selected]
+    [selected, fixedIds]
   );
 
   const previewImages = showAll

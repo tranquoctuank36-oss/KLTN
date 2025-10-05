@@ -20,7 +20,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 
 export default function UserMenu() {
-  const { userEmail, logout } = useAuth();
+  const { logout } = useAuth();
   const [open, setOpen] = useState(false);
 
   return (

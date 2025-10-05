@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Video, ChevronUp, ChevronDown } from "lucide-react";
 import { Product, ProductImageSet } from "@/types/product";
 
+const FIXED_IDS = ["sideAngle", "sideProfile", "case"] as const;
+type FixedId = typeof FIXED_IDS[number];
+
 type Props = {
   product: Product;
   selected: ProductImageSet;
@@ -15,24 +18,23 @@ type Props = {
 export default function ProductGallery({ product, selected, isSale }: Props) {
   const [showAll, setShowAll] = useState(false);
 
-  const fixedIds = ["sideAngle", "sideProfile", "case"] as const;
-  type FixedId = typeof fixedIds[number];
   const COLLAPSED_COUNT = 2;
 
   const fixedImages = useMemo(
     () =>
-      fixedIds
-        .map((id) => selected.images.find((img) => img.id === id))
-        .filter(Boolean) as { id: string; url: string }[],
-    [selected, fixedIds]
+      FIXED_IDS.map((id) => selected.images.find((img) => img.id === id)).filter(Boolean) as {
+        id: string;
+        url: string;
+      }[],
+    [selected]
   );
 
   const extraImages = useMemo(
     () =>
       selected.images.filter(
-        (img) => img.id !== "front" && !fixedIds.includes(img.id as FixedId)
+        (img) => img.id !== "front" && !FIXED_IDS.includes(img.id as FixedId)
       ),
-    [selected, fixedIds]
+    [selected]
   );
 
   const previewImages = showAll

@@ -15,6 +15,10 @@ import { useRouter } from "next/navigation";
 import { login as loginApi } from "@/services/auth";
 import { useAuth } from "@/context/AuthContext";
 
+function isAxiosLikeError(err: unknown): err is { response?: { status?: number } } {
+  return typeof err === "object" && err !== null && "response" in err;
+}
+
 export default function LoginDialog({
   open,
   onOpenChange,
@@ -58,8 +62,9 @@ export default function LoginDialog({
       onOpenChange(false);
 
       router.push(Routes.home());
-    } catch (err: any) {
-      if (err.response?.status === 401) {
+    } catch (err: unknown) {
+      // Use a safe type-narrowing instead of "any"
+      if (isAxiosLikeError(err) && err.response?.status === 401) {
         setErrorMsg("Email or password is incorrect!");
       } else {
         setErrorMsg("Login failed, please try again later!");

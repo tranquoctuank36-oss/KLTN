@@ -1,6 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import type { ProductImageSet } from "@/data/products-data";
+import { ProductImageSet } from "@/types/product";
 import { useState } from "react";
 
 function swatchStyleFromColors(colors: string[]): React.CSSProperties {

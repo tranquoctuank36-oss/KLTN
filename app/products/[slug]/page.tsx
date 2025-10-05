@@ -65,7 +65,11 @@ export default function ProductDetailPage() {
         <div className="lg:col-span-8">
           <Breadcrumb product={product} selected={selected!} />
 
-          <ProductGallery product={product} selected={selected!} isSale={isSale} />
+          <ProductGallery
+            product={product}
+            selected={selected!}
+            isSale={isSale}
+          />
 
           <div className="mt-16 mb-16">
             <IncludingStrip />
@@ -73,13 +77,15 @@ export default function ProductDetailPage() {
 
           <ProductTabs product={product} />
 
-          {selectedSize && (
-            <FrameMeasurementsTable
-              measurements={
-                selected.sizes.find((s) => s.size === selectedSize)?.measurements!
-              }
-            />
-          )}
+          {selectedSize &&
+            (() => {
+              const matched = selected.sizes.find(
+                (s) => s.size === selectedSize
+              );
+              return matched ? (
+                <FrameMeasurementsTable measurements={matched.measurements} />
+              ) : null;
+            })()}
 
           <div className="mt-16">
             <h2 className="text-xl font-semibold mb-3">Customer Reviews:</h2>
@@ -208,9 +214,7 @@ export default function ProductDetailPage() {
 
                     <Button
                       onClick={() =>
-                        setQuantity((q) =>
-                          Math.min(selectedQuantity, q + 1)
-                        )
+                        setQuantity((q) => Math.min(selectedQuantity, q + 1))
                       }
                       disabled={quantity >= selectedQuantity}
                       className="w-10 h-full text-xl p-0 hover:bg-white text-gray-400"

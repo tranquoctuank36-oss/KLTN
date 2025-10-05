@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Heart, ShoppingCart, Search } from "lucide-react";
-import LoginMenu from "./login-menu";
+import LoginMenu from "./LoginMenu";
 import { useCart } from "@/context/CartContext";
 import { Routes } from "@/lib/routes";
 

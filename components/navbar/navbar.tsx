@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Mainbar from "./main-navbar";
-import Topbar from "./top-navbar";
+import Mainbar from "./MainNavbar";
+import Topbar from "./TopNavbar";
 
 export default function Navbar() {
   const headerRef = useRef<HTMLElement>(null);

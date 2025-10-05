@@ -70,7 +70,7 @@ export default function FloatingInput({
             onBlur={() => setTouched(true)}
             placeholder=" "
             className={`peer w-full h-12 rounded-md border bg-white
-              px-3 pr-12 pt-4 text-[16px] text-gray-600
+              px-3 pr-12 pt-4 text-[16px] text-gray-800
               focus:border-2 focus:border-blue-400 focus:outline-none focus:text-gray-800 transition
               group-hover:border-gray-500
               ${showError ? "border-red-500 bg-red-50" : "border-gray-300"}`}

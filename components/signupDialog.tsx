@@ -10,19 +10,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Check, Circle } from "lucide-react";
 import FloatingInput from "./FloatingInput";
+import { register } from "@/services/auth";
+import { AxiosError } from "axios";
 
 export default function SignupDialog({
   open,
   onOpenChange,
-  onSubmit,
   onSwitchToLogin,
-  onSwitchToCreate,
+  onSwitchToVerify,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit?: (payload: { email: string; password: string }) => void;
   onSwitchToLogin?: () => void;
-  onSwitchToCreate?: () => void;
+  onSwitchToVerify?: (email: string) => void;
 }) {
   const [email, setEmail] = useState("");
   const [password, setPwd] = useState("");
@@ -31,11 +31,19 @@ export default function SignupDialog({
   const [showConfirmPwd, setShowConfirmPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [forceValidate, setForceValidate] = useState(false);
+  const [emailError, setEmailError] = useState("");
 
+  // Password rules
   const passMin8 = password.length >= 8;
-  const passNo3Repeat = !/(.)\1\1/.test(password);
+  const hasNumber = /\d/.test(password);
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
   const hasTypedPwd = password.length > 0;
   const matchConfirm = confirmPwd === password;
+
+  const isValidPassword =
+    passMin8 && hasNumber && hasUppercase && hasLowercase && hasSpecial;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -57,9 +65,15 @@ export default function SignupDialog({
             type="email"
             required
             value={email}
-            onChange={setEmail}
+            onChange={(val) => {
+              setEmail(val);
+              setEmailError("");
+            }}
             forceValidate={forceValidate}
           />
+          {emailError && (
+            <p className="text-xs text-red-500 mt-1">{emailError}</p>
+          )}
 
           {/* Password */}
           <FloatingInput
@@ -87,6 +101,51 @@ export default function SignupDialog({
               </Button>
             }
           />
+
+          {/* Password rules */}
+          {!hasTypedPwd ? (
+            <ul className="mt-1 space-y-1 text-sm">
+              <li className="flex items-center gap-2">
+                <Circle className="w-2 h-2 fill-gray-500 text-gray-500" />
+                <span className="text-gray-600">At least 8 characters</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Circle className="w-2 h-2 fill-gray-500 text-gray-500" />
+                <span className="text-gray-600">
+                  Includes number, uppercase, lowercase and special character
+                </span>
+              </li>
+            </ul>
+          ) : (
+            <ul className="mt-2 space-y-1 text-sm">
+              <li className="flex items-center gap-2">
+                {passMin8 ? (
+                  <Check className="w-4 h-4 text-green-500" />
+                ) : (
+                  <Circle className="w-2 h-2 fill-red-500 text-red-500" />
+                )}
+                <span className={passMin8 ? "text-green-600" : "text-red-500"}>
+                  At least 8 characters
+                </span>
+              </li>
+              <li className="flex items-center gap-2">
+                {hasNumber && hasUppercase && hasLowercase && hasSpecial ? (
+                  <Check className="w-4 h-4 text-green-500" />
+                ) : (
+                  <Circle className="w-2 h-2 fill-red-500 text-red-500" />
+                )}
+                <span
+                  className={
+                    hasNumber && hasUppercase && hasLowercase && hasSpecial
+                      ? "text-green-600"
+                      : "text-red-500"
+                  }
+                >
+                  Includes number, uppercase, lowercase and special character
+                </span>
+              </li>
+            </ul>
+          )}
 
           {/* Confirm Password */}
           <FloatingInput
@@ -121,47 +180,6 @@ export default function SignupDialog({
             </p>
           )}
 
-          {/* Password rules */}
-          {!hasTypedPwd ? (
-            <ul className="mt-1 space-y-1 text-sm">
-              <li className="flex items-center gap-2">
-                <Circle className="w-2 h-2 fill-gray-500 text-gray-500" />
-                <span className="text-gray-600">At least 8 characters</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Circle className="w-2 h-2 fill-gray-500 text-gray-500" />
-                <span className="text-gray-600">
-                  No more than 2 repeating characters
-                </span>
-              </li>
-            </ul>
-          ) : (
-            <ul className="mt-2 space-y-1 text-sm">
-              <li className="flex items-center gap-2">
-                {passMin8 ? (
-                  <Check className="w-4 h-4 text-green-500" />
-                ) : (
-                  <Circle className="w-2 h-2 fill-red-500 text-red-500" />
-                )}
-                <span className={passMin8 ? "text-green-600" : "text-red-500"}>
-                  At least 8 characters
-                </span>
-              </li>
-              <li className="flex items-center gap-2">
-                {passNo3Repeat ? (
-                  <Check className="w-4 h-4 text-green-500" />
-                ) : (
-                  <Circle className="w-2 h-2 fill-red-500 text-red-500" />
-                )}
-                <span
-                  className={passNo3Repeat ? "text-green-600" : "text-red-500"}
-                >
-                  No more than 2 repeating characters
-                </span>
-              </li>
-            </ul>
-          )}
-
           <Button
             onClick={async () => {
               if (
@@ -173,21 +191,36 @@ export default function SignupDialog({
                 setForceValidate(true);
                 return;
               }
-              if (!passMin8 || !passNo3Repeat) {
+              if (!isValidPassword) {
                 setForceValidate(true);
                 return;
               }
 
               setLoading(true);
               try {
-                await new Promise((res) => setTimeout(res, 1000));
-                await onSubmit?.({
+                const res = await register({
                   email: email.trim(),
                   password: password.trim(),
                 });
+
+                console.log("Register success:", res);
+                localStorage.setItem("token", res.data.accessToken);
+
+                setEmail("");
+                setPwd("");
                 setForceValidate(false);
                 onOpenChange(false);
-                onSwitchToCreate?.();
+                onSwitchToVerify?.(email.trim());
+              } catch (err) {
+                const error = err as AxiosError;
+                if (
+                  error.response?.status === 400 ||
+                  error.response?.status === 409
+                ) {
+                  setEmailError("Email already exists!");
+                } else {
+                  setEmailError("Register failed, please try again!");
+                }
               } finally {
                 setLoading(false);
               }

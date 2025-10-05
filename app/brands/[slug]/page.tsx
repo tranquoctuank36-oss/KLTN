@@ -1,6 +1,6 @@
+import { BRANDS } from "@/mocks/brands-mock";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { BRANDS } from "@/data/brands-data";
 
 export function generateStaticParams() {
   // SSG cho tất cả brand

@@ -10,7 +10,7 @@ import FloatingInput from "@/components/FloatingInput";
 import ShippingMethods from "@/components/ShippingMethods";
 import PaymentMethods from "@/components/PaymentMethod";
 import { Routes } from "@/lib/routes";
-import { CalendarDays, DollarSign, Home, Truck } from "lucide-react";
+import { CalendarDays, DollarSign, Truck } from "lucide-react";
 
 type Province = { code: number; name: string };
 type District = { code: number; name: string };
@@ -143,9 +143,6 @@ export default function CheckoutPage() {
           <LoginDialog
             open={loginOpen}
             onOpenChange={setLoginOpen}
-            onSubmit={(payload) => {
-              console.log("login payload", payload);
-            }}
             onSwitchToSignup={() => {
               console.log("switch to signup");
             }}

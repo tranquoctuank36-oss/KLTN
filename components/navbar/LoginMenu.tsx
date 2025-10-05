@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { MapPin, Undo2, User } from "lucide-react";
+import { MapPin, Undo2, User} from "lucide-react";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -11,14 +10,30 @@ import {
 import { Button } from "@/components/ui/button";
 import LoginDialog from "../loginDialog";
 import SignupDialog from "../signupDialog";
-import CreateAccountDialog from "../createAccountDialog";
+import VerifyEmail from "../ResendVerification";
+import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import UserMenu from "./UserMenu";
 
 export default function LoginMenu() {
   const [hoverOpen, setHoverOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [signupOpen, setSignupOpen] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
+  const { isLoggedIn, loading } = useAuth();
+
+  if (loading) {
+    return null;
+  }
+
+  if (isLoggedIn) {
+    // Sau khi login
+    return <UserMenu />;
+  }
+
+  // Chưa login
   return (
     <>
       <HoverCard
@@ -31,7 +46,7 @@ export default function LoginMenu() {
           <div className="h-6 border border-gray-400" />
 
           <HoverCardTrigger asChild>
-            <Button className="!shadow-none flex items-center gap-4 !px-3 !py-6 text-black bg-white hover:bg-gray-100">
+            <Button className="!shadow-none flex items-center gap-2 !px-3 !py-6 text-black bg-white hover:bg-gray-100">
               <User className="!h-6 !w-6" />
               <span className="text-base">Log In</span>
             </Button>
@@ -112,12 +127,6 @@ export default function LoginMenu() {
       <LoginDialog
         open={loginOpen}
         onOpenChange={setLoginOpen}
-        onSubmit={({ email, password }) => {
-          console.log("Email:", email);
-          console.log("Password:", password);
-          // gọi API login
-          // await LogIn(email, password)
-        }}
         onSwitchToSignup={() => {
           setLoginOpen(false);
           setSignupOpen(true);
@@ -126,22 +135,24 @@ export default function LoginMenu() {
       <SignupDialog
         open={signupOpen}
         onOpenChange={setSignupOpen}
-        onSubmit={({ email }) => {
-          console.log("Email:", email);
-          // gọi API signup
-          // await signUp(email)
-        }}
         onSwitchToLogin={() => {
           setLoginOpen(true);
           setSignupOpen(false);
         }}
-        onSwitchToCreate={() => setCreateOpen(true)}
+        onSwitchToVerify={(email) => {
+          setSignupOpen(false);
+          setRegisteredEmail(email);
+          setVerifyOpen(true);
+        }}
       />
-      <CreateAccountDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onSubmit={(payload) => console.log("create account:", payload)}
-        onSwitchToSignup={() => { setCreateOpen(false); setSignupOpen(true); }}
+      <VerifyEmail
+        open={verifyOpen}
+        onOpenChange={setVerifyOpen}
+        email={registeredEmail}
+        onSwitchToSignup={() => {
+          setVerifyOpen(false);
+          setSignupOpen(true);
+        }}
       />
     </>
   );

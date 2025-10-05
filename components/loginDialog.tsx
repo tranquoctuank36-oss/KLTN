@@ -11,17 +11,17 @@ import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
 import FloatingInput from "./FloatingInput";
 import { Routes } from "@/lib/routes";
-import { useRouter } from "next/navigation"
+import { useRouter } from "next/navigation";
+import { login as loginApi } from "@/services/auth";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginDialog({
   open,
   onOpenChange,
-  onSubmit,
   onSwitchToSignup,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit?: (payload: { email: string; password: string }) => void;
   onSwitchToSignup?: () => void;
 }) {
   const [showPwd, setShowPwd] = useState(false);
@@ -29,7 +29,45 @@ export default function LoginDialog({
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [forceValidate, setForceValidate] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const router = useRouter();
+
+  const { login } = useAuth();
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      setForceValidate(true);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await loginApi({
+        email: email.trim(),
+        password: password.trim(),
+      });
+
+      console.log("Login success:", res);
+
+      login(res.data.accessToken);
+
+      // setEmail("");
+      // setPassword("");
+      setForceValidate(false);
+      setErrorMsg("");
+      onOpenChange(false);
+
+      router.push(Routes.home());
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        setErrorMsg("Email or password is incorrect!");
+      } else {
+        setErrorMsg("Login failed, please try again later!");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -38,7 +76,7 @@ export default function LoginDialog({
           <DialogTitle className="mt-2 text-center text-2xl font-bold">
             Log in.
           </DialogTitle>
-          <p className="text-center text-xm leading-5">
+          <p className="text-center text-sm leading-5">
             Log in to track your orders and manage your account.
           </p>
         </DialogHeader>
@@ -51,18 +89,24 @@ export default function LoginDialog({
             type="email"
             required
             value={email}
-            onChange={setEmail}
+            onChange={(val) => {
+              setEmail(val);
+              setErrorMsg("");
+            }}
             forceValidate={forceValidate}
           />
 
-          {/* Password + toggle eye */}
+          {/* Password */}
           <FloatingInput
             id="password"
             label="* Password"
             type={showPwd ? "text" : "password"}
             required
             value={password}
-            onChange={setPassword}
+            onChange={(val) => {
+              setPassword(val);
+              setErrorMsg("");
+            }}
             forceValidate={forceValidate}
             rightIcon={
               <Button
@@ -82,6 +126,8 @@ export default function LoginDialog({
             }
           />
 
+          {errorMsg && <p className="text-xs text-red-500 mt-1">{errorMsg}</p>}
+
           <div className="text-center">
             <a
               href="/forgot-password"
@@ -92,30 +138,7 @@ export default function LoginDialog({
           </div>
 
           <Button
-            onClick={async () => {
-              if (!email.trim() || !password.trim()) {
-                setForceValidate(true);
-                return;
-              }
-
-              setLoading(true);
-              try {
-                await new Promise((res) => setTimeout(res, 1000));
-
-                await onSubmit?.({
-                  email: email.trim(),
-                  password: password.trim(),
-                  
-                });
-                onOpenChange(false);
-                setForceValidate(false);
-                // setEmail("");
-                // setPassword("");
-                router.push(Routes.home());
-              } finally {
-                setLoading(false);
-              }
-            }}
+            onClick={handleLogin}
             disabled={loading}
             className="w-full !h-12 mt-2 rounded-md bg-blue-600 hover:bg-blue-700 flex items-center justify-center"
           >

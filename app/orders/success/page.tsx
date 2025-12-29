@@ -7,6 +7,8 @@ import { CheckCircle2, Copy, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Routes } from "@/lib/routes";
 
+export const dynamic = 'force-dynamic';
+
 export default function OrderSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();

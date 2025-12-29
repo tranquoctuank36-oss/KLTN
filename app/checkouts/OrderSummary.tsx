@@ -272,10 +272,9 @@ export default function OrderSummary({
 
                 if (result.items) {
                   result.items.forEach((item: any) => {
-                    removeFromCart({
-                      slug: item.product.slug,
-                      variantId: item.selectedVariant.id,
-                    });
+                    if (item.cartItemId) {
+                      removeFromCart(item.cartItemId);
+                    }
                   });
                 }
 

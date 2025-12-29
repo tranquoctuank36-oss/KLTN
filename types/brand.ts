@@ -1,6 +1,9 @@
 export type Brand = {
+  id: string;
   name: string;
   slug: string;
-  logo: string;
-  cover: string;
+  websiteUrl: string;
+  description: string;
+  bannerImagePublicUrl?: string;
+  bannerImageAltText?: string;
 };

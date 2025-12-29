@@ -3,9 +3,12 @@ import "./globals.css";
 import Footer from "@/components/footer";
 import BackToTop from "@/components/back-to-top";
 import GuaranteeSection from "@/components/guarantee-section";
-import { CartProvider } from "@/context/CartContext";
+import { CartProvider, useCart } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
-import Navbar from "@/components/navbar/MainNavbar";
+import { Toaster } from "react-hot-toast";
+import ChatFab from "@/components/chat";
+import CartDrawerWrapper from "@/components/cart/CartDrawerWrapper";
+import Header from "@/components/navbar/Header";
 
 export const metadata: Metadata = {
   title: "Shop Glasses Online | Save up to 50% OFF + Free Shipping",
@@ -14,6 +17,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
+  
 }: Readonly<{
   children: React.ReactNode;
 }>) {
@@ -23,11 +27,14 @@ export default function RootLayout({
         <AuthProvider> 
           <CartProvider>
             <div className="mx-auto w-full">
-              <Navbar />
+              <Header />
               {children}
+              <Toaster position="top-center" />
               <BackToTop />
+              <ChatFab/>
               <GuaranteeSection />
               <Footer />
+              <CartDrawerWrapper /> 
             </div>
           </CartProvider>
         </AuthProvider>

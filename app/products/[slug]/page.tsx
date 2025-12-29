@@ -1,15 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { fetchProduct } from "@/services/productService";
-import {
-  type Product,
-  type ProductImageSet,
-  type ProductSizeInfo,
-} from "@/types/product";
+import { useEffect, useRef, useState } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { getProductBySlug } from "@/services/productService";
+import { Product } from "@/types/product";
 import { Button } from "@/components/ui/button";
-import { Star, Check, ChevronRight } from "lucide-react";
+import { Star, Check, ChevronRight, Heart } from "lucide-react";
 import IncludingStrip from "@/components/productDetail/IncludingStrip";
 import ProductTabs from "@/components/productDetail/ProductInfo";
 import FrameMeasurementsTable from "@/components/productDetail/FrameMeasurementsTable";
@@ -17,77 +13,143 @@ import Breadcrumb from "@/components/productDetail/Breadcrumb";
 import ProductGallery from "@/components/productDetail/ProductGallery";
 import ColorSelector from "@/components/colorSelector";
 import { useCart } from "@/context/CartContext";
-import LoadingButton from "@/components/ui/LoadingButton";
+import { ProductVariants } from "@/types/productVariants";
+import { Routes } from "@/lib/routes";
+// import RecommendedProducts from "@/components/RecommendedProducts";
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const { addToCart } = useCart();
+  const searchParams = useSearchParams();
+  const variantIdFromUrl = searchParams.get("variantId");
+  const { addToCart, cart, openDrawer} = useCart();
+  const router = useRouter();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [selected, setSelected] = useState<ProductImageSet | null>(null);
-  const [quantity, setQuantity] = useState(1);
-  const [selectedSize, setSelectedSize] = useState<string>("");
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariants | null>(
+    null
+  );
+  const [quantity, setQuantity] = useState<number | string>(1);
+
+  // 👉 ref để scroll
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const reviewsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
-    fetchProduct(slug).then((p) => {
-      setProduct(p);
-      if (p) {
-        setSelected(p.images[0]);
-        setSelectedSize(p.images[0]?.sizes?.[0]?.size || "");
-        setQuantity(1);
-      }
-      setLoading(false);
-    });
-  }, [slug]);
+    getProductBySlug(slug)
+      .then((res) => {
+        setProduct(res);
+        if (res?.variants?.length) {
+          if (variantIdFromUrl) {
+            const variantFromUrl = res.variants.find(
+              (v) => v.id === variantIdFromUrl
+            );
+            if (variantFromUrl) {
+              setSelectedVariant(variantFromUrl);
+              return;
+            }
+          }
+          
+          const def =
+            res.variants.find((v: ProductVariants) => v.isDefault) ||
+            res.variants[0];
+          setSelectedVariant(def);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching product:", err);
+      })
+      .finally(() => setLoading(false));
+  }, [slug, variantIdFromUrl]);
 
-  if (loading) {
-    return <div className="max-w-6xl mx-auto p-6">Loading...</div>;
-  }
 
-  if (!product || !selected) {
+  if (!product || !selectedVariant) {
     return <div className="max-w-6xl mx-auto p-6">Product not found</div>;
   }
 
-  const isSale = Boolean(product.oldPrice && product.sale);
-  const selectedImage = selected!;
-  const selectedSizeInfo: ProductSizeInfo | undefined =
-    selectedImage.sizes.find((s) => s.size === selectedSize);
-  const selectedQuantity = selectedSizeInfo?.inventory ?? 0;
+  const handleVariantChange = (variant: ProductVariants) => {
+    setSelectedVariant(variant);
+    setQuantity(1);
+
+    const newUrl = variant.id
+      ? Routes.product(product!.slug, variant.id)
+      : Routes.product(product!.slug);
+    router.replace(newUrl, { scroll: false });
+  };
+
+  const handleAddToCart = async () => {
+    if (!selectedVariant?.id) {
+      console.error("No variant ID available");
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      // Gọi trực tiếp addToCart với đúng product variant ID
+      await addToCart({
+        product,
+        selectedVariant: selectedVariant,
+        quantity: typeof quantity === "number" ? quantity : 1,
+      });
+      openDrawer();
+    } catch (error) {
+      console.error("Failed to add to cart:", error);
+      alert("Failed to add item to cart. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const finalPrice: number | undefined = selectedVariant.finalPrice
+    ? Number(selectedVariant.finalPrice)
+    : undefined;
+
+  const originalPrice: number | undefined = selectedVariant.originalPrice
+    ? Number(selectedVariant.originalPrice)
+    : undefined;
+
+  const isOnSale: boolean =
+    finalPrice !== undefined &&
+    originalPrice !== undefined &&
+    originalPrice > finalPrice;
+
+  const cartItem = cart.find(
+    (i) =>
+      i.product.id === product.id && i.selectedVariant.id === selectedVariant.id
+  );
+  const alreadyInCart = cartItem ? cartItem.quantity : 0;
+
+  const maxQuantity = (selectedVariant.availableQuantity ?? selectedVariant.quantityAvailable ?? 0) - alreadyInCart;
 
   return (
-    <div className="max-w-full px-6 lg:px-20 py-6">
+    <div className="mx-auto max-w-[1440px] px-6 lg:px-20 py-6">
       <div className="mt-4 grid grid-cols-1 lg:grid-cols-12 gap-12">
         {/* LEFT */}
         <div className="lg:col-span-8">
-          <Breadcrumb product={product} selected={selected!} />
+          <Breadcrumb product={product} selectedVariant={selectedVariant} />
 
           <ProductGallery
             product={product}
-            selected={selected!}
-            isSale={isSale}
+            selectedVariant={selectedVariant}
+            isSale={isOnSale}
           />
 
-          <div className="mt-16 mb-16">
+          <div className="mt-16">
             <IncludingStrip />
           </div>
 
+          <div className="mt-15 mb-15">{/* <RecommendedProducts /> */}</div>
+
           <ProductTabs product={product} />
 
-          {selectedSize &&
-            (() => {
-              const matched = selected.sizes.find(
-                (s) => s.size === selectedSize
-              );
-              return matched ? (
-                <FrameMeasurementsTable measurements={matched.measurements} />
-              ) : null;
-            })()}
+          <div ref={frameRef}>
+            <FrameMeasurementsTable product={product} />
+          </div>
 
-          <div className="mt-16">
+          <div ref={reviewsRef} className="mt-16">
             <h2 className="text-xl font-semibold mb-3">Customer Reviews:</h2>
           </div>
         </div>
@@ -97,7 +159,9 @@ export default function ProductDetailPage() {
           className="lg:col-span-4 sticky self-start"
           style={{ top: "var(--header-h)" }}
         >
-          <h1 className="text-2xl font-bold mb-2">{product.name}</h1>
+          <h1 className="text-2xl font-bold">
+            {product.name}
+          </h1>
 
           {/* Rating */}
           <div className="flex items-center gap-2 text-gray-700 mb-5">
@@ -116,20 +180,22 @@ export default function ProductDetailPage() {
 
           {/* Price */}
           <div className="flex items-baseline gap-3 mb-1">
-            {isSale && (
+            {isOnSale && originalPrice !== undefined && (
               <span className="text-gray-400 line-through font-bold">
-                ${product.oldPrice}
+                {originalPrice.toLocaleString("en-US")}đ
               </span>
             )}
             <span
-              className={`text-xl font-bold ${isSale ? "text-red-600" : ""}`}
+              className={`text-xl font-bold ${isOnSale ? "text-red-600" : ""}`}
             >
-              ${product.price}
+              {finalPrice !== undefined
+                ? `${finalPrice.toLocaleString("en-US")}đ`
+                : "Chưa có"}
             </span>
           </div>
 
           <div className="text-gray-500 text-base mb-5">
-            Single payment via <b>PayPal</b>
+            Single payment via <b>VNPAY</b>
           </div>
 
           {/* Features */}
@@ -147,104 +213,128 @@ export default function ProductDetailPage() {
 
           {/* Color selector */}
           <div className="space-y-2 mb-5">
-            <ColorSelector
-              images={product.images}
-              selected={selected!}
-              onSelect={setSelected}
-            />
+            {selectedVariant.colors?.length ? (
+              <ColorSelector
+                variants={product.variants}
+                selected={selectedVariant}
+                onSelect={handleVariantChange}
+              />
+            ) : (
+              <span className="text-gray-400 text-sm">Không có màu</span>
+            )}
           </div>
 
-          {/* Size selector */}
-          <div
-            className={`flex items-center gap-3 text-gray-700 ${
-              selectedQuantity < 6 && selectedQuantity > 0 ? "mb-3" : "mb-10"
-            }`}
-          >
-            <span className="text-sm font-medium">Size:</span>
-            <div className="flex gap-2">
-              {selectedImage.sizes.map(({ size }) => {
-                const isActive = selectedSize === size;
-                return (
-                  <Button
-                    key={size}
-                    onClick={() => {
-                      setSelectedSize(size);
-                      setQuantity(1);
-                    }}
-                    className={`p-1 h-auto leading-none rounded-md border text-sm transition ${
-                      isActive
-                        ? "bg-blue-50 border-blue-700 text-blue-700 font-medium"
-                        : "bg-white border-gray-400 text-gray-400 hover:bg-gray-50"
-                    }`}
-                  >
-                    {size}
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
+          <span className="text-xs text-gray-800 block pb-2">
+            Stock Status:{" "}
+            <b
+              className={`${
+                selectedVariant.stockStatus === "out_of_stock"
+                  ? "text-red-600"
+                  : selectedVariant.stockStatus === "low_stock"
+                  ? "text-orange-600"
+                  : selectedVariant.stockStatus === "in_stock"
+                  ? "text-green-600"
+                  : "text-gray-600"
+              }`}
+            >
+              {selectedVariant.stockStatus === "out_of_stock"
+                ? "Out of Stock"
+                : selectedVariant.stockStatus === "low_stock"
+                ? "Low Stock"
+                : selectedVariant.stockStatus === "in_stock"
+                ? "In Stock"
+                : "Unknown"}
+            </b>
+          </span>
 
-          {/* Low stock warning */}
-          {selectedQuantity < 6 && selectedQuantity > 0 && (
-            <div className="mt-2 flex items-center gap-2 text-orange-600 text-sm font-medium mb-10">
-              <span>
-                Only <b>{selectedQuantity}</b> left In Stock – <b>Act Fast</b>
-              </span>
-            </div>
-          )}
+          {/* <span className="text-xs text-gray-800 block">
+            Max quantity:{" "}
+            <b className="text-gray-800">{maxQuantity > 0 ? maxQuantity : 0}</b>
+          </span> */}
 
           {/* Quantity + Add to Cart */}
           <div className="flex items-center gap-3 mb-3">
-            {selectedSize && (
-              <>
-                {selectedQuantity > 0 ? (
-                  <div className="flex border rounded-md overflow-hidden h-14">
-                    <Button
-                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                      disabled={quantity <= 1}
-                      className="w-10 h-full text-xl p-0 hover:bg-white text-gray-400"
-                      variant="ghost"
-                    >
-                      -
-                    </Button>
-
-                    <span className="w-12 flex items-center justify-center text-xl font-medium">
-                      {quantity}
-                    </span>
-
-                    <Button
-                      onClick={() =>
-                        setQuantity((q) => Math.min(selectedQuantity, q + 1))
+            {(selectedVariant.availableQuantity ?? selectedVariant.quantityAvailable ?? 0) > 0 ? (
+              <div className="flex border rounded-md overflow-hidden h-14">
+                <Button
+                  onClick={() => setQuantity((q) => {
+                    const current = typeof q === "number" ? q : 1;
+                    return Math.max(1, current - 1);
+                  })}
+                  disabled={typeof quantity === "number" ? quantity <= 1 : true}
+                  className="w-10 h-full text-xl p-0 hover:bg-white text-gray-400"
+                  variant="ghost"
+                >
+                  -
+                </Button>
+                <input
+                  type="text"
+                  value={quantity}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    
+                    // Allow empty string temporarily for user to clear and type
+                    if (val === "") {
+                      setQuantity("");
+                      return;
+                    }
+                    
+                    // Only allow digits
+                    if (!/^\d+$/.test(val)) return;
+                    
+                    const num = parseInt(val, 10);
+                    
+                    // Allow any number during typing, will validate on blur
+                    if (num >= 0 && num <= 99) {
+                      setQuantity(num);
+                    } else if (num > 99) {
+                      setQuantity(99);
+                    }
+                  }}
+                  onBlur={() => {
+                    // If empty or invalid, reset to 1
+                    if (quantity === "") {
+                      setQuantity(1);
+                    } else if (typeof quantity === "number") {
+                      if (quantity < 1) {
+                        setQuantity(1);
+                      } else if (quantity > 99) {
+                        setQuantity(99);
                       }
-                      disabled={quantity >= selectedQuantity}
-                      className="w-10 h-full text-xl p-0 hover:bg-white text-gray-400"
-                      variant="ghost"
-                    >
-                      +
-                    </Button>
-                  </div>
-                ) : (
-                  <span className="text-red-600 text-2xl font-medium">
-                    Out of stock
-                  </span>
-                )}
-              </>
+                    }
+                  }}
+                  className="w-12 flex items-center justify-center text-xl font-medium text-center border-0 focus:outline-none focus:ring-0"
+                />
+                <Button
+                  onClick={() =>
+                    setQuantity((q) => {
+                      const current = typeof q === "number" ? q : 1;
+                      return Math.min(99, current + 1);
+                    })
+                  }
+                  disabled={typeof quantity === "number" && quantity >= 99}
+                  className="w-10 h-full text-xl p-0 hover:bg-white text-gray-400"
+                  variant="ghost"
+                >
+                  +
+                </Button>
+              </div>
+            ) : (
+              <span className="text-red-600 text-2xl font-medium">
+                Out of stock
+              </span>
             )}
-
-            <LoadingButton
-              onClick={async () => {
-                if (selectedQuantity === 0) return;
-                addToCart({
-                  product,
-                  selected: selected!,
-                  size: selectedSize,
-                  quantity,
-                });
-              }}
-              className="flex-1 h-14 text-xl font-bold bg-blue-600 hover:bg-blue-700 text-white"
+            <Button
+              onClick={handleAddToCart}
+              disabled={loading}
+              className="flex-1 h-14 text-xl font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center"
             >
-              Add to Cart
-            </LoadingButton>
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <span className="font-semibold text-lg">Add to Cart</span>
+              )}
+            </Button>
           </div>
 
           {/* Buy now */}
@@ -257,21 +347,40 @@ export default function ProductDetailPage() {
 
           {/* Extra sections */}
           <div className="mt-2 overflow-hidden border mb-2">
-            {["Frame & Measurements", "Customer Reviews"].map(
-              (title, idx, arr) => (
-                <div key={title}>
-                  <Button className="group w-full flex items-center justify-between px-4 py-4 text-left hover:bg-white shadow-none border-none">
-                    <span className="font-medium text-gray-500 group-hover:text-gray-700">
-                      {title}
-                    </span>
-                    <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-700" />
-                  </Button>
-                  {idx !== arr.length - 1 && (
-                    <div className="border-t border-gray-300"></div>
-                  )}
-                </div>
-              )
-            )}
+            {[
+              { title: "Frame & Measurements", ref: frameRef },
+              { title: "Customer Reviews", ref: reviewsRef },
+            ].map(({ title, ref }, idx, arr) => (
+              <div key={title}>
+                <Button
+                  className="group w-full flex items-center justify-between px-4 py-4 text-left hover:bg-white drop-shadow-none border-none"
+                  onClick={() => {
+                    if (ref.current) {
+                      const headerHeight =
+                        parseInt(
+                          getComputedStyle(
+                            document.documentElement
+                          ).getPropertyValue("--header-h")
+                        ) || 0;
+                      const top =
+                        ref.current.getBoundingClientRect().top +
+                        window.scrollY -
+                        headerHeight -
+                        20;
+                      window.scrollTo({ top, behavior: "smooth" });
+                    }
+                  }}
+                >
+                  <span className="font-medium text-gray-500 group-hover:text-gray-700">
+                    {title}
+                  </span>
+                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-700" />
+                </Button>
+                {idx !== arr.length - 1 && (
+                  <div className="border-t border-gray-300"></div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>

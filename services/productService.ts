@@ -1,33 +1,233 @@
+import api from "./api";
 import { Product } from "@/types/product";
-import { products } from "@/mocks/products-mock";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+export type AggBucket = { key: string; count: number };
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
-
-export async function fetchProducts(): Promise<Product[]> {
-  if (USE_MOCK) {
-    return Promise.resolve(products);
-  }
-  const res = await fetch(`${API_BASE}/api/products`, { cache: "no-store" });
-  if (!res.ok) {
-    throw new Error(`Failed to fetch products: ${res.status}`);
-  }
-
-  return res.json();
+export interface ElasticAggregation {
+  productTypes: AggBucket[];
+  genders: AggBucket[];
+  frameShapes: AggBucket[];
+  frameTypes: AggBucket[];
+  frameMaterials: AggBucket[];
+  brands: AggBucket[];
+  tags: AggBucket[];
+  colors: AggBucket[];
+  price: { min: number | null; max: number | null };
+  size: {
+    lensWidth: { min: number | null; max: number | null };
+    bridgeWidth: { min: number | null; max: number | null };
+    templeLength: { min: number | null; max: number | null };
+    lensHeight: { min: number | null; max: number | null };
+  };
 }
 
-export async function fetchProduct(slug: string): Promise<Product> {
-  if (USE_MOCK) {
-    const found = products.find((p) => p.slug === slug);
-    if (!found) throw new Error("Product not found (mock)");
-    return Promise.resolve(found);
-  }
-
-  const res = await fetch(`${API_BASE}/api/products/${slug}`, { cache: "no-store" });
-  if (!res.ok) {
-    throw new Error(`Failed to fetch product ${slug}: ${res.status}`);
-  }
-
-  return res.json();
+export interface ProductSearchResponse {
+  data: Product[];
+  aggregations?: ElasticAggregation;
+  pagination: {
+    total: number;
+    limit: number;
+    page: number;
+    totalPages: number;
+  };
 }
+
+export type ElasticSearchFilters = {
+  search?: string;
+  productTypes?: string[];
+  genders?: string[];
+  minLensWidth?: number;
+  maxLensWidth?: number;
+  minBridgeWidth?: number;
+  maxBridgeWidth?: number;
+  minTempleLength?: number;
+  maxTempleLength?: number;
+  minLensHeight?: number;
+  maxLensHeight?: number;
+  frameShapes?: string[];
+  frameTypes?: string[];
+  frameMaterials?: string[];
+  brands?: string[];
+  tags?: string[];
+  minPrice?: string;
+  maxPrice?: string;
+  colors?: string[];
+};
+
+type SearchQuery = ElasticSearchFilters & { page: number; limit: number };
+
+function buildParams(q: SearchQuery) {
+  const usp = new URLSearchParams();
+
+  const append = (k: string, v: any) => {
+    if (v === undefined || v === null || v === "") return;
+
+    // nếu là mảng:
+    if (Array.isArray(v)) {
+      const arr = v
+        .map((x) => (x === undefined || x === null ? "" : String(x).trim()))
+        .filter((x) => x !== "");
+
+      if (!arr.length) return;
+
+      // Join arrays with comma for better API compatibility
+      if (k === "colors" || k === "brands" || k === "tags" || k === "productTypes" || 
+          k === "genders" || k === "frameShapes" || k === "frameTypes" || k === "frameMaterials") {
+        usp.append(k, arr.join(","));
+      } else {
+        // default: append repeated params
+        arr.forEach((x) => usp.append(k, x));
+      }
+    } else {
+      usp.append(k, String(v));
+    }
+  };
+
+  Object.entries(q).forEach(([k, v]) => append(k, v));
+  return usp.toString();
+}
+
+function transformFacetsToAggregations(facets: any[]): ElasticAggregation {
+  const agg: any = {
+    productTypes: [],
+    genders: [],
+    frameShapes: [],
+    frameTypes: [],
+    frameMaterials: [],
+    brands: [],
+    tags: [],
+    colors: [],
+    price: { min: null, max: null },
+    size: {
+      lensWidth: { min: null, max: null },
+      bridgeWidth: { min: null, max: null },
+      templeLength: { min: null, max: null },
+      lensHeight: { min: null, max: null },
+    },
+  };
+
+  facets.forEach((facet: any) => {
+    const id = facet.id;
+    const type = facet.type;
+    const options = facet.options || [];
+
+    if (type === "terms" && Array.isArray(options)) {
+      // Map facet IDs to our aggregation keys
+      const keyMap: Record<string, keyof ElasticAggregation> = {
+        productTypes: "productTypes",
+        genders: "genders",
+        frameShapes: "frameShapes",
+        frameTypes: "frameTypes",
+        frameMaterials: "frameMaterials",
+        brands: "brands",
+        tags: "tags",
+        colors: "colors",
+      };
+
+      const aggKey = keyMap[id];
+      if (aggKey) {
+        agg[aggKey] = options.map((opt: any) => ({
+          key: opt.value || opt.label,
+          count: opt.count || 0,
+          ...(opt.hexCode && { hexCode: opt.hexCode }),
+        }));
+      }
+    }
+  });
+
+  return agg as ElasticAggregation;
+}
+
+export async function searchProductsElastic(
+  q: SearchQuery
+): Promise<ProductSearchResponse> {
+  // Always request facets for aggregations
+  const params = buildParams(q);
+  const url = `/elastic-search/products?${params}&facets=true`;
+  const res = await api.get(url);
+  
+  const root = res.data ?? {};
+  const meta = root.meta ?? {};
+
+  // Fix: root.data IS the products array directly
+  const products: Product[] = Array.isArray(root.data) ? root.data : [];
+  
+  // Parse facets from meta.facets and transform to aggregations format
+  const aggregations: ElasticAggregation | undefined = meta.facets
+    ? transformFacetsToAggregations(meta.facets)
+    : undefined;
+
+  const page = Number(meta.currentPage ?? q.page ?? 1);
+  const limit = Number(meta.itemsPerPage ?? q.limit ?? 12);
+  const total = Number(meta.totalItems ?? products.length);
+  const totalPages = Number(
+    meta.totalPages ?? (limit > 0 ? Math.ceil(total / limit) : 1)
+  );
+
+  return {
+    data: products,
+    aggregations,
+    pagination: { total, limit, page, totalPages },
+  };
+}
+
+export async function getProductBySlug(slug: string): Promise<Product | null> {
+  const res = await api.get(`/products/${slug}`);
+  return res.data?.data as Product;
+}
+
+export async function getProductById(id: string): Promise<Product | null> {
+  const res = await api.get(`/products/id/${id}`);
+  return res.data?.data as Product;
+}
+
+export async function getSimilarProducts(productId: string, size: number = 20): Promise<Product[]> {
+  try {
+    const res = await api.get(`/elastic-search/products/similar-frames?productId=${productId}&size=${size}`);
+    return Array.isArray(res.data?.data) ? res.data.data : [];
+  } catch (error) {
+    console.error('Error fetching similar products:', error);
+    return [];
+  }
+}
+
+// export async function getProductsByBrandSlug(
+//   brandSlug: string,
+//   page = 1,
+//   limit = 12
+// ): Promise<ProductResponse> {
+//   const brand = await getBrandBySlug(brandSlug);
+//   if (!brand?.id) throw new Error("Brand not found");
+//   return getProducts(page, limit, { brandId: String(brand.id) });
+// }
+
+// export async function getProductsByCategory(
+//   categoryId: string,
+//   page = 1,
+//   limit = 12
+// ): Promise<ProductResponse> {
+//   return getProducts(page, limit, { categoryId });
+// }
+
+// /**
+//  * Search products
+//  */
+// export async function searchProducts(
+//   search: string,
+//   page = 1,
+//   limit = 12
+// ): Promise<ProductResponse> {
+//   return getProducts(page, limit, { search });
+// }
+
+// /**
+//  * Get products with price range
+//  */
+// export async function getProductsByPriceRange(
+//   minPrice: number,
+//   maxPrice: number,
+//   page = 1,
+//   limit = 12
+// ): Promise<ProductResponse> {
+//   return getProducts(page, limit, { minPrice, maxPrice });
+// }

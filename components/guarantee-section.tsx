@@ -24,7 +24,7 @@ export default function GuaranteeSection() {
     <section className="w-full bg-blue-50 border-t-1">
       <div className="mx-auto max-w-5xl pt-6 lg:pt-10 pb-3 lg:pb-5">
         <div className="flex flex-col items-center text-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white drop-shadow-sm ring-1 ring-slate-200">
             <ShieldCheck className="h-6 w-6 text-slate-700" />
           </div>
 
@@ -43,11 +43,11 @@ export default function GuaranteeSection() {
           {ITEMS.map((it) => (
             <Card
               key={it.title}
-              className="border-none bg-transparent shadow-none"
+              className="border-none bg-transparent drop-shadow-none"
             >
               <CardContent className="p-0">
                 <div className="flex flex-col items-center text-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white drop-shadow-sm ring-1 ring-slate-200">
                     <span className="text-slate-800">{it.icon}</span>
                   </div>
                   <p className="font-medium text-gray-500">{it.title}</p>

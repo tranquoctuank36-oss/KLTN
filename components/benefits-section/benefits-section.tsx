@@ -10,7 +10,7 @@ export default function BenefitsSection() {
       <div className="mx-auto max-w-[1440px] px-6 lg:px-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {BENEFITS.map((b, idx) => (
-            <Card key={`${b.title}-${idx}`} className="border-0 shadow-none">
+            <Card key={`${b.title}-${idx}`} className="border-0 drop-shadow-none">
               <CardContent className="p-0">
                 <BenefitCard {...b} />
               </CardContent>

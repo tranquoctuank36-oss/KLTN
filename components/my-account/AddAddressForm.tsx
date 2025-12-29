@@ -1,0 +1,265 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import FloatingInput from "@/components/FloatingInput";
+import {
+  Province,
+  District,
+  Ward,
+  getProvinces,
+  getDistricts,
+  getWards,
+} from "@/services/shippingService";
+import { createAddress } from "@/services/userService";
+import toast from "react-hot-toast";
+import { UserAddress } from "@/types/userAddress";
+
+type Props = {
+  onCancel: () => void;
+  onSave: (data: any) => void;
+  existingCount: number;
+};
+
+export default function AddAddressForm({ onCancel, onSave, existingCount }: Props) {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [country, setCountry] = useState("VN");
+  const [isDefaultDelivery, setIsDefaultDelivery] = useState(existingCount === 0);
+
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [districts, setDistricts] = useState<District[]>([]);
+  const [wards, setWards] = useState<Ward[]>([]);
+  const [selectedProvince, setSelectedProvince] = useState("");
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedWard, setSelectedWard] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const phoneRegex = /^(0|\+84)(\d{9})$/;
+
+  useEffect(() => {
+    if (country === "VN") {
+      getProvinces().then(setProvinces).catch(console.error);
+    }
+  }, [country]);
+
+  useEffect(() => {
+    if (selectedProvince) {
+      getDistricts(selectedProvince)
+        .then((data) => {
+          setDistricts(data);
+          setWards([]);
+          setSelectedDistrict("");
+          setSelectedWard("");
+        })
+        .catch(console.error);
+    }
+  }, [selectedProvince]);
+
+  useEffect(() => {
+    if (selectedDistrict) {
+      getWards(selectedDistrict).then(setWards).catch(console.error);
+    }
+  }, [selectedDistrict]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    const newErrors: { [key: string]: string } = {};
+
+    if (!phoneRegex.test(phone)) newErrors.phone = "Invalid phone number";
+
+    if (
+      country === "VN" &&
+      (!selectedProvince || !selectedDistrict || !selectedWard)
+    ) {
+      newErrors.location = "Please select Province, District and Ward";
+    }
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
+
+    try {
+      const province = provinces.find(
+        (p) => String(p.ProvinceID) === selectedProvince
+      );
+      const district = districts.find(
+        (d) => String(d.DistrictID) === selectedDistrict
+      );
+      const ward = wards.find((w) => String(w.WardCode) === selectedWard);
+
+      const payload: UserAddress = {
+        recipientName: name,
+        recipientPhone: phone,
+        provinceName: province?.ProvinceName || "",
+        districtName: district?.DistrictName || "",
+        wardName: ward?.WardName || "",
+        addressLine: address,
+        ghnDistrictId: district ? Number(district.DistrictID) : 0,
+        ghnWardCode: ward ? String(ward.WardCode) : "",
+        isDefault: isDefaultDelivery,
+      };
+
+      await createAddress(payload);
+      toast.success("Changes Saved!", {
+        duration: 2000,
+        position: "top-center",
+      });
+      onSave(payload);
+    } catch (error) {
+      console.error("Failed to save address:", error);
+      throw error;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="bg-white rounded-lg p-6 shadow-lg w-full max-w-auto"
+    >
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-bold">Add new address</h3>
+        <Button
+          type="button"
+          onClick={onCancel}
+          className="w-9 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-full drop-shadow-none"
+        >
+          ✕
+        </Button>
+      </div>
+      <hr className="my-4 border-t-2" />
+
+      {/* First/Last Name */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3">
+        <FloatingInput
+          id="name"
+          label="Name"
+          value={name}
+          onChange={setName}
+          required
+        />
+        <FloatingInput
+          id="phone"
+          label="Phone Number"
+          value={phone}
+          onChange={setPhone}
+          required
+        />
+        {errors.phone && <p className="text-sm text-red-500">{errors.phone}</p>}
+      </div>
+
+      {/* Country + Province */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+        <FloatingInput
+          id="country"
+          label="Country"
+          as="select"
+          value={country}
+          onChange={setCountry}
+          options={[{ value: "VN", label: "Vietnam" }]}
+          required
+        />
+
+        <FloatingInput
+          id="province"
+          label="Province"
+          as="select"
+          value={selectedProvince}
+          onChange={setSelectedProvince}
+          options={provinces.map((p) => ({
+            value: p.ProvinceID,
+            label: p.ProvinceName,
+          }))}
+          required
+        />
+      </div>
+
+      {/* District + Ward */}
+      {country === "VN" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <FloatingInput
+            id="district"
+            label="District"
+            as="select"
+            value={selectedDistrict}
+            onChange={setSelectedDistrict}
+            options={
+              !selectedProvince
+                ? [{ value: "", label: "No data" }]
+                : districts.length > 0
+                ? districts.map((d) => ({
+                    value: String(d.DistrictID),
+                    label: d.DistrictName,
+                  }))
+                : [{ value: "", label: "No data" }]
+            }
+            required
+          />
+          <FloatingInput
+            id="ward"
+            label="Ward"
+            as="select"
+            value={selectedWard}
+            onChange={setSelectedWard}
+            options={
+              !selectedDistrict
+                ? [{ value: "", label: "No data" }]
+                : wards.length > 0
+                ? wards.map((w) => ({
+                    value: String(w.WardCode),
+                    label: w.WardName,
+                  }))
+                : [{ value: "", label: "No data" }]
+            }
+            required
+          />
+        </div>
+      )}
+      {errors.location && (
+        <p className="text-sm text-red-500">{errors.location}</p>
+      )}
+
+      {/* Address */}
+      <div className="mt-4">
+        <FloatingInput
+          id="address"
+          label="Building, House Number, Street Name"
+          value={address}
+          onChange={setAddress}
+          required
+        />
+      </div>
+
+      <label className="flex items-center gap-2 pt-5 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={isDefaultDelivery}
+          disabled={existingCount === 0}
+          onChange={(e) => setIsDefaultDelivery(e.target.checked)}
+          className="w-4 h-4 accent-blue-600 cursor-pointer disabled:cursor-not-allowed"
+        />
+        <span className="cursor-pointer">Default</span>
+      </label>
+
+      <div className="flex items-center justify-end gap-4 mt-8">
+        <Button
+          type="button"
+          onClick={onCancel}
+          className="h-12 w-25 bg-white border border-2 border-gray-400 hover:border-gray-800 text-lg font-bold text-gray-400 hover:text-gray-800 rounded-full"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={saving}
+          className="h-12 w-25 bg-blue-600 text-white text-lg font-bold hover:bg-blue-800 rounded-full"
+        >
+          {saving ? "Saving..." : "Save"}
+        </Button>
+      </div>
+    </form>
+  );
+}

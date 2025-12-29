@@ -1,0 +1,1 @@
+export type PaymentMethodType = "COD" | "VNPAY";

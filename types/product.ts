@@ -1,38 +1,49 @@
-export type ProductImage = {
-  id: string;
-  url: string;
-  alt?: string;
-};
-
-export type ProductSizeInfo = {
-  size: string;
-  inventory: number;
-  measurements: FrameMeasurements;
-};
-
-export type FrameMeasurements = {
-  lensWidth: string;
-  lensHeight: string;
-  bridgeWidth: string;
-  templeLength: string;
-};
-
-export type ProductImageSet = {
-  id: string;
-  colors: string[];
-  label: string;
-  images: ProductImage[];
-  sizes: ProductSizeInfo[];
-};
+import { Brand } from "./brand";
+import { Categories } from "./categories";
+import { ProductImages } from "./productImage";
+import { ProductVariants } from "./productVariants";
+import { Tags } from "./tags";
 
 export type Product = {
-  
-  slug: string;
+  id: string;
   name: string;
-  price: number;
-  oldPrice?: number;
-  sale?: boolean;
-  images: ProductImageSet[];
-  brandSlug: string;
+  slug: string;
   description?: string;
+  productType: string;
+  gender: string;
+
+  frameDetail?: {
+    lensWidth?: number;
+    bridgeWidth?: number;
+    templeLength?: number;
+    lensHeight?: number;
+    frameShape?: {
+      id: string;
+      name: string;
+      slug: string;
+    };
+    frameType?: {
+      id: string;
+      name: string;
+      slug: string;
+    };
+    frameMaterial?: {
+      id: string;
+      name: string;
+      slug: string;
+    };
+    frameFeatures?: any[];
+  };
+
+  brand: Brand;
+  categories?: Categories[];
+  tags: Tags[];
+
+  isFeatured?: boolean;
+  averageRating?: number;
+  reviewCount?: number;
+  totalSold?: number;
+  viewCount?: number;
+
+  variants: ProductVariants[];
 };

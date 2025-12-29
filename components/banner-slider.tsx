@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "./ui/button";
 
 const IMAGES = [
   "/banners/banner_1.png",
@@ -71,27 +72,27 @@ export default function BannerSlider() {
                   src={src}
                   alt={`Slide ${i}`}
                   fill
-                  priority={i === 1}              
+                  priority={i === index}              
                 />
               </div>
             ))}
           </div>
 
           <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-3 md:px-6 ">
-            <button
+            <Button
               aria-label="Previous slide"
               onClick={prev}
-              className="pointer-events-auto rounded-full bg-white/80 hover:bg-white/100 shadow-md p-2"
+              className="pointer-events-auto w-12 h-12 rounded-full bg-white/80 hover:bg-white/100 drop-shadow-md p-2"
             >
-              <ChevronLeft className="h-7 w-7 text-gray-400 hover:text-gray-600 " />
-            </button>
-            <button
+              <ChevronLeft className="!h-7 !w-7 text-gray-400 hover:text-gray-600 " />
+            </Button>
+            <Button
               aria-label="Next slide"
               onClick={next}
-              className="pointer-events-auto rounded-full bg-white/80 hover:bg-white/100 shadow-md p-2"
+              className="pointer-events-auto w-12 h-12 rounded-full bg-white/80 hover:bg-white/100 drop-shadow-md p-2"
             >
-              <ChevronRight className="h-7 w-7 text-gray-400 hover:text-gray-600" />
-            </button>
+              <ChevronRight className="!h-7 !w-7 text-gray-400 hover:text-gray-600" />
+            </Button>
           </div>
         </div>
       </div>

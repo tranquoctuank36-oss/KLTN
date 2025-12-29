@@ -2,21 +2,19 @@ import BannerSlider from "@/components/banner-slider";
 import BenefitsSection from "@/components/benefits-section/benefits-section";
 import BrandSection from "@/components/brand-section/brand-section";
 import BrandListButton from "@/components/brandList-section";
-import ChatFab from "@/components/chat";
-import FilterSection from "@/components/filterbar/filter-section";
+import FilterSection from "@/components/filterbar/FilterSection";
 import NeedSection from "@/components/need-section/need-section";
-import { BRANDS } from "@/mocks/brands-mock";
+import ProductGrid from "@/components/products/ProductGird";
 
 export default function HomePage() {
   return (
     <main>
       <BannerSlider />
-      <BrandListButton brands={BRANDS}/>
-      <BrandSection />
+      <BrandListButton/>
+      {/* <BrandSection /> */}
       <NeedSection />
       <BenefitsSection />
-      <FilterSection />
-      <ChatFab />
+      <ProductGrid />
     </main>
   );
 }

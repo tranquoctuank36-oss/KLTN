@@ -105,7 +105,7 @@ export default function Topbar() {
 
         {/* Top Right */}
         <div className="flex flex-wrap items-center gap-4">
-          <span>0776-913-901 Every day 7am – midnight VN time</span>
+          <span>1900 12 34 56 cskh.glassesshop@gmail.com</span>
           <span className="text-gray-500">|</span>
           <Link href="#" className="hover:underline">
             Help & Support

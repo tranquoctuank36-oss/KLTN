@@ -1,19 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, Undo2, User} from "lucide-react";
+import { MapPin, Undo2, User } from "lucide-react";
 import {
   HoverCard,
   HoverCardTrigger,
   HoverCardContent,
 } from "@/components/ui/hover-card";
 import { Button } from "@/components/ui/button";
-import LoginDialog from "../loginDialog";
-import SignupDialog from "../signupDialog";
-import VerifyEmail from "../ResendVerification";
+import LoginDialog from "../dialog/LoginDialog";
+import VerifyEmail from "../dialog/CheckEmailDialog";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import UserMenu from "./UserMenu";
+import SignupDialog from "../dialog/SignupDialog";
+import { Routes } from "@/lib/routes";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function LoginMenu() {
   const [hoverOpen, setHoverOpen] = useState(false);
@@ -21,19 +23,30 @@ export default function LoginMenu() {
   const [signupOpen, setSignupOpen] = useState(false);
   const [verifyOpen, setVerifyOpen] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
+  const router = useRouter();
+  const pathname = usePathname();
 
   const { isLoggedIn, loading } = useAuth();
+
+  const handleLoginSuccess = () => {
+    setHoverOpen(false);
+    setLoginOpen(false);
+
+    if (pathname === Routes.orderTracking()) {
+      setTimeout(() => {
+        router.push(`${Routes.users()}?section=my-orders`);
+      }, 0);
+    }
+  };
 
   if (loading) {
     return null;
   }
 
   if (isLoggedIn) {
-    // Sau khi login
     return <UserMenu />;
   }
 
-  // Chưa login
   return (
     <>
       <HoverCard
@@ -46,9 +59,9 @@ export default function LoginMenu() {
           <div className="h-6 border border-gray-400" />
 
           <HoverCardTrigger asChild>
-            <Button className="!shadow-none flex items-center gap-2 !px-3 !py-6 text-black bg-white hover:bg-gray-100">
+            <Button className="drop-shadow-none flex items-center gap-2 !px-3 !py-6 text-black bg-white hover:bg-gray-100">
               <User className="!h-6 !w-6" />
-              <span className="text-base">Log In</span>
+              <span className="text-base font-normal">Log In</span>
             </Button>
           </HoverCardTrigger>
         </div>
@@ -57,7 +70,7 @@ export default function LoginMenu() {
           side="bottom"
           align="center"
           sideOffset={16}
-          className="relative w-60 p-4 border border-gray-200 bg-white rounded-md shadow-[0_0_15px_rgba(209,213,219,0.4)]"
+          className="relative w-60 p-4 border border-gray-200 bg-white rounded-md drop-shadow-[0_0_15px_rgba(209,213,219,0.4)]"
         >
           {/* caret */}
           <div className="absolute -top-[12px] left-1/2 -translate-x-1/2 pointer-events-none">
@@ -102,8 +115,9 @@ export default function LoginMenu() {
 
             <div className="pt-2 mt-6 border-t space-y-2 text-lg">
               <Link
-                href="/orders"
+                href={Routes.orderTracking()}
                 className="group flex items-center gap-2 ml-4"
+                onClick={() => setHoverOpen(false)}
               >
                 <MapPin className="h-5 w-5 text-gray-600 group-hover:text-black" />
                 <span className="text-gray-800 group-hover:text-black group-hover:font-medium">
@@ -131,6 +145,7 @@ export default function LoginMenu() {
           setLoginOpen(false);
           setSignupOpen(true);
         }}
+        onLoginSuccess={handleLoginSuccess}
       />
       <SignupDialog
         open={signupOpen}
@@ -149,10 +164,6 @@ export default function LoginMenu() {
         open={verifyOpen}
         onOpenChange={setVerifyOpen}
         email={registeredEmail}
-        onSwitchToSignup={() => {
-          setVerifyOpen(false);
-          setSignupOpen(true);
-        }}
       />
     </>
   );

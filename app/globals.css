@@ -127,3 +127,23 @@
     margin-right: 0 !important;
   }
 }
+
+input[type="date"]::-webkit-datetime-edit {
+  color: transparent;
+}
+input[type="date"]:focus::-webkit-datetime-edit,
+input[type="date"]:valid::-webkit-datetime-edit {
+  color: oklch(0.145 0 0);
+}
+
+input[type="date"]::before {
+  color: transparent;
+  content: attr(placeholder);
+}
+
+.edit-user-form input[type="date"]::-webkit-calendar-picker-indicator {
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+}

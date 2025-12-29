@@ -1,55 +1,91 @@
 "use client";
-
-import PaypalCheckoutButton from "./PaypalCheckoutButton";
+import { PaymentMethodType } from "@/types/payment";
+import Image from "next/image";
+import { useEffect } from "react";
 
 type PaymentMethodsProps = {
-  value: string; // "card" | "paypal"
-  onChange: (method: string) => void;
-  submitted?: boolean;
+  value: PaymentMethodType;
+  onChange: (method: PaymentMethodType) => void;
 };
 
 export default function PaymentMethods({
   value,
   onChange,
-  submitted = false,
 }: PaymentMethodsProps) {
-  if (!value) {
-    onChange("paypal");
-  }
+  useEffect(() => {
+    if (!value) {
+      onChange("COD");
+    }
+  }, [value, onChange]);
+  
   return (
     <div className="bg-white rounded-lg shadow p-6 mt-6 pt-8 pb-10">
-      <h2 className="text-2xl font-bold mb-4">Payment Method</h2>
-      {/* PayPal */}
-      <div
-        className={`border rounded-lg p-4 cursor-pointer ${
-          value === "paypal" ? "border-blue-500 bg-blue-50" : "border-gray-300"
-        }`}
-        onClick={() => onChange("paypal")}
-      >
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            checked={value === "paypal"}
-            onChange={() => onChange("paypal")}
-            className="w-5 h-5 text-blue-600 focus:ring-blue-500"
-          />
-          <span className="font-semibold text-lg text-[#003087]">PayPal</span>
-        </label>
+      <h2 className="text-2xl font-bold mb-4">3. Payment</h2>
 
-        {value === "paypal" && (
-          <div className="mt-4 text-center">
-            <p className="text-gray-600 text-base mb-4 font-semibold">
-              Click the button to be redirected to PayPal & complete your
-              purchase.
+      <div className="space-y-4">
+        {/* COD */}
+        <div
+          className={`border rounded-lg p-4 cursor-pointer ${
+            value === "COD"
+              ? "border-blue-500 bg-blue-50"
+              : "border-gray-300 hover:border-gray-400"
+          }`}
+          onClick={() => onChange("COD")}
+        >
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="payment"
+              checked={value === "COD"}
+              onChange={() => onChange("COD")}
+              className="w-5 h-5 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="font-semibold text-lg text-gray-800">
+              Cash on Delivery (COD)
+            </span>
+          </label>
+
+          {value === "COD" && (
+            <div className="mt-4 pl-7 text-gray-600 text-base font-medium">
+              Pay the courier upon receipt of goods.
+            </div>
+          )}
+        </div>
+
+        {/* VNPAY */}
+        <div
+          className={`border rounded-lg p-4 pt-2 cursor-pointer ${
+            value === "VNPAY" ? "border-blue-500 bg-blue-50" : "border-gray-300"
+          }`}
+          onClick={() => onChange("VNPAY")}
+        >
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              checked={value === "VNPAY"}
+              onChange={() => onChange("VNPAY")}
+              className="w-5 h-5 text-blue-600 focus:ring-blue-500"
+            />
+            <Image
+              src="/vnpay_logo.png"
+              alt="VNPAY"
+              width={60}
+              height={30}
+              className="object-contain"
+            />
+          </label>
+
+          {value === "VNPAY" && (
+            <p className="mt-4 pl-7 text-gray-600 text-base font-semibold">
+              You will be redirected to the VNPAY payment gateway to complete
+              your payment.
             </p>
-
-            <PaypalCheckoutButton />
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Error nếu submit mà chưa chọn */}
-      {submitted && !value && (
+      {!value && (
         <p className="text-xs text-red-500 mt-2">
           Please select a payment method
         </p>

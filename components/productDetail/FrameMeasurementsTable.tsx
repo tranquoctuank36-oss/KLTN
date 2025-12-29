@@ -1,16 +1,16 @@
 "use client";
 
-import { FrameMeasurements } from "@/types/product";
+import { Product } from "@/types/product";
 
 type Props = {
-  measurements: FrameMeasurements;
+  product: Product;
 };
 
-export default function FrameMeasurementsTable({ measurements }: Props) {
+export default function FrameMeasurementsTable({ product }: Props) {
   const items = [
     {
       label: "Lens Width",
-      value: measurements.lensWidth,
+      value: product.frameDetail?.lensWidth,
       svg: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -33,7 +33,7 @@ export default function FrameMeasurementsTable({ measurements }: Props) {
     },
     {
       label: "Lens Height",
-      value: measurements.lensHeight,
+      value: product.frameDetail?.lensHeight,
       svg: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -56,7 +56,7 @@ export default function FrameMeasurementsTable({ measurements }: Props) {
     },
     {
       label: "Bridge Width",
-      value: measurements.bridgeWidth,
+      value: product.frameDetail?.bridgeWidth,
       svg: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -79,7 +79,7 @@ export default function FrameMeasurementsTable({ measurements }: Props) {
     },
     {
       label: "Temple Length",
-      value: measurements.templeLength,
+      value: product.frameDetail?.templeLength,
       svg: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -108,12 +108,12 @@ export default function FrameMeasurementsTable({ measurements }: Props) {
     <div className="mt-15">
       <div className="flex items-center justify-between mb-3">
         <p className="font-semibold text-gray-700 text-lg">Frame Measurements:</p>
-        <a
+        {/* <a
           href="#"
           className="text-blue-600 text-sm font-medium hover:underline"
         >
           Find My Size
-        </a>
+        </a> */}
       </div>
 
       <div className="rounded-xl border border-gray-200 overflow-hidden">
@@ -130,7 +130,7 @@ export default function FrameMeasurementsTable({ measurements }: Props) {
               </div>
               <div className="flex flex-col items-center justify-center py-2 text-center">
                 {it.svg}
-                <div className="text-gray-800 text-xm font-semibold">{it.value}</div>
+                <div className="text-gray-800 text-xm font-semibold">{it.value ? `${it.value} mm` : "-"}</div>
               </div>
             </div>
           ))}

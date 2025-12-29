@@ -11,7 +11,7 @@ export default function NeedCard({ tile }: { tile: NeedSection }) {
   const router = useRouter();
 
   return ( 
-    <Card className="rounded-3xl border-0 shadow-none">
+    <Card className="rounded-3xl border-0 drop-shadow-none">
       <CardContent className="p-0">
         <Link
           href={tile.href}

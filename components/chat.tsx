@@ -27,7 +27,7 @@ export default function ChatFab({ bottom = 24, right = 24 }: ChatFabProps) {
             fixed z-50 grid place-items-center rounded-full
             h-12 w-12 md:h-14 md:w-14
             bg-[#1e7bf4] text-white
-            shadow-lg
+            drop-shadow-lg hover:bg-blue-800
           "
           style={{ bottom, right }}
         >

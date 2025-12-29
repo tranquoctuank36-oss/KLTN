@@ -1,9 +1,12 @@
 export const Routes = {
   home: () => `/`,
-  brand: (slug: string) => `/brand/${slug}`,
+  brand: (slug: string) => `/brands/${slug}`,
   brands: () => `/brands`,
 
-  product: (slug: string) => `/products/${slug}`,
+  users: () => `/users`,
+
+  product: (slug: string, variantId?: string) =>
+    `/products/${slug}?variantId=${variantId}`,
   products: () => `/products`,
 
   progressiveGlasses: () => `/progressive-glasses`,
@@ -11,6 +14,12 @@ export const Routes = {
   kidsGlasses: () => "/kids-glasses",
   blueLightGlasses: () => "/blue-light-glasses",
 
-  cart: () => `/cart`,
+  cart: () => `/carts`,
   checkouts: () => `/checkouts`,
+  orderTracking: () => `/order-tracking`,
+  orderTrackingDetail: (orderCode: string) => `/order-tracking/${orderCode}`, 
+  orderDetail: (orderCode: string) => `/orders/${orderCode}`,
+  orderSuccessPage: (orderCode: string) => `/orders/success?orderCode=${orderCode}`,
+  
+  sale: () => `/sale`,
 };

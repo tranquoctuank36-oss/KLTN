@@ -12,7 +12,7 @@ export default function ProductTabs({ product }: Props) {
     <div className="mt-8">
       <Tabs defaultValue="about" className="w-full">
         {/* Tabs Header */}
-        <TabsList className="flex w-full rounded-none border-b-2 border-gray-300 bg-transparent p-0">
+        <TabsList className="flex w-full border-b-2 border-gray-300 bg-transparent p-0">
           <TabsTrigger
             value="about"
             className="px-4 py-2 text-base font-medium text-gray-500
@@ -69,25 +69,34 @@ export default function ProductTabs({ product }: Props) {
                     <td className="bg-gray-100 font-semibold px-3 py-2 w-1/2">
                       Material:
                     </td>
-                    <td className="px-3 py-2">Metal</td>
+                    <td className="px-3 py-2">
+                      {product.frameDetail?.frameMaterial?.name}
+                    </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="bg-gray-100 font-semibold px-3 py-2">
                       Shape:
                     </td>
-                    <td className="px-3 py-2">Rectangle</td>
+                    <td className="px-3 py-2">
+                      {product.frameDetail?.frameShape?.name}
+                    </td>
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="bg-gray-100 font-semibold px-3 py-2">
                       Type:
                     </td>
-                    <td className="px-3 py-2">Full-Rim</td>
+                    <td className="px-3 py-2">
+                      {product.frameDetail?.frameType?.name}
+                    </td>
                   </tr>
                   <tr>
                     <td className="bg-gray-100 font-semibold px-3 py-2">
-                      Spring Hinges:
+                      Gender:
                     </td>
-                    <td className="px-3 py-2">Yes</td>
+                    <td className="px-3 py-2">
+                      {product.gender?.charAt(0).toUpperCase() +
+                        product.gender?.slice(1)}
+                    </td>
                   </tr>
                 </tbody>
               </table>

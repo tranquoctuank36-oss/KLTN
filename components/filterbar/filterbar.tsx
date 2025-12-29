@@ -1,60 +1,277 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+  memo,
+} from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
-
-import { FILTER_GROUPS } from "@/mocks/filter-mock";
-import { type FilterGroup } from "@/types/filter";
-
-import FilterChip from "./filterchip";
-import FilterPanel from "./filterpanel";
 import { X } from "lucide-react";
 
-export default function FilterBar() {
+import type {
+  ElasticAggregation,
+  ElasticSearchFilters,
+} from "@/services/productService";
+import FrameGroupPanel from "./FrameGroupPanel";
+import FilterChip from "./filterchip";
+import FilterPanel from "./filterpanel";
+import PricePanel from "./PricePanel";
+import BrandsPanel from "./BrandsPanel";
+import ColorsPanel from "./ColorsPanel";
+
+export type FilterGroup = {
+  key:
+    | "productTypes"
+    | "genders"
+    | "frameShapes"
+    | "frameTypes"
+    | "frameMaterials"
+    | "brands"
+    | "tags"
+    | "colors";
+  label: string;
+  options: { id: string; label: string; count: number; hexCode?: string }[];
+};
+
+type Props = {
+  aggregations?: ElasticAggregation;
+  onChange?: (filters: Partial<ElasticSearchFilters>) => void;
+  sort?: string;
+  onSortChange?: (s: string) => void;
+  priceBounds?: { min: number; max: number };
+  currency?: string;
+};
+
+const LABELS: Record<FilterGroup["key"], string> = {
+  productTypes: "Glasses Type",
+  genders: "Gender",
+  frameShapes: "Frame Shape",
+  frameTypes: "Frame Type",
+  frameMaterials: "Frame Material",
+  brands: "Brands",
+  tags: "Tags",
+  colors: "Colors",
+};
+
+const FRAME_KEYS: Array<FilterGroup["key"]> = [
+  "frameShapes",
+  "frameTypes",
+  "frameMaterials",
+];
+
+const DEFAULT_PRICE_BOUNDS = { min: 0, max: 2000 };
+
+const removeFrom = (s: Set<string> | undefined, id: string) => {
+  const next = new Set(s ?? []);
+  next.delete(id);
+  return Array.from(next);
+};
+
+function FilterBar({
+  aggregations,
+  onChange,
+  priceBounds,
+}: Props) {
   const [selected, setSelected] = useState<Record<string, Set<string>>>({});
-  const [expandedKey, setExpandedKey] = useState<string | null>(null);
-  const [sort, setSort] = useState("relevant");
-  const [activeButton, setActiveButton] = useState<"front" | "side">("side");
+  const [expandedKey, setExpandedKey] = useState<
+    FilterGroup["key"] | "frame" | "price" | null
+  >(null);
 
-  /** Toggle chọn/bỏ chọn option */
-  const toggleOption = (group: FilterGroup, id: string) => {
-    setSelected((prev) => {
-      const current = new Set(prev[group.key] ?? []);
-      if (current.has(id)) {
-        current.delete(id);
-      } else {
-        current.add(id);
-      }
-      return { ...prev, [group.key]: current };
-    });
-  };
-
-  /** Map để check chip nào đang active */
-  const activeMap = useMemo(
-    () =>
-      FILTER_GROUPS.reduce<Record<string, boolean>>((acc, g) => {
-        acc[g.key] = (selected[g.key]?.size ?? 0) > 0;
-        return acc;
-      }, {}),
-    [selected]
+  const [selectedPrice, setSelectedPrice] = useState<[number, number] | null>(
+    null
   );
 
-  /** Clear toàn bộ filter */
-  const clearAll = () => setSelected({});
+  const reopenFrameRef = useRef(false);
+
+  const GROUPS_NO_FRAME: FilterGroup[] = useMemo(() => {
+    if (!aggregations) {
+      return [];
+    }
+    
+    const build = (key: FilterGroup["key"]) => {
+      const data = aggregations[key] ?? [];
+      const optionsMap = new Map<string, { id: string; label: string; count: number; hexCode: string }>();
+      
+      // Add options from aggregations
+      data.forEach((x: any) => {
+        const option = {
+          id: String(x.key ?? x.value ?? x.label),
+          label: String(x.label ?? x.key),
+          count: Number(x.count ?? 0),
+          hexCode: x.hexCode, // This should work if API returns it
+        };
+        
+        optionsMap.set(option.id, option);
+      });
+      
+      // Add selected options that might be missing from aggregations
+      const selectedIds = Array.from(selected[key] ?? []);
+      selectedIds.forEach((id) => {
+        if (!optionsMap.has(id)) {
+          optionsMap.set(id, {
+            id: id,
+            label: id,
+            count: 0, // We don't know the count, set to 0
+            hexCode: "#CCCCCC", // No hexCode available
+          });
+        }
+      });
+      
+      return {
+        key,
+        label: LABELS[key],
+        options: Array.from(optionsMap.values()),
+      } as FilterGroup;
+    };
+
+    return (
+      ["productTypes", "genders", "brands", "tags", "colors"] as const
+    ).map((k) => build(k));
+  }, [aggregations, selected]);
+
+  const FRAME_DATA = useMemo(
+    () => ({
+      shapes: (aggregations?.frameShapes ?? []).map((x: any) => ({
+        id: String(x.key),
+        name: String(x.key),
+        count: Number(x.count ?? 0),
+      })),
+      types: (aggregations?.frameTypes ?? []).map((x: any) => ({
+        id: String(x.key),
+        name: String(x.key),
+        count: Number(x.count ?? 0),
+      })),
+      materials: (aggregations?.frameMaterials ?? []).map((x: any) => ({
+        id: String(x.key),
+        name: String(x.key),
+        count: Number(x.count ?? 0),
+      })),
+    }),
+    [aggregations]
+  );
+
+  const activeMap = useMemo(() => {
+    return GROUPS_NO_FRAME.reduce<Record<string, boolean>>((acc, g) => {
+      acc[g.key] = (selected[g.key]?.size ?? 0) > 0;
+      return acc;
+    }, {});
+  }, [GROUPS_NO_FRAME, selected]);
+
+  const activeFrame =
+    (selected.frameShapes?.size ?? 0) > 0 ||
+    (selected.frameTypes?.size ?? 0) > 0 ||
+    (selected.frameMaterials?.size ?? 0) > 0;
+
+  const toggleOption = useCallback((group: FilterGroup, id: string) => {
+    setSelected((prev) => {
+      const current = new Set(prev[group.key] ?? []);
+      current.has(id) ? current.delete(id) : current.add(id);
+      return { ...prev, [group.key]: current };
+    });
+  }, []);
+
+  const applyFramePatch = useCallback(
+    (patch: {
+      frameShapesIds?: string[];
+      frameTypesIds?: string[];
+      frameMaterialsIds?: string[];
+    }) => {
+      setSelected((prev) => {
+        const next = { ...prev };
+        if (patch.frameShapesIds)
+          next.frameShapes = new Set(patch.frameShapesIds);
+        if (patch.frameTypesIds) next.frameTypes = new Set(patch.frameTypesIds);
+        if (patch.frameMaterialsIds)
+          next.frameMaterials = new Set(patch.frameMaterialsIds);
+        return next;
+      });
+    },
+    []
+  );
+
+  const clearAll = useCallback(() => {
+    setSelected({});
+    setSelectedPrice(null);
+  }, []);
+
+  const bounds = useMemo(() => {
+    const apiMin = Number(aggregations?.price?.min ?? NaN);
+    const apiMax = Number(aggregations?.price?.max ?? NaN);
+    const propMin = Number(priceBounds?.min ?? NaN);
+    const propMax = Number(priceBounds?.max ?? NaN);
+
+    // chọn theo thứ tự ưu tiên: API -> prop -> default
+    const min = Number.isFinite(apiMin)
+      ? apiMin
+      : Number.isFinite(propMin)
+      ? propMin
+      : DEFAULT_PRICE_BOUNDS.min;
+
+    const max = Number.isFinite(apiMax)
+      ? apiMax
+      : Number.isFinite(propMax)
+      ? propMax
+      : DEFAULT_PRICE_BOUNDS.max;
+
+    // đảm bảo min<=max
+    return { min: Math.min(min, max), max: Math.max(min, max) };
+  }, [aggregations?.price, priceBounds]);
+
+  const disabledPrice = bounds.min === bounds.max;
+
+  const apiFilters = useMemo(() => {
+    const toArr = (key: string) => Array.from(selected[key] ?? []);
+    const base: Partial<ElasticSearchFilters> = {
+      productTypes: toArr("productTypes"),
+      genders: toArr("genders"),
+      frameShapes: toArr("frameShapes"),
+      frameTypes: toArr("frameTypes"),
+      frameMaterials: toArr("frameMaterials"),
+      brands: toArr("brands"),
+      tags: toArr("tags"),
+      colors: toArr("colors"),
+    } as Partial<ElasticSearchFilters>;
+
+    if (selectedPrice) {
+      (base as any).minPrice = String(selectedPrice[0]);
+      (base as any).maxPrice = String(selectedPrice[1]);
+    }
+
+    return base;
+  }, [selected, selectedPrice]);
+
+  const lastEmittedRef = useRef<string>("");
+  useEffect(() => {
+    const s = JSON.stringify(apiFilters);
+    if (s !== lastEmittedRef.current) {
+      lastEmittedRef.current = s;
+      onChange?.(apiFilters);
+    }
+  }, [apiFilters, onChange]);
+
+  useEffect(() => {
+    if (reopenFrameRef.current) {
+      reopenFrameRef.current = false;
+      setTimeout(() => setExpandedKey("frame"), 0);
+    }
+  }, [aggregations]);
+
+  // format VNĐ (or other currency)
+  const currencyFormatter = (n: number) => `${Number(n).toLocaleString("en-US")}đ`;
+
 
   return (
     <>
       <div className="rounded-xl border border-slate-200 bg-gray-100">
         {/* Chips */}
         <div className="flex flex-wrap items-center gap-2 p-4">
-          {FILTER_GROUPS.map((g) => (
+          {/* 1) productTypes + genders */}
+          {GROUPS_NO_FRAME.filter(
+            (g) => g.key === "productTypes" || g.key === "genders"
+          ).map((g) => (
             <FilterChip
               key={g.key}
               label={g.label}
@@ -66,111 +283,152 @@ export default function FilterBar() {
             />
           ))}
 
-          {/* View mode + Sort */}
-          <div className="ml-auto flex items-center">
-            {/* Front button */}
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => setActiveButton("front")}
-              className={`h-10 w-13 rounded-lg border-slate-300 transition-colors ${
-                activeButton === "front"
-                  ? "bg-white text-gray-800"
-                  : "bg-gray-100 text-gray-500 hover:bg-white hover:text-gray-800"
-              }`}
-              aria-label="Front view"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 14"
-                className="!w-6 !h-6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8.577 9a3.793 3.793 0 0 1-3.79 3.797A3.79 3.79 0 0 1 1 9a3.79 3.79 0 0 1 3.789-3.797c2.093 0 3.79 1.7 3.79 3.797Zm0 0c0-.786.636-1.424 1.422-1.424.783 0 1.42.638 1.42 1.424m0 0a3.79 3.79 0 0 0 3.79 3.797A3.793 3.793 0 0 0 18.999 9a3.793 3.793 0 0 0-3.79-3.797c-2.093 0-3.79 1.7-3.79 3.797M1 8.703V2.578c0-.758.613-1.375 1.372-1.375M19 8.703V2.578c0-.758-.616-1.375-1.372-1.375"
-                />
-              </svg>
-            </Button>
+          {/* 2) Frame (gộp) — đứng ngay sau Gender */}
+          <FilterChip
+            label="Frame"
+            active={activeFrame}
+            expanded={expandedKey === "frame"}
+            onClick={() =>
+              setExpandedKey((prev) => (prev === "frame" ? null : "frame"))
+            }
+          />
 
-            {/* Side button */}
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => setActiveButton("side")}
-              className={`h-10 w-13 rounded-lg border-slate-300 transition-colors ${
-                activeButton === "side"
-                  ? "bg-white text-gray-800"
-                  : "bg-gray-100 text-gray-500 hover:bg-white hover:text-gray-800"
-              }`}
-              aria-label="Side view"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                strokeWidth="1.5"
-                viewBox="0 0 24 18"
-                className="!w-6 !h-6"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6.799 10.15c-.076 2.165-1.435 3.334-3.04 2.602C2.153 12.021.909 9.684.975 7.508s1.434-3.334 3.04-2.603c1.606.732 2.85 3.078 2.784 5.244Zm0 0c.028-.808.541-1.255 1.14-.979s1.073 1.15 1.045 1.966m0 0c-.076 2.167 1.168 4.513 2.783 5.245 1.615.731 2.974-.437 3.04-2.603.067-2.166-1.168-4.513-2.783-5.245-1.615-.731-2.974.437-3.04 2.603m5.13-.399 6.184-4.009c.409-.266.903-.209 1.14.133l1.596 2.223M2.276 4.877l6.67-3.373c.418-.209.883-.104 1.083.257l1.064 1.919"
-                />
-              </svg>
-            </Button>
+          {/* 3) Brands, Tags, Colors */}
+          {GROUPS_NO_FRAME.filter(
+            (g) => !["productTypes", "genders"].includes(g.key as string)
+          ).map((g) => (
+            <FilterChip
+              key={g.key}
+              label={g.label}
+              active={activeMap[g.key]}
+              expanded={expandedKey === g.key}
+              onClick={() =>
+                setExpandedKey((prev) => (prev === g.key ? null : g.key))
+              }
+            />
+          ))}
 
-            {/* Sort select */}
-            <Select value={sort} onValueChange={setSort}>
-              <SelectTrigger className="h-10 rounded-lg border-slate-300 w-[150px] font-semibold ml-2 cursor-pointer">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent align="end">
-                <SelectItem value="relevant">Most Relevant</SelectItem>
-                <SelectItem value="popular">Most Popular</SelectItem>
-                <SelectItem value="low">Lowest Price</SelectItem>
-                <SelectItem value="high">Highest Price</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {/* 4) Price chip */}
+          <FilterChip
+            key="price"
+            label="Price"
+            active={!!selectedPrice}
+            expanded={expandedKey === "price"}
+            onClick={() =>
+              setExpandedKey((prev) => (prev === "price" ? null : "price"))
+            }
+          />
         </div>
 
-        {/* Panel */}
-        {expandedKey && (
-          <FilterPanel
-            group={FILTER_GROUPS.find((g) => g.key === expandedKey)!}
-            selected={selected[expandedKey] ?? new Set()}
-            onToggle={(id) => {
-              const group = FILTER_GROUPS.find((g) => g.key === expandedKey);
-              if (group) toggleOption(group, id);
-            }}
-            onClose={() => setExpandedKey(null)}
-          />
+        {/* Panel chi tiết */}
+        {!!expandedKey && (
+          <div className="pb-3">
+            {expandedKey === "frame" ? (
+              <FrameGroupPanel
+                open={true}
+                onOpenChange={(v) => !v && setExpandedKey(null)}
+                data={FRAME_DATA}
+                value={{
+                  frameShapesIds: Array.from(selected.frameShapes ?? []),
+                  frameTypesIds: Array.from(selected.frameTypes ?? []),
+                  frameMaterialsIds: Array.from(selected.frameMaterials ?? []),
+                }}
+                onChange={applyFramePatch}
+              />
+            ) : expandedKey === "price" ? (
+              <PricePanel
+                open={true}
+                onOpenChange={(v) => {
+                  if (!v) setExpandedKey(null);
+                }}
+                min={bounds.min}
+                max={bounds.max}
+                value={selectedPrice ?? undefined}
+                disabled={disabledPrice}
+                format={(n) => currencyFormatter(n)}
+                onChange={(v) => {
+                  setSelectedPrice([v[0], v[1]]);
+                }}
+              />
+            ) : expandedKey === "brands" ? (
+              <BrandsPanel
+                selected={selected.brands ?? new Set()}
+                onToggle={(id) => {
+                  const group = GROUPS_NO_FRAME.find((g) => g.key === "brands");
+                  if (group) toggleOption(group, id);
+                }}
+                onClose={() => setExpandedKey(null)}
+                options={
+                  GROUPS_NO_FRAME.find((g) => g.key === "brands")?.options ?? []
+                }
+              />
+            ) : expandedKey === "colors" ? (
+              <ColorsPanel
+                selected={selected.colors ?? new Set()}
+                onToggle={(id) => {
+                  const group = GROUPS_NO_FRAME.find((g) => g.key === "colors");
+                  if (group) toggleOption(group, id);
+                }}
+                onClose={() => setExpandedKey(null)}
+                options={
+                  GROUPS_NO_FRAME.find((g) => g.key === "colors")?.options ?? []
+                }
+              />
+            ) : (
+              <FilterPanel
+                group={
+                  GROUPS_NO_FRAME.find(
+                    (g) => g.key === expandedKey
+                  ) as FilterGroup
+                }
+                selected={selected[expandedKey] ?? new Set()}
+                onToggle={(id) => {
+                  const group = GROUPS_NO_FRAME.find(
+                    (g) => g.key === expandedKey
+                  );
+                  if (group) toggleOption(group, id);
+                }}
+                onClose={() => setExpandedKey(null)}
+              />
+            )}
+          </div>
         )}
       </div>
 
-      {/* Active tags */}
-      {Object.entries(selected).some(([, set]) => set.size > 0) && (
-        <div className="flex flex-wrap gap-2 p-3">
+      {/* Dải tag đang chọn */}
+      {(Object.entries(selected).some(([, set]) => set.size > 0) ||
+        selectedPrice) && (
+        <div className="flex flex-wrap gap-2 p-3 pb-0">
           {Object.entries(selected).map(([groupKey, set]) =>
             Array.from(set).map((optionId) => {
-              const group = FILTER_GROUPS.find((g) => g.key === groupKey);
+              const inFrame = FRAME_KEYS.includes(groupKey as any);
+              const group = inFrame
+                ? ({
+                    key: groupKey,
+                    label: LABELS[groupKey as FilterGroup["key"]],
+                    options: (aggregations?.[
+                      groupKey as keyof ElasticAggregation
+                    ] ?? []) as any[],
+                  } as any)
+                : GROUPS_NO_FRAME.find((g) => g.key === groupKey);
+
               if (!group) return null;
 
               const optionLabel =
-                group.options.find((o) => o.id === optionId)?.label ??
-                optionId;
+                group.options.find(
+                  (o: any) => String(o.key ?? o.id) === optionId
+                )?.label ??
+                group.options.find((o: any) => String(o.id) === optionId)
+                  ?.label ??
+                String(optionId);
 
               return (
                 <span
                   key={`${groupKey}-${optionId}`}
-                  onClick={() => toggleOption(group, optionId)}
+                  onClick={() =>
+                    !FRAME_KEYS.includes(groupKey as any) &&
+                    toggleOption(group as FilterGroup, optionId)
+                  }
                   className="px-2 mt-1 mb-1 bg-gray-200 text-gray-700 rounded-full text-xs flex items-center gap-1 cursor-pointer"
                 >
                   <span className="leading-none font-medium">
@@ -178,11 +436,42 @@ export default function FilterBar() {
                   </span>
                   <Button
                     type="button"
-                    className="bg-gray-200 text-gray-700 !w-4 !h-4 rounded-full flex items-center justify-center !p-0
-                      hover:bg-black/80 hover:text-white shadow-none"
+                    className="bg-gray-200 text-gray-700 !w-4 !h-4 rounded-full flex items-center justify-center !p-0 hover:bg-black/80 hover:text-white drop-shadow-none"
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggleOption(group, optionId);
+                      if (FRAME_KEYS.includes(groupKey as any)) {
+                        // báo hiệu để mở lại panel sau fetch
+                        reopenFrameRef.current = true;
+
+                        // xoá 1 item trong nhóm frame (không đóng panel)
+                        if (groupKey === "frameShapes") {
+                          applyFramePatch({
+                            frameShapesIds: removeFrom(
+                              selected.frameShapes,
+                              optionId
+                            ),
+                          });
+                        } else if (groupKey === "frameTypes") {
+                          applyFramePatch({
+                            frameTypesIds: removeFrom(
+                              selected.frameTypes,
+                              optionId
+                            ),
+                          });
+                        } else {
+                          applyFramePatch({
+                            frameMaterialsIds: removeFrom(
+                              selected.frameMaterials,
+                              optionId
+                            ),
+                          });
+                        }
+                      } else {
+                        const groupObj = GROUPS_NO_FRAME.find(
+                          (g) => g.key === groupKey
+                        );
+                        groupObj && toggleOption(groupObj, optionId);
+                      }
                     }}
                   >
                     <X className="!w-3 !h-3" />
@@ -192,10 +481,30 @@ export default function FilterBar() {
             })
           )}
 
+          {/* Price chip */}
+          {selectedPrice && (
+            <span className="px-2 mt-1 mb-1 bg-gray-200 text-gray-700 rounded-full text-xs flex items-center gap-2 cursor-default">
+              <span className="leading-none font-medium">
+                {currencyFormatter(selectedPrice[0])} -{" "}
+                {currencyFormatter(selectedPrice[1])}
+              </span>
+              <Button
+                type="button"
+                className="bg-gray-200 text-gray-700 !w-4 !h-4 rounded-full flex items-center justify-center !p-0 hover:bg-black/80 hover:text-white drop-shadow-none"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedPrice(null);
+                }}
+              >
+                <X className="!w-3 !h-3" />
+              </Button>
+            </span>
+          )}
+
           <Button
             type="button"
             onClick={clearAll}
-            className="text-xs text-slate-500 hover:text-gray-800 hover:underline ml-2 shadow-none !p-0"
+            className="text-xs text-slate-500 hover:text-gray-800 hover:underline ml-2 drop-shadow-none !p-0"
           >
             Clear All
           </Button>
@@ -204,3 +513,5 @@ export default function FilterBar() {
     </>
   );
 }
+
+export default memo(FilterBar);

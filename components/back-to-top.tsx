@@ -28,7 +28,7 @@ export default function BackToTop() {
         "fixed right-6 md:right-15 bottom-40 z-50",
         "group grid place-items-center rounded-full",
         "h-12 w-12 md:h-14 md:w-14",
-        "bg-gray-400 text-white shadow-lg",
+        "bg-gray-400 text-white drop-shadow-lg",
         "transition-all duration-200",
         "ring-6 ring-gray-300/40",
         "hover:bg-blue-600 hover:ring-sky-300",

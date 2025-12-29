@@ -15,6 +15,7 @@ export type FloatingInputProps = {
   options?: { value: string; label: string }[];
   rows?: number;
   maxLength?: number;
+  forceValidate?: boolean;
 
   min?: number;
   max?: number;
@@ -35,12 +36,13 @@ export default function FloatingInput({
   options = [],
   rows = 4,
   maxLength,
+  forceValidate = false,
   min,
   max,
   step,
 }: FloatingInputProps) {
   const [touched, setTouched] = React.useState(false);
-  const showError = required && touched && !value;
+  const showError = required && (touched || forceValidate) && !value;
 
   const baseClassCommon =
     "peer w-full rounded-md border bg-white text-[16px] text-gray-800 focus:border-2 focus:border-blue-400 focus:outline-none transition" +

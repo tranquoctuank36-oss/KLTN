@@ -159,7 +159,7 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
 
           const product = await getProductById(item.productId);
           const variantId = item.productVariantId;
-          const selectedVariant = product?.productVariants?.find(
+          const selectedVariant = product?.variants?.find(
             (v: ProductVariants) => String(v.id) === String(variantId)
           );
           if (!product || !selectedVariant) return;

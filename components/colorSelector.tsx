@@ -1,6 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { ProductVariant } from "@/types/productVariants";
+import { ProductVariants } from "@/types/productVariants";
 import { useState } from "react";
 
 function swatchStyleFromColors(colors: string[]): React.CSSProperties {
@@ -47,9 +47,9 @@ function ringStyleFromColors(colors: string[], isActive: boolean): React.CSSProp
 }
 
 type Props = {
-  variants: ProductVariant[];
-  selected: ProductVariant | null;
-  onSelect: (variant: ProductVariant) => void;
+  variants: ProductVariants[];
+  selected: ProductVariants | null;
+  onSelect: (variant: ProductVariants) => void;
 };
 
 export default function ColorSelector({ variants, selected, onSelect }: Props) {
@@ -60,12 +60,12 @@ export default function ColorSelector({ variants, selected, onSelect }: Props) {
       {variants.map((variant, i) => {
         const isSelected = selected?.id === variant.id;
         const isHover = hovering === i;
-        const hexColors = variant.colors.map((c) => c.hexCode);
+        const hexColors = variant.colors?.map((c: { hexCode: string }) => c.hexCode) || [];
 
         const label =
-          variant.colors.length > 1
-            ? variant.colors.map((c) => c.name).join(" / ")
-            : variant.colors[0]?.name || "";
+          variant.colors && variant.colors.length > 1
+            ? variant.colors.map((c: { name: string }) => c.name).join(" / ")
+            : variant.colors?.[0]?.name || "";
 
         return (
           <div key={variant.id} className="relative">

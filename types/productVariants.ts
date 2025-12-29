@@ -1,5 +1,3 @@
-
-import { ProductColor } from "./productColor";
 import { ProductImages } from "./productImage";
 
 export type ProductVariants = {

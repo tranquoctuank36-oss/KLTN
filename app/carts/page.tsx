@@ -60,7 +60,7 @@ export default function CartPage() {
     }, 300);
   };
 
-  const handleClearCart = () => {
+  const handleClearCart = async () => {
     setSelectedItems(new Set());
     clearDiscount();
     const allKeys = cart.map(

@@ -177,7 +177,7 @@ export default function VoucherSection({
   return (
     <div className="bg-white rounded-lg shadow p-6 mt-6 pb-10">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-2xl font-bold">4. Voucher/Coupon</h2>
+        <h2 className={`text-2xl font-bold ${disabled ? 'text-gray-300' : ''}`}>4. Voucher/Coupon</h2>
         <button
           onClick={handleViewAll}
           disabled={disabled || loadingVouchers}

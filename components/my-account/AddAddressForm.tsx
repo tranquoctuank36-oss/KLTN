@@ -4,16 +4,14 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import FloatingInput from "@/components/FloatingInput";
 import {
-  Province,
-  District,
-  Ward,
   getProvinces,
   getDistricts,
   getWards,
-} from "@/services/shippingService";
-import { createAddress } from "@/services/userService";
+} from "@/services/locationService";
+import { createAddress, getUserProfile } from "@/services/userService";
 import toast from "react-hot-toast";
 import { UserAddress } from "@/types/userAddress";
+import { District, Province, Ward } from "@/types/location";
 
 type Props = {
   onCancel: () => void;
@@ -23,6 +21,7 @@ type Props = {
 
 export default function AddAddressForm({ onCancel, onSave, existingCount }: Props) {
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [country, setCountry] = useState("VN");
@@ -37,6 +36,21 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const phoneRegex = /^(0|\+84)(\d{9})$/;
+
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      try {
+        const user = await getUserProfile();
+        if (user.email) {
+          setEmail(user.email);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user profile:", error);
+      }
+    };
+
+    fetchUserEmail();
+  }, []);
 
   useEffect(() => {
     if (country === "VN") {
@@ -82,22 +96,21 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
 
     try {
       const province = provinces.find(
-        (p) => String(p.ProvinceID) === selectedProvince
+        (p) => String(p.id) === selectedProvince
       );
       const district = districts.find(
-        (d) => String(d.DistrictID) === selectedDistrict
+        (d) => String(d.id) === selectedDistrict
       );
-      const ward = wards.find((w) => String(w.WardCode) === selectedWard);
+      const ward = wards.find((w) => String(w.id) === selectedWard);
 
       const payload: UserAddress = {
         recipientName: name,
+        recipientEmail: email,
         recipientPhone: phone,
-        provinceName: province?.ProvinceName || "",
-        districtName: district?.DistrictName || "",
-        wardName: ward?.WardName || "",
         addressLine: address,
-        ghnDistrictId: district ? Number(district.DistrictID) : 0,
-        ghnWardCode: ward ? String(ward.WardCode) : "",
+        provinceId: province ? String(province.id) : "",
+        districtId: district ? String(district.id) : "",
+        wardId: ward ? String(ward.id) : "",
         isDefault: isDefaultDelivery,
       };
 
@@ -107,9 +120,22 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
         position: "top-center",
       });
       onSave(payload);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save address:", error);
-      throw error;
+      
+      // Hiển thị detail từ response
+      const detail = error?.response?.data?.detail;
+      if (detail) {
+        toast.error(detail, {
+          duration: 3000,
+          position: "top-center",
+        });
+      } else {
+        toast.error("Failed to save address", {
+          duration: 3000,
+          position: "top-center",
+        });
+      }
     } finally {
       setSaving(false);
     }
@@ -142,6 +168,17 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
           required
         />
         <FloatingInput
+          id="email"
+          label="Email"
+          type="email"
+          value={email}
+          onChange={setEmail}
+          disabled
+          required
+        />
+      </div>
+      <div className="grid grid-cols-1 gap-4 pt-3">
+        <FloatingInput
           id="phone"
           label="Phone Number"
           value={phone}
@@ -170,8 +207,8 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
           value={selectedProvince}
           onChange={setSelectedProvince}
           options={provinces.map((p) => ({
-            value: p.ProvinceID,
-            label: p.ProvinceName,
+            value: p.id,
+            label: p.name,
           }))}
           required
         />
@@ -191,8 +228,8 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
                 ? [{ value: "", label: "No data" }]
                 : districts.length > 0
                 ? districts.map((d) => ({
-                    value: String(d.DistrictID),
-                    label: d.DistrictName,
+                    value: String(d.id),
+                    label: d.name,
                   }))
                 : [{ value: "", label: "No data" }]
             }
@@ -209,8 +246,8 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
                 ? [{ value: "", label: "No data" }]
                 : wards.length > 0
                 ? wards.map((w) => ({
-                    value: String(w.WardCode),
-                    label: w.WardName,
+                    value: String(w.id),
+                    label: w.name,
                   }))
                 : [{ value: "", label: "No data" }]
             }

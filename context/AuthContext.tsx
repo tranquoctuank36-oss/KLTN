@@ -43,7 +43,10 @@ const clearAuthClient = () => {
   // 3) header axios
   delete api.defaults.headers.common.Authorization;
 
-  // 4) sync đa tab
+  // 4) xóa anonymousId cũ để tránh conflict khi logout
+  localStorage.removeItem("x-anonymous-id");
+
+  // 5) sync đa tab
   localStorage.setItem("__app:logout", String(Date.now()));
 };
 
@@ -129,6 +132,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
+      // localStorage.removeItem("user");
+      // setUser(null);
+      
       const res = await apiLogin({ email, password });
       const { accessToken } = res.data;
 

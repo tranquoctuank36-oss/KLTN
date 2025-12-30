@@ -7,6 +7,8 @@ export type CartItemResponse = {
   name: string;
   originalPrice: string;
   finalPrice: string;
+  productId?: string;
+  productVariantId?: string;
   thumbnailImage: {
     id: string;
     publicUrl: string;
@@ -22,68 +24,75 @@ export type CartResponse = {
   items: CartItemResponse[];
 };
 
-// Lấy hoặc tạo anonymousId từ localStorage
-export const getOrCreateAnonymousId = (): string => {
-  // Check if we're in browser environment
-  if (typeof window === 'undefined') {
-    return ''; // Return empty string on server-side
-  }
-  
-  let anonymousId = localStorage.getItem("x-anonymous-id");
-  if (!anonymousId) {
-    anonymousId = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    localStorage.setItem("x-anonymous-id", anonymousId);
-    console.log("🆕 Created new anonymousId:", anonymousId);
-  } else {
-    console.log("♻️ Reusing existing anonymousId:", anonymousId);
-  }
-  return anonymousId;
+// Lấy anonymousId từ localStorage (không tạo mới)
+export const getAnonymousId = (): string | null => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("x-anonymous-id");
 };
+
+// Lưu anonymousId vào localStorage
+export const saveAnonymousId = (anonymousId: string): void => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("x-anonymous-id", anonymousId);
+  console.log("💾 Saved anonymousId:", anonymousId);
+};
+
+// Xóa anonymousId khỏi localStorage (dùng khi logout)
+export const clearAnonymousId = (): void => {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("x-anonymous-id");
+  console.log("🗑️ Cleared anonymousId");
+};
+
+// Kiểm tra có token hoặc anonymousId không
+export const hasCartIdentifier = (): boolean => {
+  if (typeof window === "undefined") return false;
+  const token = localStorage.getItem("token");
+  const anonymousId = getAnonymousId();
+  return !!(token || anonymousId);
+};
+
+// Helper: chỉ add header khi anonymousId tồn tại
+const withAnonymousHeader = (anonymousId: string | null) => {
+  return anonymousId ? { headers: { "x-anonymous-id": anonymousId } } : {};
+};
+
+const emptyCart = (anonymousId: string = ""): CartResponse => ({
+  id: "",
+  anonymousId,
+  type: "anonymous",
+  items: [],
+});
 
 // Lấy giỏ hàng
 export const getCart = async (): Promise<CartResponse> => {
   try {
-    const anonymousId = getOrCreateAnonymousId();
-    
-    if (!anonymousId) {
-      // Return empty cart if no anonymousId (SSR)
-      return {
-        id: '',
-        anonymousId: '',
-        type: 'anonymous',
-        items: []
-      };
+    if (!hasCartIdentifier()) {
+      return emptyCart();
     }
-    
-    console.log("📥 Fetching cart with anonymousId:", anonymousId);
-    const response = await api.get("/carts", {
-      headers: {
-        "x-anonymous-id": anonymousId,
-      },
-    });
+
+    const anonymousId = getAnonymousId();
+
+    const response = await api.get("/carts", withAnonymousHeader(anonymousId));
     return response.data?.data || response.data;
   } catch (err: any) {
-    console.error("❌ getCart error:", err.response?.status, err.response?.data?.message);
+    const status = err.response?.status;
+    const detail = err.response?.data?.detail;
     
-    // Nếu lỗi 400 hoặc 404, có thể là cart chưa tồn tại
-    // Trả về empty cart thay vì crash
-    if (err.response?.status === 400 || err.response?.status === 404) {
-      console.log("⚠️ Cart not found or DB error, returning empty cart");
-      return {
-        id: '',
-        anonymousId: getOrCreateAnonymousId(),
-        type: 'anonymous',
-        items: []
-      };
+    console.error("❌ getCart error:", status, detail);
+
+    // 404 = cart không tồn tại (đã bị xóa sau logout hoặc chưa tạo)
+    // 400 = bad request (anonymousId không hợp lệ)
+    // Với mọi lỗi, trả về empty cart để UI không crash
+    if (status === 404 || status === 400) {
+      // Clear anonymousId cũ nếu không còn hợp lệ
+      if (status === 404 || status === 400) {
+        clearAnonymousId();
+      }
+      return emptyCart();
     }
-    
-    // Với các lỗi khác, vẫn return empty cart để UI không crash
-    return {
-      id: '',
-      anonymousId: getOrCreateAnonymousId(),
-      type: 'anonymous',
-      items: []
-    };
+
+    return emptyCart(getAnonymousId() || "");
   }
 };
 
@@ -93,19 +102,45 @@ export const addItemToCart = async (
   quantity: number
 ): Promise<CartResponse> => {
   try {
-    const anonymousId = getOrCreateAnonymousId();
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    
+    // Nếu đã đăng nhập (có token), không cần anonymousId
+    if (token) {
+      console.log("➕ Adding item to cart (logged in user)");
+      const response = await api.post(
+        "/carts/items",
+        { productVariantId, quantity }
+      );
+      return response.data?.data || response.data;
+    }
+
+    // Guest user - cần anonymousId
+    let anonymousId = getAnonymousId();
+
+    // Nếu chưa có anonymousId, gọi GET /carts để lấy từ server
+    if (!anonymousId) {
+      console.log("🔄 No anonymousId found, fetching from server...");
+      const cartResponse = await api.get("/carts");
+      const cartData = cartResponse.data?.data || cartResponse.data;
+
+      const serverAnonymousId: unknown = cartData?.anonymousId;
+      if (typeof serverAnonymousId === "string" && serverAnonymousId.length > 0) {
+        anonymousId = serverAnonymousId;
+        saveAnonymousId(anonymousId);
+        console.log("✅ Got anonymousId from server:", anonymousId);
+      } else {
+        throw new Error("Server did not return anonymousId");
+      }
+    }
+
+    // Tới đây anonymousId chắc chắn là string
+    console.log("➕ Adding item to cart with anonymousId:", anonymousId);
     const response = await api.post(
       "/carts/items",
-      {
-        productVariantId,
-        quantity,
-      },
-      {
-        headers: {
-          "x-anonymous-id": anonymousId,
-        },
-      }
+      { productVariantId, quantity },
+      { headers: { "x-anonymous-id": anonymousId } }
     );
+
     return response.data?.data || response.data;
   } catch (err) {
     console.error("❌ addItemToCart error:", err);
@@ -114,16 +149,15 @@ export const addItemToCart = async (
 };
 
 // Xóa sản phẩm khỏi giỏ hàng
-export const removeItemFromCart = async (
-  cartItemId: string
-): Promise<CartResponse> => {
+export const removeItemFromCart = async (cartItemIds: string | string[]): Promise<CartResponse> => {
   try {
-    const anonymousId = getOrCreateAnonymousId();
+    const anonymousId = getAnonymousId();
+    // Convert to array if single string
+    const items = Array.isArray(cartItemIds) ? cartItemIds : [cartItemIds];
+    
     const response = await api.delete("/carts/items", {
-      data: { cartItemId },
-      headers: {
-        "x-anonymous-id": anonymousId,
-      },
+      data: { cartItemIds: items },
+      ...(withAnonymousHeader(anonymousId) as any),
     });
     return response.data?.data || response.data;
   } catch (err) {
@@ -138,18 +172,11 @@ export const updateCartItemQuantity = async (
   quantity: number
 ): Promise<CartResponse> => {
   try {
-    const anonymousId = getOrCreateAnonymousId();
+    const anonymousId = getAnonymousId();
     const response = await api.patch(
       "/carts/items/quantity",
-      {
-        cartItemId,
-        quantity,
-      },
-      {
-        headers: {
-          "x-anonymous-id": anonymousId,
-        },
-      }
+      { cartItemId, quantity },
+      withAnonymousHeader(anonymousId)
     );
     return response.data?.data || response.data;
   } catch (err) {
@@ -159,22 +186,19 @@ export const updateCartItemQuantity = async (
 };
 
 // Hợp nhất giỏ hàng anonymous vào giỏ hàng user khi đăng nhập
-export const mergeCart = async (
-  anonymousId: string
-): Promise<CartResponse> => {
-  try {
-    const response = await api.patch(
-      "/carts/merge",
-      {},
-      {
-        headers: {
-          "x-anonymous-id": anonymousId,
-        },
-      }
-    );
-    return response.data?.data || response.data;
-  } catch (err) {
-    console.error("❌ mergeCart error:", err);
-    throw err;
-  }
+// FIX: Hàm này chỉ nhận string (không nhận null)
+export const mergeCart = async (anonymousId: string): Promise<CartResponse> => {
+  const response = await api.patch(
+    "/carts/merge",
+    {},
+    { headers: { "x-anonymous-id": anonymousId } }
+  );
+  return response.data?.data || response.data;
+};
+
+// Helper call merge (nếu bạn muốn dùng nơi đăng nhập):
+export const mergeCartIfPossible = async (): Promise<CartResponse | null> => {
+  const anonymousId = getAnonymousId();
+  if (!anonymousId) return null; // không có thì khỏi merge
+  return mergeCart(anonymousId);
 };

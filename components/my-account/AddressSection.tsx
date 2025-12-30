@@ -98,8 +98,8 @@ const AddressSection = forwardRef<HTMLDivElement, Props>(
                     </div>
                     <p className="text-gray-400">{addr.recipientPhone}</p>
                     <p className="text-gray-700">
-                      {addr.addressLine}, {addr.wardName}, {addr.districtName},{" "}
-                      {addr.provinceName}
+                      {addr.addressLine}, {addr.provinceName},{" "}
+                      {addr.districtName}, {addr.wardName}
                     </p>
                   </div>
 
@@ -134,18 +134,11 @@ const AddressSection = forwardRef<HTMLDivElement, Props>(
             <Button
               className="text-blue-800 font-normal hover:underline drop-shadow-none p-0 text-base"
               onClick={() => {
-                if (addresses.length < 5) onAddAddress();
+                onAddAddress();
               }}
-              disabled={addresses.length >= 5}
             >
               Add New Address
             </Button>
-
-            {addresses.length >= 5 && (
-              <p className="text-red-500 text-sm">
-                You can only add up to 5 shipping addresses
-              </p>
-            )}
           </div>
 
           {totalPages > 1 && (

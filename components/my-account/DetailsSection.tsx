@@ -49,28 +49,28 @@ const DetailsSection = forwardRef<HTMLDivElement, Props>(
 
         <div className="grid grid-cols-2 gap-y-4 gap-x-8">
           <div>
-            <p className="text-gray-400 text-sm">First Name:</p>
-            <p className="text-gray-800">{user?.firstName || "—"}</p>
+            <p className="text-gray-500 text-sm">First Name:</p>
+            <p className="text-gray-800 text-base">{user?.firstName || "—"}</p>
           </div>
           <div>
-            <p className="text-gray-400 text-sm">Gender:</p>
-            <p className="text-gray-800">{user?.gender || "—"}</p>
+            <p className="text-gray-500 text-sm">Gender:</p>
+            <p className="text-gray-800 text-base">{user?.gender || "—"}</p>
           </div>
           <div>
-            <p className="text-gray-400 text-sm">Last Name:</p>
-            <p className="text-gray-800">{user?.lastName || "—"}</p>
+            <p className="text-gray-500 text-sm">Last Name:</p>
+            <p className="text-gray-800 text-base">{user?.lastName || "—"}</p>
           </div>
           <div>
-            <p className="text-gray-400 text-sm">Date of Birth:</p>
-            <p className="text-gray-800">
+            <p className="text-gray-500 text-sm">Date of Birth:</p>
+            <p className="text-gray-800 text-base">
               {user?.dateOfBirth
                 ? new Date(user.dateOfBirth).toLocaleDateString()
                 : "—"}
             </p>
           </div>
           <div className="col-span-2">
-            <p className="text-gray-400 text-sm">Email Address:</p>
-            <p className="text-gray-800">{user?.email || "—"}</p>
+            <p className="text-gray-500 text-sm">Email Address:</p>
+            <p className="text-gray-800 text-base">{user?.email || "—"}</p>
           </div>
         </div>
 

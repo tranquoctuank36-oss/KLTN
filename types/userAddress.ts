@@ -2,12 +2,14 @@ export interface UserAddress {
   id?: string;            
   userId?: string;         
   recipientName: string;
+  recipientEmail?: string;
   recipientPhone: string;
-  provinceName: string;
-  districtName: string;
-  wardName: string;
+  provinceName?: string;
+  districtName?: string;
+  wardName?: string;
   addressLine: string;
-  ghnDistrictId: number;
-  ghnWardCode: string;
+  provinceId: string;
+  districtId: string;
+  wardId: string;
   isDefault: boolean;
 }

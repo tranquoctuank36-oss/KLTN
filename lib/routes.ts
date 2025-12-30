@@ -18,7 +18,7 @@ export const Routes = {
   checkouts: () => `/checkouts`,
   orderTracking: () => `/order-tracking`,
   orderTrackingDetail: (orderCode: string) => `/order-tracking/${orderCode}`, 
-  orderDetail: (orderCode: string) => `/orders/${orderCode}`,
+  orderDetail: (orderId: string) => `/orders/${orderId}`,
   orderSuccessPage: (orderCode: string) => `/orders/success?orderCode=${orderCode}`,
   
   sale: () => `/sale`,

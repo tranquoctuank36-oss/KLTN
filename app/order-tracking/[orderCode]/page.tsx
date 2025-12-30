@@ -283,8 +283,8 @@ export default function OrderTrackingDetailPage() {
                 <p className="font-medium">{order.recipientName || "--"}</p>
                 <p>{order.recipientPhone || "--"}</p>
                 <p className="text-black whitespace-normal break-all w-full text-black text-justify">
-                  {order.addressLine || "không có"} - {order.wardName},{" "}
-                  {order.districtName}, {order.provinceName}
+                  {order.addressLine || "không có"} - {order.name},{" "}
+                  {order.name}, {order.name}
                 </p>
               </div>
             </div>

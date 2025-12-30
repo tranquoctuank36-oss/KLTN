@@ -4,19 +4,39 @@ import { useEffect, useState, useRef } from "react";
 import ClientOnly from "@/components/ClientOnly";
 import CheckoutForm from "./CheckoutForm";
 import OrderSummary from "./OrderSummary";
+import VoucherSection from "@/components/VoucherSection";
 import { useCart } from "@/context/CartContext";
 import { Order } from "@/types/order";
 import { PaymentMethodType } from "@/types/payment";
 
 export default function CheckoutPage() {
-  const { cart, discountCode, discountAmount } = useCart();
+  const { cart } = useCart();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("COD");
   const [shippingFee, setShippingFee] = useState(0);
   const [checkoutCart, setCheckoutCart] = useState<typeof cart>([]);
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedWard, setSelectedWard] = useState("");
   const hasLoadedRef = useRef(false);
   const [isFormValid, setIsFormValid] = useState(false);
   const [hasShippingError, setHasShippingError] = useState(false);
   const [note, setNote] = useState("");
+  
+  // Voucher states
+  const [voucherCode, setVoucherCode] = useState<string | null>(null);
+  const [voucherOrderDiscount, setVoucherOrderDiscount] = useState(0);
+  const [voucherShippingDiscount, setVoucherShippingDiscount] = useState(0);
+
+  const handleVoucherApplied = (code: string, orderDiscount: number, shippingDiscount: number) => {
+    setVoucherCode(code);
+    setVoucherOrderDiscount(orderDiscount);
+    setVoucherShippingDiscount(shippingDiscount);
+  };
+
+  const handleVoucherCleared = () => {
+    setVoucherCode(null);
+    setVoucherOrderDiscount(0);
+    setVoucherShippingDiscount(0);
+  };
 
   useEffect(() => {
     if (hasLoadedRef.current || cart.length === 0) return;
@@ -35,7 +55,8 @@ export default function CheckoutPage() {
         const selectedSet = new Set(selectedKeys);
 
         const filteredCart = cart.filter((item) => {
-          const key = `${item.product.slug}__${item.selectedVariant.id}`;
+          // Tạo key theo cùng logic với CartItems
+          const key = item.cartItemId || `${item.product.slug}__${item.selectedVariant.id}`;
           const isSelected = selectedSet.has(key);
           return isSelected;
         });
@@ -68,10 +89,8 @@ export default function CheckoutPage() {
       const isReloading = sessionStorage.getItem("isOnCheckoutPage") === "true";
 
       if (isReloading) {
-        console.log("🔄 Page reloading - keeping checkout data");
         sessionStorage.removeItem("isOnCheckoutPage");
       } else {
-        console.log("🧹 Leaving checkout - cleaning up");
         localStorage.removeItem("checkoutSelectedItems");
         localStorage.removeItem("checkoutDiscount");
       }
@@ -96,29 +115,30 @@ export default function CheckoutPage() {
     createdAt: "",
     updatedAt: "",
     items: [],
-    discountFee: discountAmount || 0,
+    discountFee: 0,
     shippingFee,
-    grandTotal:
-      Number(checkoutSubtotal) + Number(shippingFee) - Number(discountAmount),
+    grandTotal: Number(checkoutSubtotal) + Number(shippingFee),
     paymentMethod: "COD",
     recipientName: "",
+    recipientEmail: "",
     recipientPhone: "",
     addressLine: "",
-    wardName: "",
-    districtName: "",
     provinceName: "",
-    toWardCode: "",
-    toDistrictId: 0,
+    districtName: "",
+    wardName: "",
+    provinceId: "",
+    districtId: "",
+    wardId: "",
     note: "",
-    couponCode: discountCode || "",
+    couponCode: "",
   });
 
   useEffect(() => {
     const safeSubtotal = Number(checkoutSubtotal) || 0;
-    const safeShippingFee = Number(shippingFee) || 0;
-    const safeDiscountAmount = Number(discountAmount) || 0;
+    const safeShippingFee = Math.max(0, Number(shippingFee) - Number(voucherShippingDiscount));
+    const safeOrderDiscount = Number(voucherOrderDiscount) || 0;
     const calculatedGrandTotal =
-      safeSubtotal + safeShippingFee - safeDiscountAmount;
+      safeSubtotal + safeShippingFee - safeOrderDiscount;
 
     setOrderData((prev) => ({
       ...prev,
@@ -131,19 +151,20 @@ export default function CheckoutPage() {
         imageUrl: i.selectedVariant?.productImages?.[0]?.publicUrl || "",
         color: i.selectedVariant?.colors?.map((c) => c.name).join(", ") || "",
       })),
-      discountFee: discountAmount,
-      shippingFee,
+      discountFee: voucherOrderDiscount,
+      shippingFee: safeShippingFee,
       grandTotal: Math.max(0, calculatedGrandTotal),
       paymentMethod,
-      couponCode: discountCode || "",
+      couponCode: voucherCode || "",
       note,
     }));
   }, [
     checkoutCart,
     shippingFee,
-    discountAmount,
+    voucherOrderDiscount,
+    voucherShippingDiscount,
     paymentMethod,
-    discountCode,
+    voucherCode,
     checkoutSubtotal,
     note,
   ]);
@@ -161,14 +182,36 @@ export default function CheckoutPage() {
             onShippingErrorChange={setHasShippingError}
             note={note}
             onNoteChange={setNote}
+            checkoutCart={checkoutCart}
+            voucherCode={voucherCode}
+            onLocationChange={(districtId, wardId) => {
+              setSelectedDistrict(districtId);
+              setSelectedWard(wardId);
+            }}
+          />
+
+          <VoucherSection
+            orderAmount={checkoutSubtotal}
+            items={checkoutCart.map(item => ({
+              variantId: item.selectedVariant.id,
+              quantity: item.quantity
+            }))}
+            toWardId={selectedWard}
+            toDistrictId={selectedDistrict}
+            paymentMethod={paymentMethod}
+            onVoucherApplied={handleVoucherApplied}
+            onVoucherCleared={handleVoucherCleared}
+            currentVoucherCode={voucherCode || undefined}
+            disabled={!isFormValid || hasShippingError}
           />
         </div>
 
         <OrderSummary
-          shippingFee={shippingFee}
-          grandTotal={checkoutSubtotal + shippingFee - discountAmount} 
-          discountCode={discountCode}
-          discountAmount={discountAmount}
+          shippingFee={Math.max(0, shippingFee - voucherShippingDiscount)}
+          grandTotal={checkoutSubtotal + Math.max(0, shippingFee - voucherShippingDiscount) - voucherOrderDiscount} 
+          discountCode={voucherCode}
+          orderDiscount={voucherOrderDiscount}
+          shippingDiscount={voucherShippingDiscount}
           paymentMethod={paymentMethod}
           orderData={orderData}
           checkoutCart={checkoutCart}

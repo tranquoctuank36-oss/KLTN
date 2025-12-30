@@ -22,7 +22,7 @@ export default function BrandsPage() {
     })
       .then((data) => setBrands(data))
       .catch((err) => {
-        console.error("Failed to fetch brands:", err);
+        console.log("Failed to fetch brands:", err);
         setBrands([]);
       });
   }, [searchTerm]);

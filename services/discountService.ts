@@ -26,7 +26,7 @@ export type Voucher = {
   minOrderAmount: string;
   maxUsage: number;
   usedCount: number;
-  type: "fixed" | "percentage";
+  type: "fixed" | "percentage" | "free_shipping";
   value: string;
   maxDiscountValue: string;
   validFrom: string;

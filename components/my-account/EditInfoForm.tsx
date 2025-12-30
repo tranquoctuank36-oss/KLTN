@@ -37,6 +37,7 @@ export default function EditInfoForm({
 }: EditInfoFormProps) {
   const { updateUser, refetchUser } = useAuth();
   const [saving, setSaving] = useState(false);
+  const [forceValidate, setForceValidate] = useState(false);
   
   useEffect(() => {
       if ("scrollRestoration" in window.history) {
@@ -64,6 +65,12 @@ export default function EditInfoForm({
       <form
         onSubmit={async(e) => {
           e.preventDefault();
+          
+          if (!draftGender) {
+            setForceValidate(true);
+            return;
+          }
+          
           try {
             setSaving(true);
             const updated = await saveEdit();
@@ -102,25 +109,6 @@ export default function EditInfoForm({
           />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <FloatingInput
-                id="gender"
-                label="Gender"
-                as="select"
-                required
-                value={draftGender}
-                onChange={setDraftGender}
-                options={[
-                  { value: "male", label: "male" },
-                  { value: "female", label: "female" },
-                  { value: "other", label: "other" },
-                ]}
-              />
-              {errors.gender && (
-                <p className="text-red-500 text-sm mt-1">{errors.gender}</p>
-              )}
-            </div>
-
-            <div>
               <div className="edit-user-form">
                 <FloatingInput
                 id="dateOfBirth"
@@ -136,6 +124,26 @@ export default function EditInfoForm({
                 <p className="text-red-500 text-sm mt-1">
                   {errors.dateOfBirth}
                 </p>
+              )}
+            </div>
+
+            <div>
+              <FloatingInput
+                id="gender"
+                label="Gender"
+                as="select"
+                required
+                value={draftGender}
+                onChange={setDraftGender}
+                options={[
+                  { value: "male", label: "male" },
+                  { value: "female", label: "female" },
+                  { value: "other", label: "other" },
+                ]}
+                forceValidate={forceValidate}
+              />
+              {errors.gender && (
+                <p className="text-red-500 text-sm mt-1">{errors.gender}</p>
               )}
             </div>
           </div>

@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
-import { useEffect, useState } from "react";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { Routes } from "@/lib/routes";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import LoginDialog from "@/components/dialog/LoginDialog";
 
 type Props = {
   subtotal: number;
@@ -21,110 +23,44 @@ export default function CartSummary({
   isEmpty = false,
   selectedItems = new Set(),
 }: Props) {
-  const { discountCode, discountAmount, applyDiscount, clearDiscount, cart } =
-    useCart();
-  const [couponInput, setCouponInput] = useState("");
-  const [error, setError] = useState("");
+  const { discountCode, discountAmount, cart } = useCart();
+  const { isLoggedIn } = useAuth();
   const router = useRouter();
-
-  useEffect(() => {
-    if (isEmpty) {
-      setCouponInput("");
-      setError("");
-      clearDiscount();
-    }
-  }, [isEmpty, clearDiscount]);
-
-  const coupons: Record<string, number> = {
-    VIP15: 0.15,
-    SALE10: 0.1,
-  };
-
-  const handleApply = () => {
-    const code = couponInput.trim().toUpperCase();
-    if (coupons[code]) {
-      const discount = subtotal * coupons[code];
-      applyDiscount(code, discount);
-      setError("");
-    } else {
-      setError("That coupon is not valid for this order.");
-      clearDiscount();
-    }
-  };
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
 
   const handleCheckout = () => {
+    // Save selected items to localStorage
     localStorage.setItem(
       "checkoutSelectedItems",
       JSON.stringify(Array.from(selectedItems))
     );
-
-    if (discountCode && discountAmount > 0) {
-      localStorage.setItem(
-        "checkoutDiscount",
-        JSON.stringify({
-          code: discountCode,
-          amount: discountAmount,
-        })
-      );
+    
+    // Check if user is logged in
+    if (!isLoggedIn) {
+      // Save intended destination
+      localStorage.setItem("intendedCheckout", "true");
+      setShowLoginDialog(true);
+      return;
     }
+    
+    // If logged in, proceed to checkout
     router.push(Routes.checkouts());
+  };
+
+  const handleLoginSuccess = () => {
+    setShowLoginDialog(false);
+    // Check if user was trying to checkout
+    const intendedCheckout = localStorage.getItem("intendedCheckout");
+    if (intendedCheckout === "true") {
+      localStorage.removeItem("intendedCheckout");
+      router.push(Routes.checkouts());
+    }
   };
 
   const grandTotal = subtotal - discountAmount;
 
   return (
     <div className="rounded-lg p-6 h-fit bg-white">
-      <div className="flex items-center mb-5 mt-5">
-        <input
-          type="text"
-          placeholder="Coupon"
-          value={couponInput}
-          onChange={(e) => {
-            setCouponInput(e.target.value);
-            setError("");
-          }}
-          disabled={isEmpty}
-          className={`flex-1 border rounded-l-md px-3 py-3 font-semibold text-gray-600 focus:outline-none ${
-            isEmpty
-              ? "bg-gray-100 cursor-not-allowed"
-              : error
-              ? "border-red-500 bg-red-50"
-              : "border-gray-300 focus:border-blue-500 focus:border-r-gray-300"
-          }`}
-        />
-        <Button
-          onClick={handleApply}
-          disabled={isEmpty}
-          className={`rounded-l-none text-white px-6 py-6 ${
-            isEmpty
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-gray-500 hover:bg-gray-800"
-          }`}
-        >
-          <span className="text-xl">Apply</span>
-        </Button>
-      </div>
-
-      {error && <p className="text-xs text-red-500 mb-5">{error}</p>}
-
-      <hr className="my-5" />
-
-      <div className="space-y-2 text-sm font-medium text-gray-500">
-        <div className="flex justify-between">
-          <span>Subtotal ({totalQuantity} items):</span>
-          <span>{subtotal.toLocaleString("en-US")}đ</span>
-        </div>
-
-        {discountCode && discountAmount > 0 && (
-          <div className="flex justify-between text-red-600 font-semibold">
-            <span>Discount ({discountCode}):</span>
-            <span>-{discountAmount.toLocaleString("en-US")}đ</span>
-          </div>
-        )}
-      </div>
-
-      <hr className="my-5" />
-
       <div className="flex justify-between items-center text-lg font-bold mb-2">
         <span>Grand total:</span>
         <span>{grandTotal.toLocaleString("en-US")}đ</span>
@@ -140,6 +76,12 @@ export default function CartSummary({
           guarantee
         </li>
       </ul>
+
+      <LoginDialog
+        open={showLoginDialog}
+        onOpenChange={setShowLoginDialog}
+        onLoginSuccess={handleLoginSuccess}
+      />
 
       <Button
         onClick={handleCheckout}

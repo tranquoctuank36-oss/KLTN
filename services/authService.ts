@@ -61,6 +61,12 @@ export const logout = async (): Promise<void> => {
   try {
     await api.delete("/auth/session", {});
   } catch (err) {
+    const error = err as AxiosError;
+    // If 401, token is already invalid, so we can just clear local session
+    if (error.response?.status === 401) {
+      console.log("Token already invalid, clearing local session");
+      return;
+    }
     return handleError(err, "Logout failed");
   }
 };
@@ -69,6 +75,12 @@ export const logoutAll = async (): Promise<void> => {
   try {
     await api.delete("/auth/sessions", {});
   } catch (err) {
+    const error = err as AxiosError;
+    // If 401, token is already invalid, so we can just clear local session
+    if (error.response?.status === 401) {
+      console.log("Token already invalid, clearing local session");
+      return;
+    }
     return handleError(err, "Logout all failed");
   }
 };
@@ -84,7 +96,7 @@ export const verifyEmail = async (token: string) => {
 
 export const resendVerification = async (email: string) => {
   try {
-    const res = await api.post("/auth/resend-verification", { email });
+    const res = await api.post("/auth/resend-verification-email", { email });
     return res.data;
   } catch (err) {
     return handleError(err, "Resend verification failed");

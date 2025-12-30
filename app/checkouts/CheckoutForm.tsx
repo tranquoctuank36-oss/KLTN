@@ -1,19 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import ShippingMethods from "@/components/ShippingMethods";
 import PaymentMethods from "@/components/PaymentMethod";
 import InputForm from "./InputForm";
 import DisplayForm from "./DisplayForm";
 import type { PaymentMethodType } from "@/types/payment";
 import {
-  Province,
-  District,
-  Ward,
   getProvinces,
   getDistricts,
   getWards,
-} from "@/services/shippingService";
+} from "@/services/locationService";
 import { useAuth } from "@/context/AuthContext";
 import {
   getUserProfile,
@@ -22,6 +20,9 @@ import {
   updateAddress,
 } from "@/services/userService";
 import { useCart } from "@/context/CartContext";
+import { District, Province, Ward } from "@/types/location";
+import { CartItem } from "@/types/cart";
+import toast from "react-hot-toast";
 
 type Props = {
   paymentMethod: PaymentMethodType;
@@ -32,6 +33,9 @@ type Props = {
   onShippingErrorChange?: (hasError: boolean) => void;
   note: string;
   onNoteChange: (value: string) => void;
+  checkoutCart: CartItem[];
+  voucherCode?: string | null;
+  onLocationChange?: (districtId: string, wardId: string) => void;
 };
 
 export default function CheckoutForm({
@@ -43,9 +47,20 @@ export default function CheckoutForm({
   onShippingErrorChange,
   note,
   onNoteChange,
+  checkoutCart,
+  voucherCode,
+  onLocationChange,
 }: Props) {
+  const router = useRouter();
   const { isLoggedIn } = useAuth();
   const { cart, subtotal, discountAmount } = useCart();
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.push("/carts");
+    }
+  }, [isLoggedIn, router]);
 
   // UI States
   const [isInitializing, setIsInitializing] = useState(true);
@@ -69,12 +84,18 @@ export default function CheckoutForm({
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [selectedWard, setSelectedWard] = useState("");
+
+  // Notify parent when location changes
+  useEffect(() => {
+    onLocationChange?.(selectedDistrict, selectedWard);
+  }, [selectedDistrict, selectedWard, onLocationChange]);
+
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
-  const [provinceNameDisplay, setProvinceNameDisplay] = useState("");
-  const [districtNameDisplay, setDistrictNameDisplay] = useState("");
-  const [wardNameDisplay, setWardNameDisplay] = useState("");
+  const [provinceDisplayName, setProvinceDisplayName] = useState("");
+  const [districtDisplayName, setDistrictDisplayName] = useState("");
+  const [wardDisplayName, setWardDisplayName] = useState("");
 
   // Address States
   const [hasAddress, setHasAddress] = useState<boolean | null>(null);
@@ -89,15 +110,15 @@ export default function CheckoutForm({
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const phoneRegex = /^(0|\+84)(\d{9})$/;
-  const storageKey = isLoggedIn ? "checkoutForm_user" : "checkoutForm_guest";
+  const storageKey = "checkoutForm_user";
   const grandTotal = subtotal - discountAmount;
 
   const canShowNext =
-    (showNextStep || (isLoggedIn && hasAddress && !isEditing)) &&
+    (showNextStep || (hasAddress && !isEditing)) &&
     cart.length > 0;
 
   const shouldShowDisplayForm =
-    ((isLoggedIn && hasAddress) || (!isLoggedIn && showNextStep)) && !isEditing;
+    (hasAddress && !isEditing);
 
   const shouldShowShippingAndPayment =
     canShowNext && !isEditing && readyToFetchShipping;
@@ -114,66 +135,15 @@ export default function CheckoutForm({
   const [prevDistrict, setPrevDistrict] = useState("");
 
   useEffect(() => {
-    if (isLoggedIn) {
-      localStorage.setItem(
-        "checkoutForm_editing",
-        JSON.stringify({ isEditing })
-      );
-    }
-  }, [isEditing, isLoggedIn]);
+    localStorage.setItem(
+      "checkoutForm_editing",
+      JSON.stringify({ isEditing })
+    );
+  }, [isEditing]);
 
   useEffect(() => {
     const loadData = async () => {
       if (!isLoggedIn) {
-        const stored = localStorage.getItem(storageKey);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setCountry(parsed.country || "VN");
-          setSelectedProvince(parsed.selectedProvince || "");
-          setSelectedDistrict(parsed.selectedDistrict || "");
-          setSelectedWard(parsed.selectedWard || "");
-          setFirstName(parsed.firstName || "");
-          setLastName(parsed.lastName || "");
-          setEmail(parsed.email || "");
-          setPhone(parsed.phone || "");
-          setAddress(parsed.address || "");
-          setProvinceNameDisplay(parsed.provinceNameDisplay || "");
-          setDistrictNameDisplay(parsed.districtNameDisplay || "");
-          setWardNameDisplay(parsed.wardNameDisplay || "");
-          setRecipientName(parsed.recipientName || "");
-          setHasAddress(parsed.hasAddress || false);
-
-          const savedShowNextStep = parsed.showNextStep || false;
-          const savedReadyToFetch = parsed.readyToFetchShipping || false;
-
-          setShowNextStep(savedShowNextStep);
-
-          const isEditingValue = parsed.isEditing || false;
-          setIsEditing(isEditingValue);
-          setShowNextStep(
-            isEditingValue ? false : parsed.showNextStep || false
-          );
-
-          if (savedReadyToFetch && !isEditingValue && parsed.selectedProvince) {
-            try {
-              const provs = await getProvinces();
-              setProvinces(provs);
-
-              if (parsed.selectedDistrict) {
-                const dists = await getDistricts(parsed.selectedProvince);
-                setDistricts(dists);
-
-                if (parsed.selectedWard) {
-                  const wds = await getWards(parsed.selectedDistrict);
-                  setWards(wds);
-                  setReadyToFetchShipping(savedReadyToFetch);
-                }
-              }
-            } catch (err) {
-              console.error("Error loading location data:", err);
-            }
-          }
-        }
         setIsInitializing(false);
         return;
       }
@@ -225,9 +195,9 @@ export default function CheckoutForm({
 
         setCurrentAddressId(defaultAddr.id);
         setIsDefault(defaultAddr.isDefault || false);
-        setProvinceNameDisplay(defaultAddr.provinceName || "");
-        setDistrictNameDisplay(defaultAddr.districtName || "");
-        setWardNameDisplay(defaultAddr.wardName || "");
+        setProvinceDisplayName(defaultAddr.provinceName || "");
+        setDistrictDisplayName(defaultAddr.districtName || "");
+        setWardDisplayName(defaultAddr.wardName || "");
 
         const provs = await getProvinces();
         setProvinces(provs);
@@ -265,24 +235,24 @@ export default function CheckoutForm({
           setPhone(defaultAddr.recipientPhone || "");
 
           const foundProvince = provs.find(
-            (p) => p.ProvinceName === defaultAddr.provinceName
+            (p) => p.name === defaultAddr.provinceName
           );
           if (foundProvince) {
-            setSelectedProvince(String(foundProvince.ProvinceID));
-            const dists = await getDistricts(foundProvince.ProvinceID);
+            setSelectedProvince(String(foundProvince.id));
+            const dists = await getDistricts(foundProvince.id);
             setDistricts(dists);
             const foundDistrict = dists.find(
-              (d) => d.DistrictName === defaultAddr.districtName
+              (d) => d.name === defaultAddr.districtName
             );
             if (foundDistrict) {
-              setSelectedDistrict(String(foundDistrict.DistrictID));
-              const wds = await getWards(foundDistrict.DistrictID);
+              setSelectedDistrict(String(foundDistrict.id));
+              const wds = await getWards(foundDistrict.id);
               setWards(wds);
               const foundWard = wds.find(
-                (w) => w.WardName === defaultAddr.wardName
+                (w) => w.name === defaultAddr.wardName
               );
               if (foundWard) {
-                setSelectedWard(String(foundWard.WardCode));
+                setSelectedWard(String(foundWard.id));
 
                 if (readyToFetch) {
                   setReadyToFetchShipping(true);
@@ -313,9 +283,9 @@ export default function CheckoutForm({
       phone,
       address,
       note,
-      provinceNameDisplay,
-      districtNameDisplay,
-      wardNameDisplay,
+      provinceDisplayName,
+      districtDisplayName,
+      wardDisplayName,
       recipientName,
       showNextStep,
       hasAddress,
@@ -324,7 +294,7 @@ export default function CheckoutForm({
     };
     localStorage.setItem(storageKey, JSON.stringify(data));
 
-    if (isLoggedIn && readyToFetchShipping) {
+    if (readyToFetchShipping) {
       localStorage.setItem(
         "checkoutForm_readyToFetch",
         JSON.stringify(readyToFetchShipping)
@@ -341,16 +311,15 @@ export default function CheckoutForm({
     phone,
     address,
     note,
-    provinceNameDisplay,
-    districtNameDisplay,
-    wardNameDisplay,
+    provinceDisplayName,
+    districtDisplayName,
+    wardDisplayName,
     recipientName,
     showNextStep,
     hasAddress,
     storageKey,
     isEditing,
     readyToFetchShipping,
-    isLoggedIn,
   ]);
 
   // Cleanup localStorage
@@ -363,27 +332,25 @@ export default function CheckoutForm({
   // Fetch provinces
   useEffect(() => {
     if (isInitializing) return;
-    if (isLoggedIn && hasAddress && provinces.length > 0) {
-      console.log("⏭️ Skipping getProvinces - already loaded");
+    if (hasAddress && provinces.length > 0) {
       return;
     }
     if (country === "VN") {
       getProvinces()
         .then((data) => {
           setProvinces(data);
-          if (provinceNameDisplay) {
+          if (provinceDisplayName) {
             const found = data.find(
-              (p) => p.ProvinceName === provinceNameDisplay
+              (p) => p.name === provinceDisplayName
             );
-            if (found) setSelectedProvince(String(found.ProvinceID));
+            if (found) setSelectedProvince(String(found.id));
           }
         })
         .catch(console.error);
     }
   }, [
     country,
-    provinceNameDisplay,
-    isLoggedIn,
+    provinceDisplayName,
     hasAddress,
     isInitializing,
     provinces.length,
@@ -408,30 +375,27 @@ export default function CheckoutForm({
     setPrevProvince(selectedProvince);
 
     if (
-      isLoggedIn &&
       hasAddress &&
       districts.length > 0 &&
       !readyToFetchShipping &&
       !isEditing
     ) {
-      console.log("⏭️ Skipping getDistricts - already loaded");
       return;
     }
 
-    if (!readyToFetchShipping || !isLoggedIn || !hasAddress || isEditing) {
+    if (!readyToFetchShipping || !hasAddress || isEditing) {
       console.log("🔄 Fetching districts for province:", selectedProvince);
 
       getDistricts(selectedProvince)
         .then((data) => {
-          console.log("getDistricts response:", data);
           setDistricts(data);
 
-          if (isInitialLoad && districtNameDisplay) {
+          if (isInitialLoad && districtDisplayName) {
             const foundDistrict = data.find(
-              (d) => d.DistrictName === districtNameDisplay
+              (d) => d.name === districtDisplayName
             );
             if (foundDistrict) {
-              setSelectedDistrict(String(foundDistrict.DistrictID));
+              setSelectedDistrict(String(foundDistrict.id));
             }
           }
         })
@@ -439,14 +403,13 @@ export default function CheckoutForm({
     }
   }, [
     selectedProvince,
-    isLoggedIn,
     hasAddress,
     isInitializing,
     districts.length,
     isSubmitting,
     isEditing,
     isInitialLoad,
-    districtNameDisplay,
+    districtDisplayName,
   ]);
 
   // Fetch wards
@@ -464,17 +427,15 @@ export default function CheckoutForm({
     setPrevDistrict(selectedDistrict);
 
     if (
-      isLoggedIn &&
       hasAddress &&
       wards.length > 0 &&
       !readyToFetchShipping &&
       !isEditing
     ) {
-      console.log("⏭️ Skipping getWards - already loaded");
       return;
     }
 
-    if (!readyToFetchShipping || !isLoggedIn || !hasAddress || isEditing) {
+    if (!readyToFetchShipping || !hasAddress || isEditing) {
       console.log("🔄 Fetching wards for district:", selectedDistrict);
 
       getWards(selectedDistrict)
@@ -482,9 +443,9 @@ export default function CheckoutForm({
           console.log("getWards response:", data);
           setWards(data);
 
-          if (isInitialLoad && wardNameDisplay) {
-            const foundWard = data.find((w) => w.WardName === wardNameDisplay);
-            if (foundWard) setSelectedWard(String(foundWard.WardCode));
+          if (isInitialLoad && wardDisplayName) {
+            const foundWard = data.find((w) => w.name === wardDisplayName);
+            if (foundWard) setSelectedWard(String(foundWard.id));
           }
           // else if (!isInitialLoad) {
           //   setSelectedWard("");
@@ -501,7 +462,7 @@ export default function CheckoutForm({
     isSubmitting,
     isEditing,
     isInitialLoad,
-    wardNameDisplay,
+    wardDisplayName,
   ]);
 
   // Check initial load complete
@@ -549,24 +510,28 @@ export default function CheckoutForm({
   useEffect(() => {
     onOrderDataChange({
       recipientName: recipientName,
+      recipientEmail: email,
       recipientPhone: phone,
       addressLine: address,
-      wardName: wardNameDisplay,
-      districtName: districtNameDisplay,
-      provinceName: provinceNameDisplay,
-      toWardCode: String(selectedWard),
-      toDistrictId: Number(selectedDistrict),
+      provinceName: provinceDisplayName,
+      districtName: districtDisplayName,
+      wardName: wardDisplayName,
+      provinceId: selectedProvince,
+      districtId: selectedDistrict,
+      wardId: selectedWard,
       note,
     });
   }, [
     recipientName,
+    email,
     phone,
     address,
-    wardNameDisplay,
-    districtNameDisplay,
-    provinceNameDisplay,
-    selectedWard,
+    provinceDisplayName,
+    districtDisplayName,
+    wardDisplayName,
+    selectedProvince,
     selectedDistrict,
+    selectedWard,
     note,
     onOrderDataChange,
   ]);
@@ -609,49 +574,73 @@ export default function CheckoutForm({
 
     const provinceId = selectedProvince;
     const districtId = selectedDistrict;
-    const wardCode = selectedWard;
+    const wardId = selectedWard;
 
     try {
       // Tìm display names TRƯỚC (từ arrays hiện tại)
       const foundProvince = provinces.find(
-        (p) => String(p.ProvinceID) === provinceId
+        (p) => String(p.id) === provinceId
       );
       const foundDistrict = districts.find(
-        (d) => String(d.DistrictID) === districtId
+        (d) => String(d.id) === districtId
       );
-      const foundWard = wards.find((w) => String(w.WardCode) === wardCode);
+      const foundWard = wards.find((w) => String(w.id) === wardId);
 
-      const provinceDisplayName = foundProvince?.ProvinceName || "";
-      const districtDisplayName = foundDistrict?.DistrictName || "";
-      const wardDisplayName = foundWard?.WardName || "";
+      const provinceDisplayName = foundProvince?.name || "";
+      const districtDisplayName = foundDistrict?.name || "";
+      const wardDisplayName = foundWard?.name || "";
 
       if (isAddingNewAddress) {
         const newAddr = {
           recipientName: `${firstName} ${lastName}`,
+          recipientEmail: email,
           recipientPhone: phone,
           addressLine: address,
-          provinceName: provinceDisplayName,
-          districtName: districtDisplayName,
-          wardName: wardDisplayName,
-          ghnDistrictId: Number(districtId),
-          ghnWardCode: String(wardCode),
+          provinceId: String(provinceId),
+          districtId: String(districtId),
+          wardId: String(wardId),
           isDefault: false, // New address không set default
         };
-
-        await createAddress(newAddr);
-
+        try {
+          await createAddress(newAddr);
+        } catch (apiErr: any) {
+          // Kiểm tra detail từ response
+          const detail = apiErr?.response?.data?.detail;
+          if (detail) {
+            toast.error(detail, {
+              duration: 3000,
+              position: "top-center",
+            });
+            setIsLoading(false);
+            setIsSubmitting(false);
+            return;
+          }
+          
+          // Kiểm tra errors array
+          const apiErrors = apiErr?.response?.data?.errors;
+          if (Array.isArray(apiErrors)) {
+            const phoneErr = apiErrors.find((e: any) => e.message && e.message.toLowerCase().includes("phone"));
+            if (phoneErr) {
+              setErrors((prev) => ({ ...prev, phone: "Phải là 1 số điện thoại hợp lệ" }));
+              setIsLoading(false);
+              setIsSubmitting(false);
+              return;
+            }
+          }
+          setIsLoading(false);
+          setIsSubmitting(false);
+          return;
+        }
         setRecipientName(newAddr.recipientName);
         setAddress(newAddr.addressLine);
         setPhone(newAddr.recipientPhone);
-        setProvinceNameDisplay(newAddr.provinceName);
-        setDistrictNameDisplay(newAddr.districtName);
-        setWardNameDisplay(newAddr.wardName);
+        setProvinceDisplayName(provinceDisplayName);
+        setDistrictDisplayName(districtDisplayName);
+        setWardDisplayName(wardDisplayName);
         setIsDefault(false);
-
         setSelectedProvince(provinceId);
         setSelectedDistrict(districtId);
-        setSelectedWard(wardCode);
-
+        setSelectedWard(wardId);
         setSavedFormData({
           firstName,
           lastName,
@@ -659,36 +648,59 @@ export default function CheckoutForm({
           address,
           note,
         });
-
         setIsAddingNewAddress(false);
       } else if (isLoggedIn && !hasAddress) {
         const newAddr = {
           recipientName: `${firstName} ${lastName}`,
+          recipientEmail: email,
           recipientPhone: phone,
           addressLine: address,
-          provinceName: provinceDisplayName,
-          districtName: districtDisplayName,
-          wardName: wardDisplayName,
-          ghnDistrictId: Number(districtId),
-          ghnWardCode: String(wardCode),
+          provinceId: String(provinceId),
+          districtId: String(districtId),
+          wardId: String(wardId),
           isDefault: true,
         };
-
-        await createAddress(newAddr);
-
+        try {
+          await createAddress(newAddr);
+        } catch (apiErr: any) {
+          // Kiểm tra detail từ response
+          const detail = apiErr?.response?.data?.detail;
+          if (detail) {
+            toast.error(detail, {
+              duration: 3000,
+              position: "top-center",
+            });
+            setIsLoading(false);
+            setIsSubmitting(false);
+            return;
+          }
+          
+          // Kiểm tra errors array
+          const apiErrors = apiErr?.response?.data?.errors;
+          if (Array.isArray(apiErrors)) {
+            const phoneErr = apiErrors.find((e: any) => e.message && e.message.toLowerCase().includes("phone"));
+            if (phoneErr) {
+              setErrors((prev) => ({ ...prev, phone: "Phải là 1 số điện thoại hợp lệ" }));
+              setIsLoading(false);
+              setIsSubmitting(false);
+              return;
+            }
+          }
+          setIsLoading(false);
+          setIsSubmitting(false);
+          return;
+        }
         setHasAddress(true);
         setIsDefault(true);
         setRecipientName(newAddr.recipientName);
         setAddress(newAddr.addressLine);
         setPhone(newAddr.recipientPhone);
-        setProvinceNameDisplay(newAddr.provinceName);
-        setDistrictNameDisplay(newAddr.districtName);
-        setWardNameDisplay(newAddr.wardName);
-
+        setProvinceDisplayName(provinceDisplayName);
+        setDistrictDisplayName(districtDisplayName);
+        setWardDisplayName(wardDisplayName);
         setSelectedProvince(provinceId);
         setSelectedDistrict(districtId);
-        setSelectedWard(wardCode);
-
+        setSelectedWard(wardId);
         // Cập nhật savedFormData
         setSavedFormData({
           firstName,
@@ -701,29 +713,47 @@ export default function CheckoutForm({
         if (currentAddressId) {
           const updatedAddr = {
             recipientName: `${firstName} ${lastName}`,
+            recipientEmail: email,
             recipientPhone: phone,
             addressLine: address,
-            provinceName: provinceDisplayName,
-            districtName: districtDisplayName,
-            wardName: wardDisplayName,
-            ghnDistrictId: Number(districtId),
-            ghnWardCode: String(wardCode),
+            provinceId: String(provinceId),
+            districtId: String(districtId),
+            wardId: String(wardId),
             isDefault: isDefault,
           };
 
-          await updateAddress(currentAddressId, updatedAddr);
+          try {
+            await updateAddress(currentAddressId, updatedAddr);
+          } catch (apiErr: any) {
+            // Kiểm tra detail từ response
+            const detail = apiErr?.response?.data?.detail;
+            if (detail) {
+              toast.error(detail, {
+                duration: 3000,
+                position: "top-center",
+              });
+              setIsLoading(false);
+              setIsSubmitting(false);
+              return;
+            }
+            
+            toast.error("Failed to update address");
+            setIsLoading(false);
+            setIsSubmitting(false);
+            return;
+          }
 
           // Cập nhật display states
           setRecipientName(updatedAddr.recipientName);
           setAddress(updatedAddr.addressLine);
           setPhone(updatedAddr.recipientPhone);
-          setProvinceNameDisplay(updatedAddr.provinceName);
-          setDistrictNameDisplay(updatedAddr.districtName);
-          setWardNameDisplay(updatedAddr.wardName);
+          setProvinceDisplayName(provinceDisplayName);
+          setDistrictDisplayName(districtDisplayName);
+          setWardDisplayName(wardDisplayName);
 
           setSelectedProvince(provinceId);
           setSelectedDistrict(districtId);
-          setSelectedWard(wardCode);
+          setSelectedWard(wardId);
 
           // Cập nhật savedFormData với data MỚI
           setSavedFormData({
@@ -734,50 +764,6 @@ export default function CheckoutForm({
             note,
           });
         }
-      } else if (!isLoggedIn) {
-        let finalDistricts = districts;
-        let finalWards = wards;
-
-        if (provinceId !== selectedProvince || districts.length === 0) {
-          finalDistricts = await getDistricts(provinceId);
-          setDistricts(finalDistricts);
-        }
-
-        if (districtId !== selectedDistrict || wards.length === 0) {
-          finalWards = await getWards(districtId);
-          setWards(finalWards);
-        }
-
-        const guestAddr = {
-          recipientName: `${firstName} ${lastName}`,
-          recipientPhone: phone,
-          addressLine: address,
-          provinceName: provinceDisplayName,
-          districtName: districtDisplayName,
-          wardName: wardDisplayName,
-        };
-
-        setHasAddress(true);
-        setIsDefault(false);
-        setRecipientName(guestAddr.recipientName);
-        setAddress(guestAddr.addressLine);
-        setPhone(guestAddr.recipientPhone);
-        setProvinceNameDisplay(guestAddr.provinceName);
-        setDistrictNameDisplay(guestAddr.districtName);
-        setWardNameDisplay(guestAddr.wardName);
-
-        setSelectedProvince(provinceId);
-        setSelectedDistrict(districtId);
-        setSelectedWard(wardCode);
-
-        // Cập nhật savedFormData
-        setSavedFormData({
-          firstName,
-          lastName,
-          phone,
-          address,
-          note,
-        });
       }
 
       const elapsedTime = Date.now() - startTime;
@@ -792,15 +778,13 @@ export default function CheckoutForm({
       setShowNextStep(true);
       setIsEditing(false);
 
-      if (isLoggedIn) {
-        localStorage.removeItem("checkoutForm_editing");
-        localStorage.removeItem("checkoutForm_savedData");
-      }
+      localStorage.removeItem("checkoutForm_editing");
+      localStorage.removeItem("checkoutForm_savedData");
 
       setReadyToFetchShipping(true);
       onFormValidChange?.(true);
     } catch (err) {
-      console.error("❌ Failed to submit shipping:", err);
+      console.error("Failed to submit shipping:", err);
       onFormValidChange?.(false);
     } finally {
       setIsLoading(false);
@@ -819,63 +803,68 @@ export default function CheckoutForm({
 
     setShippingFee(0);
 
-    if (isLoggedIn) {
-      localStorage.setItem(
-        "checkoutForm_editing",
-        JSON.stringify({ isEditing: true })
-      );
+    localStorage.setItem(
+      "checkoutForm_editing",
+      JSON.stringify({ isEditing: true })
+    );
 
-      localStorage.setItem(
-        "checkoutForm_savedData",
-        JSON.stringify({
-          firstName,
-          lastName,
-          phone,
-          address,
-          note,
-          selectedProvince,
-          selectedDistrict,
-          selectedWard,
-        })
-      );
-    }
+    const dataToSave = {
+      firstName,
+      lastName,
+      phone,
+      address,
+      recipientName,
+      note,
+      selectedProvince,
+      selectedDistrict,
+      selectedWard,
+    };
+    
+    console.log('🔵 handleEdit - Saving to localStorage:', dataToSave);
+    
+    // Save to both localStorage AND React state
+    setSavedFormData(dataToSave as any);
+    
+    localStorage.setItem(
+      "checkoutForm_savedData",
+      JSON.stringify(dataToSave)
+    );
 
-    if (isLoggedIn) {
-      const nameParts = recipientName.split(" ");
-      const restoredFirstName = nameParts[0] || savedFormData.firstName;
-      const restoredLastName =
-        nameParts.slice(1).join(" ") || savedFormData.lastName;
+    const nameParts = recipientName.split(" ");
+    const restoredFirstName = nameParts[0] || savedFormData.firstName;
+    const restoredLastName =
+      nameParts.slice(1).join(" ") || savedFormData.lastName;
 
-      setFirstName(restoredFirstName);
-      setLastName(restoredLastName);
-      setPhone(savedFormData.phone || phone);
-      setAddress(savedFormData.address || address);
+    setFirstName(restoredFirstName);
+    setLastName(restoredLastName);
+    setPhone(savedFormData.phone || phone);
+    setAddress(savedFormData.address || address);
 
-      try {
+    try {
         const provs = await getProvinces();
         setProvinces(provs);
 
         const foundProvince = provs.find(
-          (p) => p.ProvinceName === provinceNameDisplay
+          (p) => p.name === provinceDisplayName
         );
         if (foundProvince) {
-          setSelectedProvince(String(foundProvince.ProvinceID));
+          setSelectedProvince(String(foundProvince.id));
 
-          const dists = await getDistricts(foundProvince.ProvinceID);
+          const dists = await getDistricts(foundProvince.id);
           setDistricts(dists);
 
           const foundDistrict = dists.find(
-            (d) => d.DistrictName === districtNameDisplay
+            (d) => d.name === districtDisplayName
           );
           if (foundDistrict) {
-            setSelectedDistrict(String(foundDistrict.DistrictID));
+            setSelectedDistrict(String(foundDistrict.id));
 
-            const wds = await getWards(foundDistrict.DistrictID);
+            const wds = await getWards(foundDistrict.id);
             setWards(wds);
 
-            const foundWard = wds.find((w) => w.WardName === wardNameDisplay);
+            const foundWard = wds.find((w) => w.name === wardDisplayName);
             if (foundWard) {
-              setSelectedWard(String(foundWard.WardCode));
+              setSelectedWard(String(foundWard.id));
             }
           }
         }
@@ -884,13 +873,6 @@ export default function CheckoutForm({
         console.error("Error restoring location data:", err);
         setIsInitialLoad(false);
       }
-    } else {
-      setFirstName(savedFormData.firstName);
-      setLastName(savedFormData.lastName);
-      setPhone(savedFormData.phone);
-      setAddress(savedFormData.address);
-      setIsInitialLoad(false);
-    }
   };
 
   // Handler cho New Address button
@@ -953,15 +935,16 @@ export default function CheckoutForm({
       setLastName(savedFormData.lastName);
       setPhone(savedFormData.phone);
       setAddress(savedFormData.address);
+      
+      const restoredRecipientName = (savedFormData as any).recipientName || `${savedFormData.firstName} ${savedFormData.lastName}`;
+      setRecipientName(restoredRecipientName);
 
       setIsEditing(false);
       setShowNextStep(true);
       setReadyToFetchShipping(true);
 
-      if (isLoggedIn) {
-        localStorage.removeItem("checkoutForm_editing");
-        localStorage.removeItem("checkoutForm_savedData");
-      }
+      localStorage.removeItem("checkoutForm_editing");
+      localStorage.removeItem("checkoutForm_savedData");
     }
   };
 
@@ -988,6 +971,7 @@ export default function CheckoutForm({
     setWards([]);
 
     try {
+      console.log('🔵 Setting province ID in handleAddressChange:', addressData.selectedProvince);
       setSelectedProvince(addressData.selectedProvince);
       await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -995,10 +979,10 @@ export default function CheckoutForm({
       setDistricts(newDistricts);
 
       const foundProvince = provinces.find(
-        (p) => String(p.ProvinceID) === addressData.selectedProvince
+        (p) => String(p.id) === addressData.selectedProvince
       );
       if (foundProvince) {
-        setProvinceNameDisplay(foundProvince.ProvinceName);
+        setProvinceDisplayName(foundProvince.name);
       }
 
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -1009,10 +993,10 @@ export default function CheckoutForm({
       setWards(newWards);
 
       const foundDistrict = newDistricts.find(
-        (d) => String(d.DistrictID) === addressData.selectedDistrict
+        (d) => String(d.id) === addressData.selectedDistrict
       );
       if (foundDistrict) {
-        setDistrictNameDisplay(foundDistrict.DistrictName);
+        setDistrictDisplayName(foundDistrict.name);
       }
 
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -1020,10 +1004,10 @@ export default function CheckoutForm({
       setSelectedWard(addressData.selectedWard);
 
       const foundWard = newWards.find(
-        (w) => String(w.WardCode) === addressData.selectedWard
+        (w) => String(w.id) === addressData.selectedWard
       );
       if (foundWard) {
-        setWardNameDisplay(foundWard.WardName);
+        setWardDisplayName(foundWard.name);
       }
 
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -1031,7 +1015,7 @@ export default function CheckoutForm({
       setReadyToFetchShipping(true);
       onFormValidChange?.(true);
     } catch (error) {
-      console.error("❌ Error loading location data:", error);
+      console.error("Error loading location data:", error);
       onFormValidChange?.(false);
     }
   };
@@ -1064,9 +1048,9 @@ export default function CheckoutForm({
             email={email}
             address={address}
             note={note}
-            wardNameDisplay={wardNameDisplay}
-            districtNameDisplay={districtNameDisplay}
-            provinceNameDisplay={provinceNameDisplay}
+            provinceDisplayName={provinceDisplayName}
+            districtDisplayName={districtDisplayName}
+            wardDisplayName={wardDisplayName}
             isDefault={isDefault}
             isLoggedIn={isLoggedIn}
             onEdit={handleEdit}
@@ -1112,12 +1096,15 @@ export default function CheckoutForm({
 
       {shouldShowShippingAndPayment ? (
         <ShippingMethods
-          codValue={paymentMethod === "COD" ? grandTotal : 0}
-          toDistrictId={Number(selectedDistrict)}
+          items={checkoutCart.map(item => ({
+            variantId: item.selectedVariant.id,
+            quantity: item.quantity
+          }))}
+          toDistrictId={String(selectedDistrict)}
           toWardCode={String(selectedWard)}
-          serviceTypeId={2}
+          voucherCode={voucherCode || undefined}
+          paymentMethod={paymentMethod}
           onChange={(method) => {
-            console.log("🚚 Shipping fee updated:", method.fee);
             setShippingFee(method.fee);
           }}
           onLoadingChange={setShippingLoading}

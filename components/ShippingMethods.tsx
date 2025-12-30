@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getShippingFee } from "@/services/shippingService";
-import type { ShippingFeePayload } from "@/types/shipping";
+import { useEffect, useState, useMemo } from "react";
+import { previewOrder, type PreviewOrderPayload } from "@/services/orderService";
 import { Loader2 } from "lucide-react";
 
 export type ShippingMethod = {
@@ -13,20 +12,25 @@ export type ShippingMethod = {
 };
 
 type Props = {
-  codValue: number;
-  toDistrictId: number;
+  items: Array<{
+    variantId: string;
+    quantity: number;
+  }>;
+  toDistrictId: string;
   toWardCode: string;
-  serviceTypeId: number;
+  voucherCode?: string;
+  paymentMethod: string;
   onChange?: (method: ShippingMethod) => void;
-  onLoadingChange?: (loading: boolean) => void; // Thêm prop này
+  onLoadingChange?: (loading: boolean) => void;
   onErrorChange?: (error: string | null) => void;
 };
 
 export default function ShippingMethods({
-  codValue,
+  items,
   toDistrictId,
   toWardCode,
-  serviceTypeId,
+  voucherCode,
+  paymentMethod,
   onChange,
   onLoadingChange,
   onErrorChange,
@@ -42,43 +46,63 @@ export default function ShippingMethods({
   });
   const [error, setError] = useState<string | null>(null);
 
+  // Memoize items để tránh re-render vô hạn
+  const itemsKey = useMemo(() => JSON.stringify(items), [items]);
+
   useEffect(() => {
     setError(null);
     setFee(null);
     onErrorChange?.(null); 
 
-    const isValidDistrict = Number(toDistrictId) > 0;
-    const isValidWard = !!toWardCode && toWardCode !== "";
-    if (!isValidDistrict || !isValidWard) {
+    // Validate inputs
+    const isValidDistrict = !!toDistrictId && toDistrictId !== "" && toDistrictId !== "NaN";
+    const isValidWard = !!toWardCode && toWardCode !== "" && toWardCode !== "NaN";
+    const hasItems = items && items.length > 0;
+    
+    if (!isValidDistrict || !isValidWard || !hasItems) {
       setError(null);
       setLoading(false);
+      setFee(0);
       onLoadingChange?.(false);
+      
+      // Set default method with 0 fee when validation fails
+      const defaultMethod: ShippingMethod = {
+        id: "standard",
+        label: "Standard delivery",
+        description: "Delivery during business hours",
+        fee: 0,
+      };
+      setMethod(defaultMethod);
+      onChange?.(defaultMethod);
       return;
     }
+    
     setLoading(true);
     setError(null);
     onLoadingChange?.(true);
     let cancelled = false;
 
-    const fetchFee = async () => {
+    const fetchPreview = async () => {
       try {
-        const payload: ShippingFeePayload = {
+        const payload: PreviewOrderPayload = {
+          items,
           toDistrictId,
-          toWardCode,
-          codValue,
-          serviceTypeId: serviceTypeId,
+          toWardId: toWardCode,
+          paymentMethod,
+          ...(voucherCode && { voucherCode }),
         };
 
-        const feeValue = await getShippingFee(payload);
+        const preview = await previewOrder(payload);
         if (cancelled) return;
-        console.log("Got fee:", feeValue);
+        console.log("Got preview:", preview);
 
-        setFee(feeValue);
+        const shippingFee = preview.shippingFee;
+        setFee(shippingFee);
         onErrorChange?.(null);
 
         const updatedMethod: ShippingMethod = {
           ...method,
-          fee: feeValue,
+          fee: shippingFee,
         };
 
         setMethod(updatedMethod);
@@ -90,18 +114,17 @@ export default function ShippingMethods({
         onErrorChange?.(errorMsg);
       } finally {
         if (!cancelled) {
-          console.log("🧹 Done fetch, setLoading(false)");
           setLoading(false);
           onLoadingChange?.(false);
         }
       }
     };
 
-    fetchFee();
+    fetchPreview();
     return () => {
       cancelled = true;
     };
-  }, [toDistrictId, toWardCode, codValue, serviceTypeId]);
+  }, [itemsKey, toDistrictId, toWardCode, voucherCode, paymentMethod]);
 
   const handleSelect = (method: ShippingMethod) => {
     setSelected(method.id);

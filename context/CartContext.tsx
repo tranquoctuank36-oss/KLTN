@@ -8,18 +8,19 @@ import {
   removeItemFromCart, 
   updateCartItemQuantity,
   mergeCart,
-  getOrCreateAnonymousId,
+  hasCartIdentifier,
   type CartResponse,
   type CartItemResponse
 } from "@/services/cartService";
+import { getProductById } from "@/services/productService";
 import { useAuth } from "./AuthContext";
 
 type CartContextType = {
   cart: CartItem[];
   cartLoading: boolean;
   addToCart: (item: CartItem, options?: { autoOpenDrawer?: boolean }) => Promise<void>; 
-  removeFromCart: (cartItemId: string) => Promise<void>;
-  clearCart: () => void;
+  removeFromCart: (cartItemIds: string | string[]) => Promise<void>;
+  clearCart: () => Promise<void>;
   setItemQuantity: (cartItemId: string, quantity: number) => Promise<void>;
   subtotal: number;
   totalQuantity: number;
@@ -45,64 +46,90 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
 
   // Map API cart response to CartItem format
-  const mapCartResponseToItems = (apiCart: CartResponse): CartItem[] => {
-    return apiCart.items.map((item: CartItemResponse) => ({
-      cartItemId: item.id,
-      product: {
-        id: "",
-        name: item.name,
-        slug: "",
-        description: "",
-        productType: "",
-        gender: "",
-        basePrice: item.originalPrice,
-        salePrice: Number(item.finalPrice) < Number(item.originalPrice) ? item.finalPrice : null,
-        images: [],
-        variants: [],
-        brand: { 
-          id: "", 
-          name: "", 
-          slug: "",
-          websiteUrl: "",
-          description: "",
-        },
-        categories: [],
-        tags: [],
-        frameGroup: null,
-        createdAt: "",
-        updatedAt: "",
-      },
-      selectedVariant: {
-        id: "",
-        name: item.name || "",
-        sku: "",
-        finalPrice: item.finalPrice,
-        originalPrice: item.originalPrice,
-        stock: 0,
-        quantityAvailable: item.quantity || 0,
-        stockStatus: (item.status === "available" ? "in_stock" : "unknown") as "in_stock" | "out_of_stock" | "low_stock" | "unknown",
-        colors: [],
-        images: item.thumbnailImage ? [{
-          ...item.thumbnailImage,
-          alt: item.thumbnailImage.altText,
-          isDefault: true,
-        }] : [],
-      },
-      quantity: item.quantity,
-    }));
+  const mapCartResponseToItems = async (apiCart: CartResponse): Promise<CartItem[]> => {
+    // Fetch product details for all items in parallel to get slugs
+    const itemsWithSlugs = await Promise.all(
+      apiCart.items.map(async (item: CartItemResponse) => {
+        let productSlug = "";
+        let productId = item.productId || "";
+        
+        // Nếu có productId, fetch product details để lấy slug
+        if (productId) {
+          try {
+            const product = await getProductById(productId);
+            if (product) {
+              productSlug = product.slug;
+            }
+          } catch (error) {
+            console.error(`Error fetching product ${productId}:`, error);
+          }
+        }
+
+        return {
+          cartItemId: item.id,
+          product: {
+            id: productId,
+            name: item.name,
+            slug: productSlug,
+            description: "",
+            productType: "",
+            gender: "",
+            basePrice: item.originalPrice,
+            salePrice: Number(item.finalPrice) < Number(item.originalPrice) ? item.finalPrice : null,
+            images: [],
+            variants: [],
+            brand: { 
+              id: "", 
+              name: "", 
+              slug: "",
+              websiteUrl: "",
+              description: "",
+            },
+            categories: [],
+            tags: [],
+            frameGroup: null,
+            createdAt: "",
+            updatedAt: "",
+          },
+          selectedVariant: {
+            id: item.productVariantId || "",
+            name: item.name || "",
+            sku: "",
+            finalPrice: item.finalPrice,
+            originalPrice: item.originalPrice,
+            stock: 0,
+            quantityAvailable: item.quantity || 0,
+            stockStatus: (item.status === "available" ? "in_stock" : "unknown") as "in_stock" | "out_of_stock" | "low_stock" | "unknown",
+            colors: [],
+            images: item.thumbnailImage ? [{
+              ...item.thumbnailImage,
+              alt: item.thumbnailImage.altText,
+              isDefault: true,
+            }] : [],
+          },
+          quantity: item.quantity,
+        };
+      })
+    );
+
+    return itemsWithSlugs;
   };
 
   // Load cart từ API khi mount hoặc khi user thay đổi
   const refreshCart = async () => {
     try {
       setCartLoading(true);
+      
+      // Chỉ gọi API nếu có cart identifier (token hoặc anonymousId)
+      if (!hasCartIdentifier()) {
+        console.log("⚠️ No cart identifier, skipping cart fetch");
+        setCart([]);
+        setCartLoading(false);
+        return;
+      }
+      
       const apiCart = await getCart();
-      
-      // Debug log
-      console.log("📦 Cart data received:", apiCart);
-      console.log("📦 Cart items count:", apiCart.items?.length || 0);
-      
-      const mappedCart = mapCartResponseToItems(apiCart);
+      const mappedCart = await mapCartResponseToItems(apiCart);
       setCart(mappedCart);
     } catch (error) {
       console.error("Error loading cart:", error);
@@ -192,10 +219,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const openDrawer = () => setIsDrawerOpen(true);
   const closeDrawer = () => setIsDrawerOpen(false);
 
-  const removeFromCart = async (cartItemId: string) => {
+  const removeFromCart = async (cartItemIds: string | string[]) => {
     try {
       setCartLoading(true);
-      await removeItemFromCart(cartItemId);
+      await removeItemFromCart(cartItemIds);
       await refreshCart();
     } catch (error) {
       console.error("Error removing from cart:", error);
@@ -205,10 +232,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const clearCart = () => {
-    setCart([]);
-    localStorage.removeItem("cart");
-    // TODO: Gọi API để xóa cart nếu cần
+  const clearCart = async () => {
+    try {
+      setCartLoading(true);
+      // Lấy tất cả cartItemIds
+      const allCartItemIds = cart
+        .map(item => item.cartItemId)
+        .filter((id): id is string => !!id);
+      
+      if (allCartItemIds.length > 0) {
+        // Gọi API để xóa tất cả items
+        await removeItemFromCart(allCartItemIds);
+      }
+      
+      await refreshCart();
+    } catch (error) {
+      console.error("Error clearing cart:", error);
+      throw error;
+    } finally {
+      setCartLoading(false);
+    }
   };
 
   const setItemQuantity = async (cartItemId: string, quantity: number) => {

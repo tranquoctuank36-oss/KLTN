@@ -15,6 +15,7 @@ import ColorSelector from "@/components/colorSelector";
 import { useCart } from "@/context/CartContext";
 import { ProductVariants } from "@/types/productVariants";
 import { Routes } from "@/lib/routes";
+import toast from "react-hot-toast";
 // import RecommendedProducts from "@/components/RecommendedProducts";
 
 export default function ProductDetailPage() {
@@ -94,10 +95,11 @@ export default function ProductDetailPage() {
         selectedVariant: selectedVariant,
         quantity: typeof quantity === "number" ? quantity : 1,
       });
+      setQuantity(1);
       openDrawer();
-    } catch (error) {
-      console.error("Failed to add to cart:", error);
-      alert("Failed to add item to cart. Please try again.");
+    } catch (error: any) {
+      console.error(error.response?.data?.detail || "Failed to add item to cart. Please try again.");
+      toast.error(error.response?.data?.detail || "Failed to add item to cart. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -118,11 +120,11 @@ export default function ProductDetailPage() {
 
   const cartItem = cart.find(
     (i) =>
-      i.product.id === product.id && i.selectedVariant.id === selectedVariant.id
+      i.cartItemId && selectedVariant.id && i.selectedVariant.id === selectedVariant.id
   );
   const alreadyInCart = cartItem ? cartItem.quantity : 0;
 
-  const maxQuantity = (selectedVariant.availableQuantity ?? selectedVariant.quantityAvailable ?? 0) - alreadyInCart;
+  const maxQuantity = Math.max(0, (selectedVariant.availableQuantity ?? selectedVariant.quantityAvailable ?? 0) - alreadyInCart);
 
   return (
     <div className="mx-auto max-w-[1440px] px-6 lg:px-20 py-6">
@@ -247,10 +249,10 @@ export default function ProductDetailPage() {
             </b>
           </span>
 
-          {/* <span className="text-xs text-gray-800 block">
-            Max quantity:{" "}
+          <span className="text-xs text-gray-800 block mb-3">
+            Maximum available quantity:{" "}
             <b className="text-gray-800">{maxQuantity > 0 ? maxQuantity : 0}</b>
-          </span> */}
+          </span>
 
           {/* Quantity + Add to Cart */}
           <div className="flex items-center gap-3 mb-3">

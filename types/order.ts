@@ -1,19 +1,35 @@
 import { PaymentMethodType } from "./payment";
 
 export type OrderStatus =
-  | "PENDING"       
-  | "PENDING_PAYMENT"   
-  | "PAID"              
-  | "PROCESSING"        
-  | "SHIPPED"          
-  | "DELIVERED"       
-  | "COMPLETED"         
-  | "CANCELLED"       
-  | "REFUNDED";
+  | "pending"       
+  | "awaiting_payment"   
+  | "processing"        
+  | "shipping"          
+  | "delivered"       
+  | "completed"         
+  | "cancelled"       
+  | "expired"
+  | "return_requested"
+  | "returning"
+  | "returned";
 
   export type OrderItemPayload = {
   variantId: string;
   quantity: number;  
+};
+
+export type CreateOrderPayload = {
+  items: OrderItemPayload[];
+  voucherCode?: string;
+  note?: string;
+  recipientName: string;
+  recipientEmail: string;
+  recipientPhone: string;
+  addressLine: string;
+  toProvinceId: string;
+  toDistrictId: string;
+  toWardId: string;
+  paymentMethod: PaymentMethodType;
 };
 
 export type Order = {
@@ -27,14 +43,16 @@ export type Order = {
   note?: string;              
 
   recipientName: string;
+  recipientEmail: string;
   recipientPhone: string;
   addressLine: string;
-  wardName: string;
-  districtName: string;
   provinceName: string;
+  districtName: string;
+  wardName: string;
 
-  toWardCode: string;
-  toDistrictId: number;
+  provinceId: string;
+  districtId: string;
+  wardId: string;
 
   paymentMethod: PaymentMethodType;
 

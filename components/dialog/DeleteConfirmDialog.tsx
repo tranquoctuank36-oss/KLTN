@@ -66,8 +66,8 @@ export default function DeleteConfirmDialog({
             <p className="font-semibold">{address.recipientName}</p>
             <p className="text-gray-400">{address.recipientPhone}</p>
             <p className="text-gray-700">
-              {address.addressLine}, {address.wardName}, {address.districtName},{" "}
-              {address.provinceName}
+              {address.addressLine}, {address.provinceName}, {address.districtName},{" "}
+              {address.wardName}
             </p>
           </div>
         )}

@@ -3,7 +3,8 @@
 import { Button } from "@/components/ui/button";
 import FloatingInput from "@/components/FloatingInput";
 import { Loader2 } from "lucide-react";
-import type { Province, District, Ward } from "@/services/shippingService";
+import { District, Province, Ward } from "@/types/location";
+import { useState } from "react";
 
 type Props = {
   firstName: string;
@@ -68,12 +69,44 @@ export default function InputForm({
   onSubmit,
   onCancel,
 }: Props) {
+  const [forceValidate, setForceValidate] = useState(false);
+
   const showTwoButtons =
-    (isLoggedIn && hasAddress && isEditing) ||
-    (isLoggedIn && isAddingNewAddress);
+    (hasAddress && isEditing) ||
+    isAddingNewAddress;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Kiểm tra tất cả required fields
+    const requiredFields = {
+      firstName,
+      lastName,
+      email,
+      phone,
+      address,
+      country,
+      province: selectedProvince,
+      district: selectedDistrict,
+      ward: selectedWard,
+    };
+
+    const hasEmptyRequiredField = Object.values(requiredFields).some(
+      (value) => !value || value.trim() === ""
+    );
+
+    if (hasEmptyRequiredField) {
+      setForceValidate(true);
+      return;
+    }
+
+    // Reset validation state và submit
+    setForceValidate(false);
+    onSubmit(e);
+  };
 
   return (
-    <form onSubmit={onSubmit}>
+    <form onSubmit={handleSubmit}>
       <div className="flex justify-between items-center mb-5">
         <h1 className="text-2xl font-bold">1. Shipping Information</h1>
         {/* <span className="text-sm text-gray-500">* Required Fields</span> */}
@@ -87,6 +120,7 @@ export default function InputForm({
             required
             value={firstName}
             onChange={onFirstNameChange}
+            forceValidate={forceValidate}
           />
           <FloatingInput
             id="lastName"
@@ -94,6 +128,7 @@ export default function InputForm({
             required
             value={lastName}
             onChange={onLastNameChange}
+            forceValidate={forceValidate}
           />
         </div>
 
@@ -107,9 +142,10 @@ export default function InputForm({
               value={email}
               onChange={onEmailChange}
               disabled={
-                (isLoggedIn && !hasAddress) ||
-                (isLoggedIn && isAddingNewAddress)
+                !hasAddress ||
+                isAddingNewAddress
               }
+              forceValidate={forceValidate}
             />
             {errors.email && (
               <p className="text-sm text-red-500">{errors.email}</p>
@@ -122,6 +158,7 @@ export default function InputForm({
               required
               value={phone}
               onChange={onPhoneChange}
+              forceValidate={forceValidate}
             />
             {errors.phone && (
               <p className="text-sm text-red-500">{errors.phone}</p>
@@ -147,9 +184,10 @@ export default function InputForm({
             value={selectedProvince}
             onChange={onProvinceChange}
             options={provinces.map((p) => ({
-              value: p.ProvinceID,
-              label: p.ProvinceName,
+              value: String(p.id),
+              label: p.name,
             }))}
+            forceValidate={forceValidate}
             required
           />
         </div>
@@ -164,12 +202,13 @@ export default function InputForm({
             options={
               districts.length > 0
                 ? districts.map((d) => ({
-                    value: d.DistrictID,
-                    label: d.DistrictName,
+                    value: String(d.id),
+                    label: d.name,
                   }))
                 : [{ value: "", label: "No data" }]
             }
             required
+            forceValidate={forceValidate}
           />
           <FloatingInput
             id="ward"
@@ -180,12 +219,13 @@ export default function InputForm({
             options={
               wards.length > 0
                 ? wards.map((w) => ({
-                    value: w.WardCode,
-                    label: w.WardName,
+                    value: String(w.id),
+                    label: w.name,
                   }))
                 : [{ value: "", label: "No data" }]
             }
             required
+            forceValidate={forceValidate}
           />
         </div>
 
@@ -195,6 +235,7 @@ export default function InputForm({
           required
           value={address}
           onChange={onAddressChange}
+          forceValidate={forceValidate}
         />
 
         {showTwoButtons ? (

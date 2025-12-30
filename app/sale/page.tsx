@@ -304,7 +304,9 @@ export default function SalePage() {
                           </p>
                         </div>
                         <span className="bg-green-100 text-green-700 text-sx font-bold px-3 py-1 rounded-full whitespace-nowrap ml-4">
-                          {calculateDiscount(voucher.type, voucher.value)} OFF
+                          {voucher.type === "free_shipping" 
+                            ? "Free Shipping" 
+                            : `${calculateDiscount(voucher.type, voucher.value)} OFF`}
                         </span>
                       </div>
 
@@ -363,6 +365,7 @@ export default function SalePage() {
                               }`}
                             >
                               {/* {voucher.usedCount}/{voucher.maxUsage} */}
+                              {Math.round((voucher.usedCount / voucher.maxUsage) * 100)}%
                             </span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">

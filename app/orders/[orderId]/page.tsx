@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Routes } from "@/lib/routes";
 import { useParams, useRouter } from "next/navigation";
-import { cancelOrder, getOrderByCode } from "@/services/orderService";
+import { cancelOrder, getOrderById } from "@/services/orderService";
 import { getProductById } from "@/services/productService";
 import { Order } from "@/types/order";
 import AddToCartOrderDialog from "@/components/dialog/AddToCartOrderDialog";
@@ -45,7 +45,7 @@ function OrderItem({ item }: { item: any }) {
       <div className="flex gap-4">
         <div className="w-25 h-25 rounded bg-gray-100 flex items-center justify-center">
           <Image
-            src={item.imageUrl || "/placeholder.png"}
+            src={item.thumbnailUrl || "/placeholder.png"}
             alt={item.productName}
             width={200}
             height={200}
@@ -85,7 +85,7 @@ function OrderItem({ item }: { item: any }) {
 export default function OrderDetailPage() {
   const { addToCart, openDrawer } = useCart();
   const params = useParams();
-  const orderCode = params.orderCode as string;
+  const orderId = params.orderId as string;
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -159,13 +159,13 @@ export default function OrderDetailPage() {
 
   useEffect(() => {
     const loadOrder = async () => {
-      if (!orderCode) {
+      if (!orderId) {
         setLoading(false);
         return;
       }
 
       try {
-        const orderData = await getOrderByCode(orderCode);
+        const orderData = await getOrderById(orderId);
 
         if (!orderData) {
           setLoading(false);
@@ -181,7 +181,7 @@ export default function OrderDetailPage() {
     };
 
     loadOrder();
-  }, [orderCode]);
+  }, [orderId]);
 
   if (loading)
     return (
@@ -227,7 +227,7 @@ export default function OrderDetailPage() {
                 }}
                 variant="outline"
                 className={`px-3 py-5 transition font-semibold w-[140px] rounded-full ${
-                  order.status === "PENDING"
+                  order.status === "pending"
                     ? "border-blue-500 border hover:bg-white text-blue-600 hover:text-blue-800 hover:border-blue-800"
                     : "bg-blue-600 text-white hover:bg-blue-800 text-white hover:text-white"
                 }`}
@@ -241,7 +241,7 @@ export default function OrderDetailPage() {
                   items={selectedOrder.items.map((item: any, idx: number) => ({
                     id: item.id,
                     productId: item.productId ?? "",
-                    imageUrl: item.imageUrl ?? "/placeholder.png",
+                    imageUrl: item.thumbnailUrl ?? "/placeholder.png",
                     productName: item.productName ?? "",
                     sku: item.sku ?? "",
                     colors: item.colors ?? "",
@@ -255,14 +255,14 @@ export default function OrderDetailPage() {
                 />
               )}
 
-              {order.status === "PENDING" || order.status === "PAID" ? (
+              {order.status === "pending" || order.status === "awaiting_payment" ? (
                 <Button
                   onClick={() => setCancelDialogOpen(true)}
                   className="bg-red-600 rounded-full text-white px-3 py-5 hover:bg-red-800 transition font-semibold w-[140px]"
                 >
                   CANCEL ORDER
                 </Button>
-              ) : order.status === "CANCELLED" ? (
+              ) : order.status === "cancelled" ? (
                 <Button
                   disabled
                   className="bg-red-300 text-red-800 rounded-full px-3 py-5 font-semibold w-[140px]"
@@ -282,9 +282,12 @@ export default function OrderDetailPage() {
               <div className="text-sm black space-y-1">
                 <p className="font-medium">{order.recipientName || "--"}</p>
                 <p>{order.recipientPhone || "--"}</p>
-                <p className="text-black whitespace-normal break-all w-full text-black text-justify">
-                  {order.addressLine || "không có"} - {order.wardName},{" "}
-                  {order.districtName}, {order.provinceName}
+                <p className="text-black whitespace-normal break-all w-full text-justify">
+                  {`${order.addressLine || ""}${
+                    order.wardName ? ", " + order.wardName : ""
+                  }${order.districtName ? ", " + order.districtName : ""}${
+                    order.provinceName ? ", " + order.provinceName : ""
+                  }`}
                 </p>
               </div>
             </div>
@@ -302,26 +305,26 @@ export default function OrderDetailPage() {
                 <p
                   className={`${
                     order.paymentMethod === "VNPAY"
-                      ? order.status === "PAID"
-                        ? "text-green-600 font-semibold"
-                        : "text-red-600 font-semibold"
+                      ? order.status === "awaiting_payment"
+                        ? "text-red-600 font-semibold"
+                        : "text-green-600 font-semibold"
                       : order.paymentMethod === "COD"
-                      ? order.status === "COMPLETED"
+                      ? order.status === "completed"
                         ? "text-green-600 font-semibold"
                         : "text-black font-semibold"
                       : "text-black font-semibold"
                   }`}
                 >
                   {order.paymentMethod === "COD"
-                    ? order.status === "COMPLETED"
+                    ? order.status === "completed"
                       ? "✓ Payment successful"
                       : `Please pay ${Number(order.grandTotal)?.toLocaleString(
                           "en-US"
                         )}đ upon delivery.`
                     : order.paymentMethod === "VNPAY"
-                    ? order.status === "PAID"
-                      ? "✓ Payment successful"
-                      : "✕ Payment failed"
+                    ? order.status === "awaiting_payment"
+                      ? "✕ Payment failed"
+                      : "✓ Payment successful"
                     : order.paymentStatus || "--"}
                 </p>
               </div>
@@ -361,27 +364,36 @@ export default function OrderDetailPage() {
 
             <div className="mt-6 space-y-2 border-t border-gray-800 pt-4">
               <div className="flex justify-between">
-                <span className="text-gray-800 text-base">Subtotal</span>
+                <span className="text-gray-800 text-base">Subtotal:</span>
                 <span className="font-semibold text-lg text-gray-800">
-                  {Number(order.subtotal)?.toLocaleString("en-US") || "--"}đ
+                  {Number(order.subtotal || 0).toLocaleString("en-US")}đ
                 </span>
               </div>
+              {(Number(order.voucherOrderDiscount || 0) > 0) && (
+                <div className="flex justify-between">
+                  <span className="text-gray-800 text-base">Discount:</span>
+                  <span className="font-semibold text-lg text-red-600">
+                    - {Number(order.voucherOrderDiscount || 0).toLocaleString("en-US")}đ
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between">
-                <span className="text-gray-800 text-base">Discount</span>
-                <span className="font-semibold text-lg text-gray-800">
-                  {Number(order.discountFee)?.toLocaleString("en-US") || "--"}đ
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-800 text-base">Shipping Fee</span>
-                <span className="font-semibold text-lg text-gray-800">
-                  {Number(order.shippingFee)?.toLocaleString("en-US") || "--"}đ
+                <span className="text-gray-800 text-base">Shipping Fee:</span>
+                <span className={`font-semibold ${
+                  Number(order.voucherShippingDiscount || 0) > 0 
+                    ? "text-green-600 text-sx" 
+                    : "text-gray-800 text-lg"
+                }`}>
+                  {Number(order.voucherShippingDiscount || 0) > 0 
+                    ? "Free Shipping" 
+                    : `${Number(order.shippingFee || 0).toLocaleString("en-US")}đ`
+                  }
                 </span>
               </div>
               <div className="flex justify-between text-xl font-bold pt-2 border-t border-gray-400">
-                <span>Grand Total</span>
+                <span>Grand Total:</span>
                 <span className="text-blue-600">
-                  {Number(order.grandTotal)?.toLocaleString("en-US") || "--"}đ
+                  {Number(order.grandTotal || 0).toLocaleString("en-US")}đ
                 </span>
               </div>
             </div>

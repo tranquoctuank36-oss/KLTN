@@ -1,11 +1,12 @@
 "use client";
 import React from "react";
+import { ChevronDown } from "lucide-react";
 
 export type FloatingInputProps = {
   id: string;
   label: string;
   as?: "input" | "select" | "textarea";
-  type?: React.HTMLInputTypeAttribute; 
+  type?: React.HTMLInputTypeAttribute;
   required?: boolean;
   value: string;
   onChange: (val: string) => void;
@@ -42,7 +43,50 @@ export default function FloatingInput({
   step,
 }: FloatingInputProps) {
   const [touched, setTouched] = React.useState(false);
+  const [open, setOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
   const showError = required && (touched || forceValidate) && !value;
+
+  const selectedOption = options.find((opt) => opt.value === value);
+  
+  // Filter options based on search query
+  const filteredOptions = React.useMemo(() => {
+    if (!searchQuery.trim()) return options;
+    return options.filter(opt => 
+      opt.label.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [options, searchQuery]);
+
+  React.useEffect(() => {
+    if (as !== "select") return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setTouched(true);
+        setSearchQuery("");
+      }
+    };
+
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+      // Focus search input when dropdown opens
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [open, as]);
+
+  const handleSelectOption = (optValue: string) => {
+    onChange(optValue);
+    setOpen(false);
+    setTouched(true);
+    setSearchQuery("");
+  };
 
   const baseClassCommon =
     "peer w-full rounded-md border bg-white text-[16px] text-gray-800 focus:border-2 focus:border-blue-400 focus:outline-none transition" +
@@ -59,7 +103,7 @@ export default function FloatingInput({
   }`;
 
   return (
-    <div className="w-full">
+    <div className="w-full" ref={as === "select" ? containerRef : null}>
       <div className="relative group w-full">
         {as === "input" && (
           <input
@@ -81,22 +125,74 @@ export default function FloatingInput({
         )}
 
         {as === "select" && (
-          <select
-            id={id}
-            required={required}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onBlur={() => setTouched(true)}
-            disabled={disabled}
-            className={`${inputSelectClass} hover:cursor-pointer pl-2`}
-          >
-            <option value="" disabled hidden />
-            {options.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <div
+              onClick={() => !disabled && setOpen(!open)}
+              className={`
+                w-full h-12 px-3 rounded-md border bg-white text-[16px] cursor-pointer
+                flex items-center justify-between transition
+                ${disabled ? "!bg-gray-200 !text-gray-500 cursor-not-allowed" : "hover:border-gray-400"}
+                ${showError ? "border-red-500 bg-red-50" : open ? "border-2 border-blue-400" : "border-gray-300"}
+              `}
+            >
+              <span className={`${value ? "text-gray-800 pt-4" : "text-transparent"} truncate pr-2`}>
+                {selectedOption?.label || "placeholder"}
+              </span>
+              <ChevronDown 
+                className={`size-4 text-gray-400 transition-transform flex-shrink-0 ${open ? "rotate-180" : ""}`} 
+              />
+            </div>
+
+            <label
+              htmlFor={id}
+              className={`absolute left-3 transition-all pointer-events-none
+                ${value ? "top-1 text-xs text-gray-500" : "top-1/2 -translate-y-1/2 text-[15px] text-gray-500"}
+              `}
+            >
+              {label} {required && <span className="text-red-500 ml-[1px]">*</span>}
+            </label>
+
+            {/* Dropdown */}
+            {open && (
+              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                {/* Search input */}
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-3 py-2">
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search..."
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-400"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+                <div className="max-h-48 overflow-y-auto">
+                  {filteredOptions.length === 0 ? (
+                    <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                      {searchQuery ? "No results found" : "No options available"}
+                    </div>
+                  ) : (
+                    filteredOptions.map((opt, idx) => (
+                      <div
+                        key={`${id}-option-${opt.value}-${idx}`}
+                        onClick={() => handleSelectOption(opt.value)}
+                        className={`
+                          px-4 py-2.5 cursor-pointer transition-colors text-sx
+                          ${opt.value === value 
+                            ? "bg-blue-50 text-blue-600 font-medium" 
+                            : "bg-white hover:bg-gray-100 text-gray-800"
+                          }
+                        `}
+                      >
+                        <span className="text-gray-800">{opt.label}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {as === "textarea" && (
@@ -114,22 +210,24 @@ export default function FloatingInput({
           />
         )}
 
-        <label
-          htmlFor={id}
-          className={`absolute left-3 transition-all pointer-events-none
-            ${
-              value
-                ? "top-1 text-xs text-gray-500"
-                : as === "textarea"
-                ? "top-3 text-[15px] text-gray-500"
-                : "top-1/2 -translate-y-1/2 text-[15px] text-gray-500"
-            }
-            peer-focus:top-1 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-gray-500`}
-        >
-          {label} {required && <span className="text-red-500 ml-[1px]">*</span>}
-        </label>
+        {as !== "select" && (
+          <label
+            htmlFor={id}
+            className={`absolute left-3 transition-all pointer-events-none
+              ${
+                value
+                  ? "top-1 text-xs text-gray-500"
+                  : as === "textarea"
+                  ? "top-3 text-[15px] text-gray-500"
+                  : "top-1/2 -translate-y-1/2 text-[15px] text-gray-500"
+              }
+              peer-focus:top-1 peer-focus:translate-y-0 peer-focus:text-xs peer-focus:text-gray-500`}
+          >
+            {label} {required && <span className="text-red-500 ml-[1px]">*</span>}
+          </label>
+        )}
 
-        {rightIcon && (
+        {rightIcon && as !== "select" && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             {rightIcon}
           </div>

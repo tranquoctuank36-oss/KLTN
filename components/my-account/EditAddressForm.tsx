@@ -1,20 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import FloatingInput from "@/components/FloatingInput";
 import {
-  Province,
-  District,
-  Ward,
   getProvinces,
   getDistricts,
   getWards,
-} from "@/services/shippingService";
+} from "@/services/locationService";
 import { UserAddress } from "@/types/userAddress";
-import { updateAddress } from "@/services/userService";
+import { updateAddress, getAddressById } from "@/services/userService";
 import toast from "react-hot-toast";
 import DeleteConfirmDialog from "../dialog/DeleteConfirmDialog";
+import { District, Province, Ward } from "@/types/location";
 
 type Props = {
   initialData: any;
@@ -29,29 +27,25 @@ export default function EditAddressForm({
   onSave,
   onDelete,
 }: Props) {
-  const [name, setName] = useState(initialData.recipientName || "");
-  const [phone, setPhone] = useState(initialData.recipientPhone || "");
-  const [address, setAddress] = useState(initialData.addressLine || "");
-  const [country, setCountry] = useState(initialData.country || "VN");
-  const [isDefaultDelivery, setIsDefaultDelivery] = useState(
-    initialData.isDefault || false
-  );
+  const [loading, setLoading] = useState(true);
+  const [addressData, setAddressData] = useState<UserAddress | null>(null);
+  const [forceValidate, setForceValidate] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [country, setCountry] = useState("VN");
+  const [isDefaultDelivery, setIsDefaultDelivery] = useState(false);
 
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
 
-  const [selectedProvince, setSelectedProvince] = useState(
-    initialData.provinceId || ""
-  );
-  const [selectedDistrict, setSelectedDistrict] = useState(
-    initialData.ghnDistrictId ? String(initialData.ghnDistrictId) : ""
-  );
-  const [selectedWard, setSelectedWard] = useState(
-    initialData.ghnWardCode || ""
-  );
+  const [selectedProvince, setSelectedProvince] = useState("");
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedWard, setSelectedWard] = useState("");
 
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const initialLoadComplete = useRef(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const phoneRegex = /^(0|\+84)(\d{9})$/;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -64,28 +58,52 @@ export default function EditAddressForm({
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  // Fetch address data by ID
+  useEffect(() => {
+    const fetchAddress = async () => {
+      try {
+        setLoading(true);
+        const data = await getAddressById(initialData.id);
+        setAddressData(data);
+        setName(data.recipientName || "");
+        setEmail(data.recipientEmail || "");
+        setPhone(data.recipientPhone || "");
+        setAddress(data.addressLine || "");
+        setCountry("VN");
+        setIsDefaultDelivery(data.isDefault || false);
+        // Only set province first, let cascade loading handle district and ward
+        setSelectedProvince(data.provinceId || "");
+      } catch (error) {
+        console.error("Failed to fetch address:", error);
+        toast.error("Failed to load address");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (initialData?.id) {
+      fetchAddress();
+    }
+  }, [initialData?.id]);
+
   useEffect(() => {
     if (country === "VN") {
       getProvinces()
         .then((data) => {
           setProvinces(data);
-          if (initialData.provinceName) {
-            const found = data.find(
-              (p) => p.ProvinceName === initialData.provinceName
-            );
-            if (found) setSelectedProvince(String(found.ProvinceID));
-          }
         })
         .catch(console.error);
     }
-  }, [country, initialData.provinceName]);
+  }, [country]);
 
   useEffect(() => {
     if (!selectedProvince) {
       setDistricts([]);
       setWards([]);
-      setSelectedDistrict("");
-      setSelectedWard("");
+      if (initialLoadComplete.current) {
+        setSelectedDistrict("");
+        setSelectedWard("");
+      }
       return;
     }
 
@@ -93,26 +111,24 @@ export default function EditAddressForm({
       .then((data) => {
         setDistricts(data);
 
-        if (isInitialLoad && initialData.districtName) {
-          const foundDistrict = data.find(
-            (d) => d.DistrictName === initialData.districtName
-          );
-          if (foundDistrict) {
-            setSelectedDistrict(String(foundDistrict.DistrictID));
-          }
-        } else {
+        // After districts loaded, set district from addressData if initial load
+        if (!initialLoadComplete.current && addressData?.districtId) {
+          setSelectedDistrict(addressData.districtId);
+        } else if (initialLoadComplete.current) {
           setSelectedDistrict("");
           setSelectedWard("");
           setWards([]);
         }
       })
       .catch(console.error);
-  }, [selectedProvince]);
+  }, [selectedProvince, addressData]);
 
   useEffect(() => {
     if (!selectedDistrict) {
       setWards([]);
-      setSelectedWard("");
+      if (initialLoadComplete.current) {
+        setSelectedWard("");
+      }
       return;
     }
 
@@ -120,37 +136,17 @@ export default function EditAddressForm({
       .then((data) => {
         setWards(data);
 
-        if (isInitialLoad && initialData.wardName) {
-          const foundWard = data.find(
-            (w) => w.WardName === initialData.wardName
-          );
-          if (foundWard) setSelectedWard(foundWard.WardCode);
-        } else {
+        // After wards loaded, set ward from addressData if initial load
+        if (!initialLoadComplete.current && addressData?.wardId) {
+          setSelectedWard(addressData.wardId);
+          // Mark initial load as complete after setting ward
+          initialLoadComplete.current = true;
+        } else if (initialLoadComplete.current) {
           setSelectedWard("");
         }
       })
       .catch(console.error);
-  }, [selectedDistrict]);
-
-  useEffect(() => {
-    if (
-      provinces.length > 0 &&
-      districts.length > 0 &&
-      wards.length > 0 &&
-      selectedProvince &&
-      selectedDistrict &&
-      selectedWard
-    ) {
-      setIsInitialLoad(false);
-    }
-  }, [
-    provinces,
-    districts,
-    wards,
-    selectedProvince,
-    selectedDistrict,
-    selectedWard,
-  ]);
+  }, [selectedDistrict, addressData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,44 +164,67 @@ export default function EditAddressForm({
     }
 
     setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
+    if (Object.keys(newErrors).length > 0) {
+      setForceValidate(true);
+      setSaving(false);
+      return;
+    }
 
     try {
-      const province = provinces.find(
-        (p) => String(p.ProvinceID) === selectedProvince
-      );
-      const district = districts.find(
-        (d) => String(d.DistrictID) === selectedDistrict
-      );
-      const ward = wards.find((w) => String(w.WardCode) === selectedWard);
+      const province = provinces.find((p) => String(p.id) === selectedProvince);
+      const district = districts.find((d) => String(d.id) === selectedDistrict);
+      const ward = wards.find((w) => String(w.id) === selectedWard);
 
       const payload: UserAddress = {
         recipientName: name,
+        recipientEmail: email,
         recipientPhone: phone,
-        provinceName: province?.ProvinceName || "",
-        districtName: district?.DistrictName || "",
-        wardName: ward?.WardName || "",
         addressLine: address,
-        ghnDistrictId: district ? Number(district.DistrictID) : 0,
-        ghnWardCode: ward ? String(ward.WardCode) : "",
+        provinceId: province ? String(province.id) : "",
+        districtId: district ? String(district.id) : "",
+        wardId: ward ? String(ward.id) : "",
         isDefault: isDefaultDelivery,
       };
 
-      console.log("Update with id:", initialData.id);
-      console.log("Payload:", payload);
-      await updateAddress(initialData.id, payload);
-      toast.success("Changes Saved!", {
-        duration: 2000,
-        position: "top-center",
-      });
-      onSave(payload);
-    } catch (error) {
-      console.error("Failed to update address:", error);
-      throw error;
+      try {
+        await updateAddress(initialData.id, payload);
+
+        toast.success("Changes Saved!", {
+          duration: 2000,
+          position: "top-center",
+        });
+        onSave(payload);
+      } catch (error: any) {
+        console.error("Failed to update address:", error);
+        
+        // Hiển thị detail từ response
+        const detail = error?.response?.data?.detail;
+        if (detail) {
+          toast.error(detail, {
+            duration: 3000,
+            position: "top-center",
+          });
+        } else {
+          toast.error("Failed to update address", {
+            duration: 3000,
+            position: "top-center",
+          });
+        }
+      }
     } finally {
       setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg p-6 shadow-lg w-full max-w-auto">
+        <div className="flex justify-center items-center py-10">
+          <p className="text-gray-500">Loading address...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form
@@ -233,6 +252,16 @@ export default function EditAddressForm({
           required
         />
         <FloatingInput
+          id="email"
+          label="Email"
+          type="email"
+          value={email}
+          onChange={setEmail}
+          disabled
+        />
+      </div>
+      <div className="grid grid-cols-1 gap-4 pt-3">
+        <FloatingInput
           id="phone"
           label="Phone Number"
           value={phone}
@@ -251,6 +280,7 @@ export default function EditAddressForm({
           onChange={setCountry}
           options={[{ value: "VN", label: "Vietnam" }]}
           required
+          forceValidate={forceValidate}
         />
 
         <FloatingInput
@@ -260,10 +290,11 @@ export default function EditAddressForm({
           value={selectedProvince}
           onChange={setSelectedProvince}
           options={provinces.map((p) => ({
-            value: p.ProvinceID,
-            label: p.ProvinceName,
+            value: String(p.id),
+            label: p.name,
           }))}
           required
+          forceValidate={forceValidate}
         />
       </div>
 
@@ -277,12 +308,13 @@ export default function EditAddressForm({
           options={
             districts.length > 0
               ? districts.map((d) => ({
-                  value: d.DistrictID,
-                  label: d.DistrictName,
+                  value: String(d.id),
+                  label: d.name,
                 }))
               : [{ value: "", label: "No data" }]
           }
           required
+          forceValidate={forceValidate}
         />
 
         <FloatingInput
@@ -294,12 +326,13 @@ export default function EditAddressForm({
           options={
             wards.length > 0
               ? wards.map((w) => ({
-                  value: w.WardCode,
-                  label: w.WardName,
+                  value: String(w.id),
+                  label: w.name,
                 }))
               : [{ value: "", label: "No data" }]
           }
           required
+          forceValidate={forceValidate}
         />
       </div>
 

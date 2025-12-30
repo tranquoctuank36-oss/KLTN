@@ -88,7 +88,7 @@ export default function LoginMenu() {
 
           <div className="space-y-3">
             <h2 className="text-2xl text-gray-500">Welcome</h2>
-            <hr className="border-gray-300 mt-2 mb-6" />
+            <hr className="border-gray-300 mt-2 mb-4" />
 
             <div className="space-y-3 flex flex-col items-center">
               <Button
@@ -113,7 +113,7 @@ export default function LoginMenu() {
               </Button>
             </div>
 
-            <div className="pt-2 mt-6 border-t space-y-2 text-lg">
+            {/* <div className="pt-2 mt-6 border-t space-y-2 text-lg">
               <Link
                 href={Routes.orderTracking()}
                 className="group flex items-center gap-2 ml-4"
@@ -133,7 +133,7 @@ export default function LoginMenu() {
                   Returns
                 </span>
               </Link>
-            </div>
+            </div> */}
           </div>
         </HoverCardContent>
       </HoverCard>

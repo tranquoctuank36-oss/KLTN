@@ -13,7 +13,7 @@ type Props = {
   cart: CartItem[];
   setItemQuantity: (cartItemId: string, quantity: number) => Promise<void>;
   removeFromCart: (cartItemId: string) => Promise<void>;
-  clearCart: () => void;
+  clearCart: () => Promise<void>;
   selectedItems?: Set<string>;
   onSelectionChange?: (items: Set<string>) => void;
   removingItems: Set<string>;
@@ -30,16 +30,26 @@ export default function CartItems({
 }: Props) {
   const [selected, setSelected] = useState<Set<string>>(() => {
     const allKeys = new Set(
-      cart.map((item) => `${item.product.slug}__${item.selectedVariant.id}`)
+      cart.map(
+        (item) =>
+          item.cartItemId || `${item.product.slug}__${item.selectedVariant.id}`
+      )
     );
     return allKeys;
   });
   const [isClearing, setIsClearing] = useState(false);
+  const [editingQuantities, setEditingQuantities] = useState<
+    Map<string, number | string>
+  >(new Map());
 
   useEffect(() => {
     if (cart.length > 0) {
       const allKeys = new Set(
-        cart.map((item) => `${item.product.slug}__${item.selectedVariant.id}`)
+        cart.map(
+          (item) =>
+            item.cartItemId ||
+            `${item.product.slug}__${item.selectedVariant.id}`
+        )
       );
       setSelected(allKeys);
       onSelectionChange?.(allKeys);
@@ -67,21 +77,25 @@ export default function CartItems({
       onSelectionChange?.(new Set());
     } else {
       const allKeys = new Set(
-        cart.map((item) => `${item.product.slug}__${item.selectedVariant.id}`)
+        cart.map(
+          (item) =>
+            item.cartItemId ||
+            `${item.product.slug}__${item.selectedVariant.id}`
+        )
       );
       setSelected(allKeys);
       onSelectionChange?.(allKeys);
     }
   };
 
-  const handleClearCart = () => {
+  const handleClearCart = async () => {
     setSelected(new Set());
     onSelectionChange?.(new Set());
 
     setIsClearing(true);
 
-    setTimeout(() => {
-      clearCart();
+    setTimeout(async () => {
+      await clearCart();
       setIsClearing(false);
     }, 400);
   };
@@ -106,10 +120,14 @@ export default function CartItems({
       )}
 
       {cart.map((item, index) => {
-        const key = item.cartItemId || `${item.product.slug}__${item.selectedVariant.id}`;
+        const key =
+          item.cartItemId || `${item.product.slug}__${item.selectedVariant.id}`;
         const maxInv = item.selectedVariant.availableQuantity ?? Infinity;
         const isSelected = selected.has(key);
         const isRemoving = removingItems.has(key) || isClearing;
+        const finalPrice = Number(item.selectedVariant.finalPrice);
+        const originalPrice = Number(item.selectedVariant.originalPrice);
+        const isOnSale = finalPrice < originalPrice;
 
         const productUrl = item.product.id
           ? Routes.product(item.product.slug, item.selectedVariant.id)
@@ -142,7 +160,7 @@ export default function CartItems({
               />
             </div>
 
-            <div className="flex items-start gap-4 flex-1 ml-8">
+            <div className="flex items-center gap-4 flex-1 ml-8">
               <Image
                 src={
                   item?.selectedVariant?.images?.[0]?.publicUrl ||
@@ -154,12 +172,10 @@ export default function CartItems({
                 className="object-contain rounded-md"
               />
 
-              <div className="flex-1 w-full pt-1">
-                <Link href={productUrl}>
-                  <h2 className="font-semibold text-xl hover:font-bold transition cursor-pointer">
-                    {item.product.name}
-                  </h2>
-                </Link>
+              <div className="flex flex-col justify-center">
+                <h2 className="font-semibold text-xl transition">
+                  {item.product.name}
+                </h2>
 
                 {/* <p className="text-sm pt-2">
                   <span className="text-gray-600 font-bold">Color:</span>{" "}
@@ -173,39 +189,122 @@ export default function CartItems({
                 </p> */}
 
                 <p className="text-base pt-2">
-                  <span className="text-gray-600">Final Price:</span>{" "}
-                  <span className="text-gray-500 font-bold">
-                    {Number(item.selectedVariant.finalPrice).toLocaleString(
-                      "en-US"
-                    )}{" "}
-                    đ
-                  </span>
+                  <span className="text-gray-600">Price:</span>{" "}
+                  {isOnSale ? (
+                    <>
+                      {/* Original price (gạch ngang) */}
+                      <span className="text-gray-400 line-through mr-2">
+                        {originalPrice.toLocaleString("en-US")} đ
+                      </span>
+
+                      {/* Final price */}
+                      <span className="text-red-600 font-bold">
+                        {finalPrice.toLocaleString("en-US")} đ
+                      </span>
+                    </>
+                  ) : (
+                    /* Không sale → chỉ hiện final price */
+                    <span className="text-gray-700 font-bold">
+                      {finalPrice.toLocaleString("en-US")} đ
+                    </span>
+                  )}
                 </p>
 
-                <div className="flex items-center border rounded-md mt-3 w-fit">
+                <div className="flex items-center border rounded-md mt-3 w-fit overflow-hidden h-10">
                   <Button
                     onClick={() => {
-                      if (item.cartItemId) {
+                      if (item.cartItemId && item.quantity > 1) {
                         setItemQuantity(item.cartItemId, item.quantity - 1);
                       }
                     }}
-                    disabled={item.quantity <= 1 || isRemoving || !item.cartItemId}
-                    className="w-8 h-8 p-0 hover:bg-white text-gray-400"
+                    disabled={
+                      item.quantity <= 1 || isRemoving || !item.cartItemId
+                    }
+                    className="w-8 h-full text-xl p-0 hover:bg-white text-gray-400"
                     variant="ghost"
                   >
                     -
                   </Button>
-                  <span className="w-10 text-center font-medium">
-                    {item.quantity}
-                  </span>
+                  <input
+                    type="text"
+                    value={editingQuantities.get(key) ?? item.quantity}
+                    onChange={(e) => {
+                      const val = e.target.value;
+
+                      // Allow empty string temporarily for user to clear and type
+                      if (val === "") {
+                        setEditingQuantities((prev) =>
+                          new Map(prev).set(key, "")
+                        );
+                        return;
+                      }
+
+                      // Only allow digits
+                      if (!/^\d+$/.test(val)) return;
+
+                      const num = parseInt(val, 10);
+                      const maxAllowed = Math.min(99, maxInv);
+
+                      // Allow any number during typing, will validate on blur
+                      if (num >= 0 && num <= maxAllowed) {
+                        setEditingQuantities((prev) =>
+                          new Map(prev).set(key, num)
+                        );
+                      } else if (num > maxAllowed) {
+                        setEditingQuantities((prev) =>
+                          new Map(prev).set(key, maxAllowed)
+                        );
+                      }
+                    }}
+                    onBlur={() => {
+                      const currentVal = editingQuantities.get(key);
+
+                      // If empty or invalid, reset to current quantity
+                      if (currentVal === "" || currentVal === undefined) {
+                        setEditingQuantities((prev) => {
+                          const next = new Map(prev);
+                          next.delete(key);
+                          return next;
+                        });
+                        return;
+                      }
+
+                      if (typeof currentVal === "number") {
+                        let finalQty = currentVal;
+                        const maxAllowed = Math.min(99, maxInv);
+
+                        if (currentVal < 1) {
+                          finalQty = 1;
+                        } else if (currentVal > maxAllowed) {
+                          finalQty = maxAllowed;
+                        }
+
+                        // Update if different from current
+                        if (finalQty !== item.quantity && item.cartItemId) {
+                          setItemQuantity(item.cartItemId, finalQty);
+                        }
+
+                        // Clear editing state
+                        setEditingQuantities((prev) => {
+                          const next = new Map(prev);
+                          next.delete(key);
+                          return next;
+                        });
+                      }
+                    }}
+                    disabled={isRemoving || !item.cartItemId}
+                    className="w-10 flex items-center justify-center text-base font-medium text-center border-0 focus:outline-none focus:ring-0"
+                  />
                   <Button
                     onClick={() => {
-                      if (item.cartItemId) {
+                      if (item.cartItemId && item.quantity < maxInv) {
                         setItemQuantity(item.cartItemId, item.quantity + 1);
                       }
                     }}
-                    disabled={item.quantity >= maxInv || isRemoving || !item.cartItemId}
-                    className="w-8 h-8 p-0 hover:bg-white text-gray-400"
+                    disabled={
+                      item.quantity >= maxInv || isRemoving || !item.cartItemId
+                    }
+                    className="w-8 h-full text-xl p-0 hover:bg-white text-gray-400"
                     variant="ghost"
                   >
                     +

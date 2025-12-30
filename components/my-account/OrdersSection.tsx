@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useEffect, useState, useRef } from "react";
+import { forwardRef, useEffect, useState, useRef, useCallback } from "react";
 import {
   Loader2,
   Package,
@@ -17,7 +17,7 @@ import {
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Order } from "@/types/order";
-import { getMyOrders } from "@/services/userService";
+import { getMyOrders } from "@/services/orderService";
 import { useRouter } from "next/navigation";
 import { Routes } from "@/lib/routes";
 import CancelOrderDialog from "../dialog/CancelOrderDialog";
@@ -34,8 +34,7 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
   const [loading, setLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("All Status");
 
@@ -53,25 +52,77 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
   const [buyAgainLoading, setBuyAgainLoading] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 2;
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 10;
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      let statusParam: string | undefined = undefined;
+      if (selectedStatus !== "All Status") {
+        // Convert display status to API format
+        const statusMap: Record<string, string> = {
+          "PENDING": "pending",
+          "AWAITING PAYMENT": "awaiting_payment",
+          "PROCESSING": "processing",
+          "SHIPPING": "shipping",
+          "DELIVERED": "delivered",
+          "COMPLETED": "completed",
+          "CANCELLED": "cancelled",
+          "EXPIRED": "expired",
+          "RETURN REQUESTED": "return_requested",
+          "RETURNING": "returning",
+          "RETURNED": "returned",
+        };
+        statusParam = statusMap[selectedStatus];
+      }
+      
+      const result = await getMyOrders({
+        search: searchTerm || undefined,
+        page: currentPage,
+        limit: itemsPerPage,
+        status: statusParam,
+      });
+      
+      setOrders(result.data || []);
+      setTotalPages(result.meta.totalPages);
+      setTotalItems(result.meta.totalItems);
+    } catch (err) {
+      console.error("❌ Failed to fetch orders:", err);
+      setOrders([]);
+      setTotalPages(0);
+      setTotalItems(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchTerm, currentPage, selectedStatus]);
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        const data = await getMyOrders();
-        setOrders(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("❌ Failed to fetch orders:", err);
-        setOrders([]);
-      } finally {
-        setLoading(false);
+    fetchOrders();
+  }, [fetchOrders]);
+
+  // Debounce search input
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      setSearchTerm(searchInput);
+      setCurrentPage(1); // Reset to page 1 when searching
+    }, 500);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
       }
     };
-    fetchOrders();
-  }, []);
+  }, [searchInput]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -86,28 +137,7 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredOrders = orders.filter((order) => {
-    const matchSearch = searchTerm
-      ? order.orderCode?.toLowerCase().includes(searchTerm.toLowerCase())
-      : true;
-
-    const matchStatus =
-      selectedStatus === "All Status"
-        ? true
-        : order.status?.toUpperCase() ===
-          selectedStatus.toUpperCase().replace(/\s+/g, "_");
-
-    const orderDate = order.createdAt ? new Date(order.createdAt) : null;
-    const matchDate =
-      (!startDate || (orderDate && orderDate >= new Date(startDate))) &&
-      (!endDate || (orderDate && orderDate <= new Date(endDate)));
-
-    return matchSearch && matchStatus && matchDate;
-  });
-
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-  const startIdx = (currentPage - 1) * itemsPerPage;
-  const currentOrders = filteredOrders.slice(startIdx, startIdx + itemsPerPage);
+  const currentOrders = orders;
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
@@ -122,23 +152,21 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
     }, 100);
   };
 
+  const handleStatusChange = (status: string) => {
+    setSelectedStatus(status);
+    setCurrentPage(1); // Reset to page 1 when filter changes
+    setIsOpen(false);
+  };
+
   const handleCancelOrder = async (reason: string) => {
     if (!selectedOrder?.id) return;
 
     try {
       await cancelOrder(String(selectedOrder.id), reason);
 
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order.id === selectedOrder.id
-            ? {
-                ...order,
-                status: "CANCELLED",
-                cancelReason: reason,
-              }
-            : order
-        )
-      );
+      // Refetch orders to get updated list
+      await fetchOrders();
+      
       setCancelDialogOpen(false);
       setSelectedOrder(null);
     } catch (err) {
@@ -180,7 +208,16 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
       setBuyAgainLoading(false);
     }
   };
-  if (loading) {
+  // Show initial loading state only on first load
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  useEffect(() => {
+    if (!loading && initialLoading) {
+      setInitialLoading(false);
+    }
+  }, [loading, initialLoading]);
+
+  if (initialLoading && loading) {
     return (
       <div
         ref={ref}
@@ -191,7 +228,10 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
     );
   }
 
-  if (orders.length === 0) {
+  // Only show empty state when no orders AND no active filters/search
+  const hasActiveFilters = searchTerm !== "" || selectedStatus !== "All Status";
+  
+  if (orders.length === 0 && !loading && !hasActiveFilters) {
     return (
       <div
         ref={ref}
@@ -260,14 +300,13 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
         <h3 className="text-2xl font-semibold">My Orders</h3>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs
       <div className="flex gap-6 mb-5 text-lg relative pb-5 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-gray-300">
-        <button className="font-semibold border-b-2 border-black pb-2">
+        <button className="font-semibold border-b-2 border-black pb-2 cursor-pointer">
           Orders
         </button>
-        <button className="text-gray-500 hover:text-black">Returns</button>
-        <button className="text-gray-500 hover:text-black">Exchanges</button>
-      </div>
+        <button className="text-gray-500 hover:text-black cursor-pointer">Returns</button>
+      </div> */}
 
       {/* Bộ lọc */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -277,8 +316,8 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
             type="text"
             placeholder="Search for order code"
             className="outline-none flex-1 text-gray-700 placeholder-gray-400 text-base"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
         </div>
 
@@ -297,25 +336,24 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
           </button>
 
           {isOpen && (
-            <div className="absolute left-0 mt-2 w-[180px] bg-white border border-gray-200 rounded-md shadow-lg z-20">
+            <div className="absolute left-0 mt-2 w-[200px] bg-white border border-gray-200 rounded-md shadow-lg z-20 max-h-[400px] overflow-y-auto">
               {[
                 "All Status",
                 "PENDING",
-                "PENDING PAYMENT",
-                "PAID",
+                "AWAITING PAYMENT",
                 "PROCESSING",
-                "SHIPPED",
+                "SHIPPING",
                 "DELIVERED",
                 "COMPLETED",
                 "CANCELLED",
-                "REFUNDED",
+                "EXPIRED",
+                "RETURN REQUESTED",
+                "RETURNING",
+                "RETURNED",
               ].map((status) => (
                 <div
                   key={status}
-                  onClick={() => {
-                    setSelectedStatus(status);
-                    setIsOpen(false);
-                  }}
+                  onClick={() => handleStatusChange(status)}
                   className={`px-4 py-2 cursor-pointer hover:bg-gray-100 ${
                     selectedStatus === status ? "bg-gray-200 font-medium" : ""
                   }`}
@@ -326,262 +364,188 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
             </div>
           )}
         </div>
-
-        {/* Bộ chọn ngày */}
-        <div className="flex items-center border border-gray-300 hover:border-gray-800 rounded-md px-3 py-2 text-gray-500 text-base h-[50px] gap-2">
-          {/* Start Date */}
-          <div className="flex items-center flex-1 relative">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              max={new Date().toISOString().split("T")[0]}
-              className="outline-none bg-transparent w-full text-gray-700 pr-5"
-              style={{
-                colorScheme: "light",
-              }}
-            />
-            {startDate ? (
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setStartDate("");
-                  setEndDate("");
-                }}
-                className="absolute right-0 text-gray-400 transition z-10 bg-white cursor-pointer"
-                type="button"
-                title="Clear dates"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            ) : (
-              <Calendar className="absolute right-0 h-4 w-4 text-gray-400 pointer-events-none" />
-            )}
-          </div>
-
-          <span className="text-gray-400">→</span>
-
-          {/* End Date */}
-          <div className="flex items-center flex-1 relative">
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              min={startDate || undefined}
-              max={new Date().toISOString().split("T")[0]}
-              disabled={!startDate}
-              className="outline-none bg-transparent w-full text-gray-700 leading-none disabled:opacity-50 disabled:cursor-not-allowed pr-5"
-              style={{
-                colorScheme: "light",
-              }}
-            />
-            {endDate ? (
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setEndDate("");
-                }}
-                className="absolute right-0 text-gray-400 transition z-10 bg-white"
-                type="button"
-                title="Clear end date"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            ) : (
-              <Calendar className="absolute right-0 h-4 w-4 text-gray-400 pointer-events-none cursor-pointer" />
-            )}
-          </div>
-        </div>
-
-        {/* CSS để ẩn calendar icon mặc định */}
-        <style jsx>{`
-          input[type="date"]::-webkit-calendar-picker-indicator {
-            opacity: 0;
-            position: absolute;
-            right: 0;
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-          }
-          input[type="date"]::-webkit-datetime-edit-text,
-          input[type="date"]::-webkit-datetime-edit-month-field,
-          input[type="date"]::-webkit-datetime-edit-day-field,
-          input[type="date"]::-webkit-datetime-edit-year-field {
-            color: inherit;
-          }
-        `}</style>
       </div>
 
-      {filteredOrders.length === 0 ? (
-        <div className="text-center py-10 text-gray-500">
-          <p className="text-lg">No orders found matching your filters.</p>
-        </div>
-      ) : (
-        <>
-          {currentOrders.map((order, index) => (
-            <div
-              key={index}
-              className="border border-gray-300 rounded-md p-4 mb-4 bg-white flex flex-col gap-4"
-            >
-              {/* Dòng thông tin chính */}
-              <div className="flex justify-between pr-50">
-                <p className="font-bold">
-                  <span className="text-black">Order code: </span>
-                  <span className="text-blue-600 tracking-wide ml-3">
-                    {order.orderCode}
-                  </span>
-                </p>
+      {/* Orders list with loading overlay */}
+      <div className="relative min-h-[200px]">
+        {loading && (
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          </div>
+        )}
+        
+        {orders.length === 0 && !loading ? (
+          <div className="text-center py-10 text-gray-500">
+            <p className="text-lg">No orders found.</p>
+          </div>
+        ) : (
+          <>
+            {currentOrders.map((order, index) => (
+              <div
+                key={index}
+                className="border border-gray-300 rounded-md p-4 mb-4 bg-white flex flex-col gap-4"
+              >
+                {/* Dòng thông tin chính */}
+                <div className="flex justify-between pr-50">
+                  <p className="font-bold">
+                    <span className="text-black">Order code: </span>
+                    <span className="text-blue-600 tracking-wide ml-3">
+                      {order.orderCode}
+                    </span>
+                  </p>
 
-                <p>
-                  <span className="text-black">Order Date: </span>
-                  <span className="font-semibold">
-                    {order.createdAt
-                      ? new Date(order.createdAt).toLocaleDateString("vi-VN")
-                      : "Invalid Date"}
-                  </span>
-                </p>
+                  <p>
+                    <span className="text-black">Order Date: </span>
+                    <span className="font-semibold">
+                      {order.createdAt
+                        ? new Date(order.createdAt).toLocaleDateString("vi-VN")
+                        : "Invalid Date"}
+                    </span>
+                  </p>
 
-                <p className="text-black">
-                  {order.items?.length || 0} items (
-                  {Number(order.grandTotal || 0).toLocaleString("en-US")}đ)
-                </p>
-              </div>
+                  <p className="text-black">
+                    {order.items?.length || 0} items (
+                    {Number(order.grandTotal || 0).toLocaleString("en-US")}đ)
+                  </p>
+                </div>
 
-              {/* Địa chỉ giao hàng */}
-              <p className="leading-relaxed whitespace-normal break-all w-full text-black text-justify">
-                <span className="mr-3">Delivery Address:</span>{" "}
-                {`${order.addressLine || ""}${
-                  order.wardName ? ", " + order.wardName : ""
-                }${order.districtName ? ", " + order.districtName : ""}${
-                  order.provinceName ? ", " + order.provinceName : ""
-                }`}
-              </p>
-
-              {/* Hàng chứa trạng thái + nút */}
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <span
-                  className={`inline-block px-4 py-2 rounded-full text-sm font-semibold w-fit ${
-                    order.status === "PENDING"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : order.status === "COMPLETED"
-                      ? "bg-green-100 text-green-800"
-                      : order.status === "CANCELLED"
-                      ? "bg-red-100 text-red-800"
-                      : order.status === "PAID"
-                      ? "bg-blue-100 text-blue-800"
-                      : order.status === "PROCESSING"
-                      ? "bg-purple-100 text-purple-800"
-                      : order.status === "SHIPPED"
-                      ? "bg-indigo-100 text-indigo-800"
-                      : order.status === "DELIVERED"
-                      ? "bg-teal-100 text-teal-800"
-                      : "bg-gray-100 text-gray-800"
+                {/* Địa chỉ giao hàng */}
+                <p className="leading-relaxed whitespace-normal break-all w-full text-black text-justify">
+                  <span className="mr-3">Delivery Address:</span>{" "}
+                  {`${order.addressLine || ""}${
+                    order.wardName ? ", " + order.wardName : ""
+                  }${order.districtName ? ", " + order.districtName : ""}${
+                    order.provinceName ? ", " + order.provinceName : ""
                   }`}
-                >
-                  {order.status === "PENDING" && "PENDING"}
-                  {order.status === "PAID" && "PAID"}
-                  {order.status === "PROCESSING" && "PROCESSING"}
-                  {order.status === "SHIPPED" && "SHIPPED"}
-                  {order.status === "DELIVERED" && "DELIVERED"}
-                  {order.status === "COMPLETED" && "COMPLETED"}
-                  {order.status === "CANCELLED" && "CANCELLED"}
-                  {![
-                    "PENDING",
-                    "PAID",
-                    "PROCESSING",
-                    "SHIPPED",
-                    "DELIVERED",
-                    "COMPLETED",
-                    "CANCELLED",
-                  ].includes(order.status || "") && order.status}
-                </span>
+                </p>
 
-                <div className="flex gap-2 shrink-0">
-                  <Button
-                    onClick={() => {
-                      localStorage.setItem(
-                        "selectedOrder",
-                        JSON.stringify(order)
-                      );
-                      router.push(Routes.orderDetail(String(order.orderCode)));
-                    }}
-                    variant="outline"
-                    className="border-blue-500 rounded-full text-blue-600 px-3 py-5 hover:bg-white hover:text-blue-800 hover:border-blue-800 transition font-semibold w-[140px]"
+                {/* Hàng chứa trạng thái + nút */}
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <span
+                    className={`inline-block px-4 py-2 rounded-full text-sm font-semibold w-fit ${
+                      order.status === "pending" || order.status === "awaiting_payment"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : order.status === "completed"
+                        ? "bg-green-100 text-green-800"
+                        : order.status === "cancelled" || order.status === "expired"
+                        ? "bg-red-100 text-red-800"
+                        : order.status === "processing"
+                        ? "bg-purple-100 text-purple-800"
+                        : order.status === "shipping"
+                        ? "bg-indigo-100 text-indigo-800"
+                        : order.status === "delivered"
+                        ? "bg-teal-100 text-teal-800"
+                        : order.status === "return_requested" || order.status === "returning" || order.status === "returned"
+                        ? "bg-orange-100 text-orange-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
                   >
-                    VIEW DETAILS
-                  </Button>
-                  {order.status === "PENDING" || order.status === "PAID" ? (
+                    {order.status === "pending" && "PENDING"}
+                    {order.status === "awaiting_payment" && "AWAITING PAYMENT"}
+                    {order.status === "processing" && "PROCESSING"}
+                    {order.status === "shipping" && "SHIPPING"}
+                    {order.status === "delivered" && "DELIVERED"}
+                    {order.status === "completed" && "COMPLETED"}
+                    {order.status === "cancelled" && "CANCELLED"}
+                    {order.status === "expired" && "EXPIRED"}
+                    {order.status === "return_requested" && "RETURN REQUESTED"}
+                    {order.status === "returning" && "RETURNING"}
+                    {order.status === "returned" && "RETURNED"}
+                    {![
+                      "pending",
+                      "awaiting_payment",
+                      "processing",
+                      "shipping",
+                      "delivered",
+                      "completed",
+                      "cancelled",
+                      "expired",
+                      "return_requested",
+                      "returning",
+                      "returned",
+                    ].includes(order.status || "") && order.status}
+                  </span>
+
+                  <div className="flex gap-2 shrink-0">
                     <Button
                       onClick={() => {
-                        setSelectedOrder({
-                          id: String(order.id),
-                          orderCode: order.orderCode ?? "",
-                        });
-                        setCancelDialogOpen(true);
-                      }}
-                      className="bg-red-600 rounded-full text-white px-3 py-5 hover:bg-red-800 transition font-semibold w-[140px]"
-                    >
-                      CANCEL ORDER
-                    </Button>
-                  ) : order.status === "CANCELLED" ? (
-                    <Button
-                      disabled
-                      className="bg-red-300 text-red-800 rounded-full px-3 py-5 font-semibold w-[140px]"
-                    >
-                      CANCELLED
-                    </Button>
-                  ) : null}
-                  {(order.status === "CANCELLED" ||
-                    order.status === "COMPLETED") && (
-                    <Button
-                      onClick={() => {
-                        setSelectedOrderForBuy(order);
-                        setBuyDialogOpen(true);
+                        localStorage.setItem(
+                          "selectedOrder",
+                          JSON.stringify(order)
+                        );
+                        router.push(Routes.orderDetail(String(order.id)));
                       }}
                       variant="outline"
-                      className="bg-blue-600 rounded-full text-white hover:text-white px-3 py-5 hover:bg-blue-800 transition font-semibold w-[140px]"
+                      className="border-blue-500 rounded-full text-blue-600 px-3 py-5 hover:bg-white hover:text-blue-800 hover:border-blue-800 transition font-semibold w-[140px]"
                     >
-                      BUY AGAIN
+                      VIEW DETAILS
                     </Button>
-                  )}
+                    {(order.status === "pending" || order.status === "awaiting_payment") && (
+                      <Button
+                        onClick={() => {
+                          setSelectedOrder({
+                            id: String(order.id),
+                            orderCode: order.orderCode ?? "",
+                          });
+                          setCancelDialogOpen(true);
+                        }}
+                        className="bg-red-600 rounded-full text-white px-3 py-5 hover:bg-red-800 transition font-semibold w-[140px]"
+                      >
+                        CANCEL ORDER
+                      </Button>
+                    )}
+                    {(order.status === "cancelled" ||
+                      order.status === "completed") && (
+                      <Button
+                        onClick={() => {
+                          setSelectedOrderForBuy(order);
+                          setBuyDialogOpen(true);
+                        }}
+                        variant="outline"
+                        className="bg-blue-600 rounded-full text-white hover:text-white px-3 py-5 hover:bg-blue-800 transition font-semibold w-[140px]"
+                      >
+                        BUY AGAIN
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </>
+        )}
+      </div>
 
-          <CancelOrderDialog
-            open={cancelDialogOpen}
-            onClose={() => setCancelDialogOpen(false)}
-            onConfirm={handleCancelOrder}
-            orderCode={selectedOrder?.orderCode || ""}
-          />
+      <CancelOrderDialog
+        open={cancelDialogOpen}
+        onClose={() => setCancelDialogOpen(false)}
+        onConfirm={handleCancelOrder}
+        orderCode={selectedOrder?.orderCode || ""}
+      />
 
-          {selectedOrderForBuy && (
-            <AddToCartOrderDialog
-              open={buyDialogOpen}
-              onOpenChange={setBuyDialogOpen}
-              items={(selectedOrderForBuy.items || []).map((item: any) => ({
-                id: item.id,
-                productId: item.productId ?? "",
-                imageUrl: item.imageUrl ?? "/placeholder.png",
-                productName: item.productName ?? "",
-                sku: item.sku ?? "",
-                colors: item.colors ?? "",
-                size: item.size ?? "",
-                quantity: item.quantity ?? 1,
-                originalPrice: item.originalPrice ?? 0,
-                finalPrice: item.finalPrice ?? 0,
-              }))}
-              onBuyAgain={handleBuyAgain}
-              isLoading={buyAgainLoading}
-            />
-          )}
+      {selectedOrderForBuy && (
+        <AddToCartOrderDialog
+          open={buyDialogOpen}
+          onOpenChange={setBuyDialogOpen}
+          items={(selectedOrderForBuy.items || []).map((item: any) => ({
+            id: item.id,
+            productId: item.productId ?? "",
+            imageUrl: item.thumbnailUrl ?? "/placeholder.png",
+            productName: item.productName ?? "",
+            sku: item.sku ?? "",
+            colors: item.colors ?? "",
+            size: item.size ?? "",
+            quantity: item.quantity ?? 1,
+            originalPrice: item.originalPrice ?? 0,
+            finalPrice: item.finalPrice ?? 0,
+          }))}
+          onBuyAgain={handleBuyAgain}
+          isLoading={buyAgainLoading}
+        />
+      )}
 
-          {/* Phân trang */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-6">
+      {/* Phân trang */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-6">
               {/* First Page */}
               <button
                 onClick={() => handlePageChange(1)}
@@ -766,8 +730,6 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
               </button>
             </div>
           )}
-        </>
-      )}
     </div>
   );
 });

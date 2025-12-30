@@ -43,7 +43,7 @@ export default function OrderTrackingPage() {
         errorMsg = "Incorrect Order ID";
       }
     } catch (err: any) {
-      console.error("❌ API Error:", err);
+      console.log("❌ API Error:", err);
 
       if (err?.response?.status === 404) {
         errorMsg = "Incorrect Order ID";

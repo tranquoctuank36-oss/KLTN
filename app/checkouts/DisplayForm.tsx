@@ -6,7 +6,7 @@ import {
   getProvinces,
   getDistricts,
   getWards,
-} from "@/services/shippingService";
+} from "@/services/locationService";
 import { getAddresses } from "@/services/userService";
 
 type Props = {
@@ -14,9 +14,9 @@ type Props = {
   phone: string;
   email: string;
   address: string;
-  wardNameDisplay: string;
-  districtNameDisplay: string;
-  provinceNameDisplay: string;
+  provinceDisplayName: string;
+  districtDisplayName: string;
+  wardDisplayName: string;
   isDefault: boolean;
   isLoggedIn: boolean;
   note: string;
@@ -32,9 +32,9 @@ export default function DisplayForm({
   phone,
   email,
   address,
-  wardNameDisplay,
-  districtNameDisplay,
-  provinceNameDisplay,
+  provinceDisplayName,
+  districtDisplayName,
+  wardDisplayName,
   isDefault,
   isLoggedIn,
   note,
@@ -73,37 +73,38 @@ export default function DisplayForm({
     try {
       const provs = await getProvinces();
       const foundProvince = provs.find(
-        (p) => p.ProvinceName === addr.provinceName
+        (p) => p.name === addr.provinceName
       );
       if (!foundProvince) return;
 
-      const dists = await getDistricts(foundProvince.ProvinceID);
+      const dists = await getDistricts(foundProvince.id);
       const foundDistrict = dists.find(
-        (d) => d.DistrictName === addr.districtName
+        (d) => d.name === addr.districtName
       );
       if (!foundDistrict) return;
 
-      const wds = await getWards(foundDistrict.DistrictID);
-      const foundWard = wds.find((w) => w.WardName === addr.wardName);
+      const wds = await getWards(foundDistrict.id);
+      const foundWard = wds.find((w) => w.name === addr.wardName);
       if (!foundWard) return;
 
       onAddressChange({
         recipientName: addr.recipientName || "",
+        recipientEmail: addr.recipientEmail || "",
         phone: addr.recipientPhone || "",
         address: addr.addressLine || "",
-        provinceNameDisplay: addr.provinceName || "",
-        districtNameDisplay: addr.districtName || "",
-        wardNameDisplay: addr.wardName || "",
-        selectedProvince: String(foundProvince.ProvinceID),
-        selectedDistrict: String(foundDistrict.DistrictID),
-        selectedWard: String(foundWard.WardCode),
+        provinceDisplayName: addr.provinceName || "",
+        districtDisplayName: addr.districtName || "",
+        wardDisplayName: addr.wardName || "",
+        selectedProvince: String(foundProvince.id),
+        selectedDistrict: String(foundDistrict.id),
+        selectedWard: String(foundWard.id),
         isDefault: addr.isDefault,
         currentAddressId: addr.id,
       });
 
       setShowAddressList(false);
     } catch (err) {
-      console.error("⚠️ Error updating address:", err);
+      console.error("Error updating address:", err);
       onFormValidChange?.(false);
     }
   };
@@ -130,30 +131,27 @@ export default function DisplayForm({
               </span>
             )}
           </div>
-          {isLoggedIn && (
-            <Button
-              onClick={onNewAddress}
-              className="bg-gray-100 text-gray-800 hover:bg-gray-300 rounded-full w-32 h-10"
-            >
-              New Address
-            </Button>
-          )}
+          <Button
+            onClick={onNewAddress}
+            className="bg-gray-100 text-gray-800 hover:bg-gray-300 rounded-full w-32 h-10"
+          >
+            New Address
+          </Button>
         </div>
         <p className="text-gray-400">{phone}</p>
         <p className="text-gray-400">{email}</p>
         <p className="text-gray-800">
           {address}
-          {wardNameDisplay && `, ${wardNameDisplay}`}
-          {districtNameDisplay && `, ${districtNameDisplay}`}
-          {provinceNameDisplay && `, ${provinceNameDisplay}`}
+          {wardDisplayName && `, ${wardDisplayName}`}
+          {districtDisplayName && `, ${districtDisplayName}`}
+          {provinceDisplayName && `, ${provinceDisplayName}`}
         </p>
       </div>
 
-      {isLoggedIn && (
-        <div className="mt-4 relative" ref={addressDropdownRef}>
-          <button
-            type="button"
-            onClick={async () => {
+      <div className="mt-4 relative" ref={addressDropdownRef}>
+        <button
+          type="button"
+          onClick={async () => {
               if (addressList.length === 0) {
                 const list = await getAddresses();
                 setAddressList(list);
@@ -172,9 +170,9 @@ export default function DisplayForm({
                 .map((addr: any, index: number) => {
                   const isSelected =
                     addr.addressLine === address &&
-                    addr.wardName === wardNameDisplay &&
-                    addr.districtName === districtNameDisplay &&
-                    addr.provinceName === provinceNameDisplay;
+                    addr.provinceName === provinceDisplayName &&
+                    addr.districtName === districtDisplayName &&
+                    addr.wardName === wardDisplayName;
 
                   return (
                     <label
@@ -217,7 +215,6 @@ export default function DisplayForm({
             </div>
           )}
         </div>
-      )}
 
       <textarea
         value={note}

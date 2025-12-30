@@ -5,6 +5,7 @@ export type User = {
   lastName?: string;
   gender?: string;
   dateOfBirth?: string;
-  role: string;      
+  phoneNumber?: string;
+  roles: string[];      
   createdAt?: string;
 };

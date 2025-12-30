@@ -18,7 +18,8 @@ type Props = {
   shippingFee: number;
   grandTotal: number;
   discountCode: string | null;
-  discountAmount: number;
+  orderDiscount: number;
+  shippingDiscount: number;
   paymentMethod: PaymentMethodType;
   orderData: Order;
   checkoutCart: any[];
@@ -31,7 +32,8 @@ export default function OrderSummary({
   shippingFee,
   grandTotal,
   discountCode,
-  discountAmount,
+  orderDiscount,
+  shippingDiscount,
   paymentMethod,
   orderData,
   checkoutCart,
@@ -51,28 +53,23 @@ export default function OrderSummary({
         quantity: i.quantity,
       }));
 
-    const payload: Order = {
+    const payload = {
       items,
-      discountFee: discountAmount > 0 ? discountAmount : 0,
-      shippingFee,
-      grandTotal,
-      couponCode: discountCode || "",
+      voucherCode: discountCode || undefined,
       note: orderData.note || "",
       recipientName: orderData.recipientName,
+      recipientEmail: orderData.recipientEmail,
       recipientPhone: orderData.recipientPhone,
       addressLine: orderData.addressLine,
-      wardName: orderData.wardName,
-      districtName: orderData.districtName,
-      provinceName: orderData.provinceName,
-      toWardCode: orderData.toWardCode,
-      toDistrictId: orderData.toDistrictId,
+      toProvinceId: orderData.provinceId,
+      toDistrictId: orderData.districtId,
+      toWardId: orderData.wardId,
       paymentMethod,
     };
 
     try {
       const orderRes = await createOrder(payload);
-      const createdOrder = orderRes?.data || orderRes;
-      console.log("💳 Order COD response:", createdOrder);
+      const createdOrder = orderRes?.data?.order || orderRes?.order || orderRes?.data || orderRes;
 
       if (paymentMethod === "VNPAY") {
         const paymentRes = await createPayment({
@@ -104,8 +101,7 @@ export default function OrderSummary({
     0
   );
 
-  const displayGrandTotal =
-    shippingFee > 0 ? grandTotal : checkoutSubtotal - discountAmount;
+  const displayGrandTotal = grandTotal;
 
   const isDisabled =
     !isFormValid || hasShippingError || loading || checkoutCart.length === 0;
@@ -154,63 +150,67 @@ export default function OrderSummary({
             </div>
           ) : (
             <>
-              {checkoutCart.map((item, index) => (
-                <div
-                  key={`${item.product.slug}-${item.selectedVariant.id}-${index}`}
-                  className={`flex gap-2 pb-4 ${
-                    index !== checkoutCart.length - 1 ? "border-b" : ""
-                  }`}
-                >
-                  <div className="w-35 h-35 rounded bg-gray-100 flex items-center justify-center">
-                    <Image
-                      src={
-                        item?.selectedVariant.productImages?.[0]?.publicUrl ||
-                        "/placeholder.png"
-                      }
-                      alt={item.product.name}
-                      width={200}
-                      height={200}
-                      className="object-contain mix-blend-multiply"
-                    />
-                  </div>
+              {checkoutCart.map((item, index) => {
+                const originalPrice = Number(
+                  item.selectedVariant.originalPrice || 0
+                );
+                const finalPrice = Number(item.selectedVariant.finalPrice || 0);
+                const isOnSale = originalPrice > finalPrice;
 
-                  <div className="flex-1 pl-2">
-                    <p className="font-bold pb-1">
-                      {item.product.brand.name} {item.product.name}
-                    </p>
-                    <p className="text-gray-500 font-medium text-sm pb-2">
-                      {item.selectedVariant.colors
-                        ?.map((c: { name: string }) => c.name)
-                        .join(" / ")}
-                    </p>
-                    <div className="flex items-center gap-2 pb-2">
-                      {item.selectedVariant.originalPrice &&
-                        Number(item.selectedVariant.originalPrice) > 0 && (
+                return (
+                  <div
+                    key={`${item.product.slug}-${item.selectedVariant.id}-${index}`}
+                    className={`flex gap-2 pb-4 ${
+                      index !== checkoutCart.length - 1 ? "border-b" : ""
+                    }`}
+                  >
+                    <div className="w-35 h-35 rounded bg-gray-100 flex items-center justify-center">
+                      <Image
+                        src={
+                          item?.selectedVariant.images?.[0]?.publicUrl ||
+                          "/placeholder.png"
+                        }
+                        alt={item.product.name}
+                        width={200}
+                        height={200}
+                        className="object-contain mix-blend-multiply"
+                      />
+                    </div>
+
+                    <div className="flex-1 pl-2 flex flex-col justify-center">
+                      <p className="font-bold pb-1">{item.product.name}</p>
+
+                      {/* PRICE */}
+                      <div className="flex items-center gap-2 pb-2">
+                        {isOnSale && (
                           <span className="text-gray-400 line-through">
-                            {(
-                              Number(item.selectedVariant.originalPrice) *
-                              item.quantity
-                            ).toLocaleString("en-US")}{" "}
+                            {(originalPrice * item.quantity).toLocaleString(
+                              "en-US"
+                            )}{" "}
                             đ
                           </span>
                         )}
-                      <span className="font-semibold text-gray-800">
-                        {(
-                          Number(item.selectedVariant.finalPrice || 0) *
-                          item.quantity
-                        ).toLocaleString("en-US")}{" "}
-                        đ
-                      </span>
+
+                        <span
+                          className={`font-semibold ${
+                            isOnSale ? "text-red-600" : "text-gray-800"
+                          }`}
+                        >
+                          {(finalPrice * item.quantity).toLocaleString("en-US")}{" "}
+                          đ
+                        </span>
+                      </div>
+
+                      <p className="text-sm text-gray-500 font-medium pb-2">
+                        Quantity:{" "}
+                        <span className="font-semibold text-gray-800">
+                          {item.quantity}
+                        </span>
+                      </p>
                     </div>
-                    <p className="text-sm text-gray-500 font-medium pb-2">
-                      Quantity:{" "}
-                      <span className="font-semibold text-gray-800">
-                        {item.quantity}
-                      </span>
-                    </p>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </>
           )}
         </div>
@@ -225,22 +225,26 @@ export default function OrderSummary({
             </span>
           </div>
 
-          {discountCode && discountAmount > 0 && (
+          {discountCode && orderDiscount > 0 && (
             <div className="flex justify-between text-red-600">
               <span>
-                Discount (<span className="font-semibold">{discountCode}:</span>
-                )
+                Order Discount (
+                <span className="font-semibold">{discountCode}</span>):
               </span>
-              <span>-{discountAmount.toLocaleString("en-US")}đ</span>
+              <span>-{orderDiscount.toLocaleString("en-US")}đ</span>
             </div>
           )}
 
           <div className="flex justify-between">
             <span className="text-gray-600">Shipping Fee:</span>
-            <span className="font-medium">
-              {!shippingFee || shippingFee === 0 || isNaN(shippingFee)
-                ? "0đ"
-                : `${shippingFee.toLocaleString("en-US")}đ`}
+            <span className={`font-medium ${discountCode && shippingDiscount > 0 ? "text-green-600 font-semibold" : ""}`}>
+              {discountCode && shippingDiscount > 0 ? (
+                "Free Shipping"
+              ) : !shippingFee || shippingFee === 0 || isNaN(shippingFee) ? (
+                "0đ"
+              ) : (
+                `${shippingFee.toLocaleString("en-US")}đ`
+              )}
             </span>
           </div>
 
@@ -284,7 +288,7 @@ export default function OrderSummary({
                   router.push(Routes.orderSuccessPage(result.orderCode));
                 }
               } catch (err) {
-                console.error("❌ Error when ordering:", err);
+                console.error("Error when ordering:", err);
               } finally {
                 setLoading(false);
               }

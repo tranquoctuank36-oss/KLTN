@@ -31,7 +31,7 @@ export default function MyAccountClient() {
   const [active, setActive] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
-  const { logoutAll, updateUser, refetchUser } = useAuth();
+  const { logoutAll, updateUser, refetchUser, user: authUser } = useAuth();
 
   const [isEditing, setIsEditing] = useState(false);
   const [draftFirstName, setDraftFirstName] = useState("");
@@ -76,36 +76,65 @@ export default function MyAccountClient() {
 
   // load user
   useEffect(() => {
-    getUserProfile()
-      .then((data) => {
-        setUser(data);
-        const mode = localStorage.getItem("accountFormMode");
+    // Ưu tiên dùng user từ AuthContext
+    if (authUser) {
+      setUser(authUser);
+      const mode = localStorage.getItem("accountFormMode");
 
-        if (mode === "edit") {
-          setIsEditing(true);
-          setDraftFirstName(data.firstName || "");
-          setDraftLastName(data.lastName || "");
-          setDraftEmail(data.email || "");
-          setDraftGender(data.gender || "");
-          setDraftDateOfBirth(
-            data.dateOfBirth ? data.dateOfBirth.substring(0, 10) : ""
-          );
-        } else if (mode === "password") {
-          setIsChangingPassword(true);
-        } else if (mode === "address") {
-          setIsAddingAddress(true);
-        } else if (mode === "editAddress") {
-          const stored = localStorage.getItem("editingAddressData");
-          if (stored) {
-            const address = JSON.parse(stored);
-            setEditingAddressData(address);
-            setIsEditingAddress(true);
-          }
+      if (mode === "edit") {
+        setIsEditing(true);
+        setDraftFirstName(authUser.firstName || "");
+        setDraftLastName(authUser.lastName || "");
+        setDraftEmail(authUser.email || "");
+        setDraftGender(authUser.gender || "");
+        setDraftDateOfBirth(
+          authUser.dateOfBirth ? authUser.dateOfBirth.substring(0, 10) : ""
+        );
+      } else if (mode === "password") {
+        setIsChangingPassword(true);
+      } else if (mode === "address") {
+        setIsAddingAddress(true);
+      } else if (mode === "editAddress") {
+        const stored = localStorage.getItem("editingAddressData");
+        if (stored) {
+          const address = JSON.parse(stored);
+          setEditingAddressData(address);
+          setIsEditingAddress(true);
         }
-      })
-      .catch(console.error)
-      .finally(() => setIsLoading(false));
-  }, []);
+      }
+      setIsLoading(false);
+    } else {
+      getUserProfile()
+        .then((data) => {
+          setUser(data);
+          const mode = localStorage.getItem("accountFormMode");
+
+          if (mode === "edit") {
+            setIsEditing(true);
+            setDraftFirstName(data.firstName || "");
+            setDraftLastName(data.lastName || "");
+            setDraftEmail(data.email || "");
+            setDraftGender(data.gender || "");
+            setDraftDateOfBirth(
+              data.dateOfBirth ? data.dateOfBirth.substring(0, 10) : ""
+            );
+          } else if (mode === "password") {
+            setIsChangingPassword(true);
+          } else if (mode === "address") {
+            setIsAddingAddress(true);
+          } else if (mode === "editAddress") {
+            const stored = localStorage.getItem("editingAddressData");
+            if (stored) {
+              const address = JSON.parse(stored);
+              setEditingAddressData(address);
+              setIsEditingAddress(true);
+            }
+          }
+        })
+        .catch(console.error)
+        .finally(() => setIsLoading(false));
+    }
+  }, [authUser]);
 
   // menu items
   const menuItems = [
@@ -320,7 +349,7 @@ export default function MyAccountClient() {
     const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
 
     if (!(passMin8 && hasNumber && hasUppercase && hasLowercase && hasSpecial)) {
-      setNewPasswordError("Password doesn’t meet the strength requirements.");
+      setNewPasswordError("Passwords must be at least 8 characters long and include numbers, uppercase letters, lowercase letters, and symbols.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -337,11 +366,7 @@ export default function MyAccountClient() {
       setIsChangingPassword(false);
       localStorage.removeItem("accountFormMode");
     } catch (err: any) {
-      if (err.response?.data?.detail?.includes("Mật khẩu hiện tại không đúng")) {
-        setCurrentPasswordError("Current password is incorrect");
-      } else {
-        setPasswordError("Failed to change password");
-      }
+      setPasswordError(err.response?.data?.detail);
     }
   };
 

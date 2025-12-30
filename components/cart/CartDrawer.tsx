@@ -35,16 +35,19 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
     };
   }, [isOpen]);
 
-  const handleRemove = (slug: string, variantId: string) => {
-    const key = `${slug}__${variantId}`;
+  const handleRemove = (cartItemId: string) => {
+    if (!cartItemId) {
+      console.error("Cannot remove item: no cartItemId");
+      return;
+    }
 
-    setRemovingItems((prev) => new Set(prev).add(key));
+    setRemovingItems((prev) => new Set(prev).add(cartItemId));
 
     setTimeout(() => {
-      removeFromCart(key);
+      removeFromCart(cartItemId);
       setRemovingItems((prev) => {
         const next = new Set(prev);
-        next.delete(key);
+        next.delete(cartItemId);
         return next;
       });
     }, 300);
@@ -82,12 +85,8 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
             <div className="text-center py-10 text-gray-500">Cart is empty</div>
           ) : (
             cart.map((item, index) => {
-              console.log("🛒 Cart Item:", item);
-              console.log("💰 originalPrice:", item.selectedVariant.originalPrice);
-              console.log("💵 finalPrice:", item.selectedVariant.finalPrice);
-              console.log("🔢 Quantity:", item.quantity);
               
-              const key = `${item.product.slug}__${item.selectedVariant.id}`;
+              const key = item.cartItemId || `${item.product.slug}__${item.selectedVariant.id}`;
               const isRemoving = removingItems.has(key);
               const productUrl = item.selectedVariant.id
                 ? Routes.product(item.product.slug, item.selectedVariant.id)
@@ -135,15 +134,14 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                     <div className="flex items-center justify-between">
                       <ConfirmPopover
                         title={`${item.product.brand?.name} ${item.product.name}`}
-                        onConfirm={() =>
-                          handleRemove(
-                            item.product.slug,
-                            item.selectedVariant.id
-                          )
-                        }
+                        onConfirm={() => {
+                          if (item.cartItemId) {
+                            handleRemove(item.cartItemId);
+                          }
+                        }}
                       >
                         <Button
-                          disabled={isRemoving}
+                          disabled={isRemoving || !item.cartItemId}
                           className="text-red-500 drop-shadow-none hover:bg-blue-50 hover:text-red-700 text-xs mt-2 flex items-center gap-1"
                         >
                           <Trash2 className="w-3 h-3" />

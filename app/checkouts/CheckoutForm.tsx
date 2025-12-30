@@ -254,9 +254,9 @@ export default function CheckoutForm({
               if (foundWard) {
                 setSelectedWard(String(foundWard.id));
 
-                if (readyToFetch) {
-                  setReadyToFetchShipping(true);
-                }
+                // Auto-enable shipping fetch when default address is loaded
+                // (not just when readyToFetch from localStorage)
+                setReadyToFetchShipping(true);
               }
             }
           }

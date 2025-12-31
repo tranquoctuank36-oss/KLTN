@@ -70,18 +70,19 @@ export default function OrderSummary({
     try {
       const orderRes = await createOrder(payload);
       const createdOrder = orderRes?.data?.order || orderRes?.order || orderRes?.data || orderRes;
+      const paymentUrl = orderRes?.data?.paymentUrl || orderRes?.paymentUrl;
 
       if (paymentMethod === "VNPAY") {
-        const paymentRes = await createPayment({
-          orderId: String(createdOrder.id),
-        });
-        console.log("💳 Payment response:", paymentRes);
-        const { paymentUrl } = paymentRes;
-        if (paymentUrl) {
-          return { type: "VNPAY", paymentUrl, items: checkoutCart };
-        } else {
+        if (!paymentUrl) {
+          toast.error("Payment URL not found. Please try again.");
           throw new Error("Payment URL not found");
         }
+        return {
+          type: "VNPAY",
+          orderCode: createdOrder.orderCode,
+          paymentUrl: paymentUrl,
+          items: checkoutCart,
+        };
       } else {
         return {
           type: "COD",

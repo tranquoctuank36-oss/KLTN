@@ -151,10 +151,20 @@ export const addItemToCart = async (
 // Xóa sản phẩm khỏi giỏ hàng
 export const removeItemFromCart = async (cartItemIds: string | string[]): Promise<CartResponse> => {
   try {
-    const anonymousId = getAnonymousId();
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
     // Convert to array if single string
     const items = Array.isArray(cartItemIds) ? cartItemIds : [cartItemIds];
     
+    // Nếu đã đăng nhập, không gửi anonymousId header
+    if (token) {
+      const response = await api.delete("/carts/items", {
+        data: { cartItemIds: items },
+      });
+      return response.data?.data || response.data;
+    }
+    
+    // Guest user - cần anonymousId
+    const anonymousId = getAnonymousId();
     const response = await api.delete("/carts/items", {
       data: { cartItemIds: items },
       ...(withAnonymousHeader(anonymousId) as any),
@@ -172,6 +182,21 @@ export const updateCartItemQuantity = async (
   quantity: number
 ): Promise<CartResponse> => {
   try {
+    console.log("🔄 updateCartItemQuantity called with:", { cartItemId, quantity });
+    
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    
+    // Nếu đã đăng nhập, không gửi anonymousId header
+    if (token) {
+      console.log("✅ Logged in user - no anonymousId needed");
+      const response = await api.patch(
+        "/carts/items/quantity",
+        { cartItemId, quantity }
+      );
+      return response.data?.data || response.data;
+    }
+    
+    // Guest user - cần anonymousId
     const anonymousId = getAnonymousId();
     const response = await api.patch(
       "/carts/items/quantity",

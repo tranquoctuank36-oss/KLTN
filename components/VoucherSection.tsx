@@ -49,8 +49,34 @@ export default function VoucherSection({
   const [selectedVoucherId, setSelectedVoucherId] = useState<string | null>(null);
   const voucherDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Click outside to close voucher list
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        voucherDropdownRef.current &&
+        !voucherDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowVoucherList(false);
+      }
+    };
+
+    if (showVoucherList) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showVoucherList]);
+
   const handleApply = async () => {
     const code = voucherInput.trim();
+
+    // Validate location before calling API
+    if (!toWardId || !toDistrictId || toWardId === "" || toDistrictId === "") {
+      setError("Please complete shipping address first");
+      return;
+    }
 
     setIsValidating(true);
     setError("");
@@ -134,6 +160,12 @@ export default function VoucherSection({
     setVoucherInput(voucher.code);
     setSelectedVoucherId(voucher.id);
     
+    // Validate location before calling API
+    if (!toWardId || !toDistrictId || toWardId === "" || toDistrictId === "") {
+      setError("Please complete shipping address first");
+      return;
+    }
+    
     // Auto-apply the voucher
     setIsValidating(true);
     setError("");
@@ -158,6 +190,7 @@ export default function VoucherSection({
         );
         setAppliedVoucher(voucher.code);
         setError("");
+        setShowVoucherList(false); // Close dropdown after successful selection
       } else {
         setError("Mã giảm giá không hợp lệ");
         setAppliedVoucher("");
@@ -180,7 +213,7 @@ export default function VoucherSection({
         <h2 className={`text-2xl font-bold ${disabled ? 'text-gray-300' : ''}`}>4. Voucher/Coupon</h2>
         <button
           onClick={handleViewAll}
-          disabled={disabled || loadingVouchers}
+          disabled={disabled || loadingVouchers || !toWardId || !toDistrictId}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-semibold text-base hover:underline disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           {loadingVouchers ? (
@@ -222,9 +255,9 @@ export default function VoucherSection({
         ) : (
           <Button
             onClick={handleApply}
-            disabled={disabled || isValidating}
+            disabled={disabled || isValidating || !toWardId || !toDistrictId}
             className={`text-white px-6 h-[52px] min-w-[100px] ${
-              disabled || isValidating
+              disabled || isValidating || !toWardId || !toDistrictId
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-blue-600 hover:bg-blue-700"
             }`}

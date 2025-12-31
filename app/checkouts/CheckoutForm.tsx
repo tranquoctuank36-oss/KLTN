@@ -121,7 +121,7 @@ export default function CheckoutForm({
     (hasAddress && !isEditing);
 
   const shouldShowShippingAndPayment =
-    canShowNext && !isEditing && readyToFetchShipping;
+    isLoggedIn && !isEditing;
 
   const [savedFormData, setSavedFormData] = useState({
     firstName: "",
@@ -488,8 +488,26 @@ export default function CheckoutForm({
 
   // Form validation
   useEffect(() => {
+    // Nếu chưa có địa chỉ (null hoặc false), luôn disable
+    if (hasAddress !== true) {
+      onFormValidChange?.(false);
+      onShippingErrorChange?.(false);
+      return;
+    }
+
+    // Đã có địa chỉ nhưng chưa Continue, vẫn disable
+    if (!readyToFetchShipping) {
+      onFormValidChange?.(false);
+      onShippingErrorChange?.(false);
+      return;
+    }
+
+    // Kiểm tra location hợp lệ và shipping status
+    const hasValidLocation = selectedDistrict && selectedWard && 
+                            selectedDistrict !== "" && selectedWard !== "";
     const isShippingValid = !shippingLoading && !shippingError;
-    if (shouldShowDisplayForm && readyToFetchShipping && !shippingLoading) {
+    
+    if (hasValidLocation && !shippingLoading) {
       onFormValidChange?.(isShippingValid);
       onShippingErrorChange?.(!isShippingValid);
     } else {
@@ -497,11 +515,12 @@ export default function CheckoutForm({
       onShippingErrorChange?.(false);
     }
   }, [
-    shouldShowDisplayForm,
+    hasAddress,
     readyToFetchShipping,
+    selectedDistrict,
+    selectedWard,
     shippingLoading,
     shippingError,
-    onFormValidChange,
     onFormValidChange,
     onShippingErrorChange,
   ]);
@@ -782,7 +801,7 @@ export default function CheckoutForm({
       localStorage.removeItem("checkoutForm_savedData");
 
       setReadyToFetchShipping(true);
-      onFormValidChange?.(true);
+      // Let useEffect handle validation
     } catch (err) {
       console.error("Failed to submit shipping:", err);
       onFormValidChange?.(false);
@@ -1013,7 +1032,7 @@ export default function CheckoutForm({
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       setReadyToFetchShipping(true);
-      onFormValidChange?.(true);
+      // Let useEffect handle validation
     } catch (error) {
       console.error("Error loading location data:", error);
       onFormValidChange?.(false);
@@ -1111,7 +1130,7 @@ export default function CheckoutForm({
           onErrorChange={(error) => {
             setShippingError(error);
             onShippingErrorChange?.(!!error);
-            onFormValidChange?.(!error);
+            // Let useEffect handle validation
           }}
         />
       ) : (

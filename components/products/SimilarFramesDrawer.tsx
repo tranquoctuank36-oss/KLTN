@@ -99,6 +99,7 @@ export default function SimilarFramesDrawer({
                 "/placeholder.png";
               const finalPrice = Number(variant?.finalPrice || 0);
               const originalPrice = Number(variant?.originalPrice || 0);
+              const isOnSale = originalPrice > finalPrice;
 
               return (
                 <Link
@@ -106,7 +107,9 @@ export default function SimilarFramesDrawer({
                   href={productUrl}
                   onClick={onClose}
                   className={`block bg-white hover:shadow-lg transition-all duration-300 rounded-lg hover:bg-gray-100 overflow-hidden ${
-                    isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4"
+                    isVisible
+                      ? "opacity-100 translate-x-0"
+                      : "opacity-0 translate-x-4"
                   }`}
                   style={{
                     transitionDelay: `${index * 50}ms`,
@@ -125,12 +128,19 @@ export default function SimilarFramesDrawer({
                   {/* Product Info */}
                   <div className="p-4 pt-0 text-center">
                     <h3 className="text-lg mb-1 line-clamp-2">
-                      {product.brand?.name} {product.name}
+                      {product.name}
                     </h3>
-                    <p className="text-lg font-semibold text-gray-900 line-through">
-                      {originalPrice.toLocaleString("en-US")}đ
-                    </p>
-                    <p className="text-lg font-semibold text-gray-900">
+                    {isOnSale && (
+                      <p className="text-lg font-semibold text-gray-400 line-through">
+                        {originalPrice.toLocaleString("en-US")}đ
+                      </p>
+                    )}
+
+                    <p
+                      className={`text-lg font-semibold ${
+                        isOnSale ? "text-red-600" : "text-gray-900"
+                      }`}
+                    >
                       {finalPrice.toLocaleString("en-US")}đ
                     </p>
                   </div>

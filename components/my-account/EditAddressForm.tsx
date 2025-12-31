@@ -196,7 +196,7 @@ export default function EditAddressForm({
         onSave(payload);
       } catch (error: any) {
         console.error("Failed to update address:", error);
-        
+
         // Hiển thị detail từ response
         const detail = error?.response?.data?.detail;
         if (detail) {
@@ -365,23 +365,13 @@ export default function EditAddressForm({
       )}
 
       <div className="flex justify-end gap-4 mt-8">
-        {initialData.isDefault ? (
-          <Button
-            type="button"
-            onClick={onCancel}
-            className="h-12 w-25 bg-white border border-2 border-gray-400 hover:border-gray-800 text-lg font-bold text-gray-400 hover:text-gray-800 rounded-full"
-          >
-            Cancel
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            onClick={() => setShowDeleteDialog(true)}
-            className="h-12 w-25 bg-white border border-2 border-gray-400 hover:border-gray-800 text-lg font-bold text-gray-400 hover:text-gray-800 rounded-full"
-          >
-            Delete
-          </Button>
-        )}
+        <Button
+          type="button"
+          onClick={() => setShowDeleteDialog(true)}
+          className="h-12 w-25 bg-white border border-2 border-gray-400 hover:border-gray-800 text-lg font-bold text-gray-400 hover:text-gray-800 rounded-full"
+        >
+          Delete
+        </Button>
 
         <Button
           type="submit"

@@ -175,10 +175,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     setLoading(true);
     try {
+      // Clear state FIRST to prevent any API calls
+      setIsLoggedIn(false);
+      setUser(null);
+      
       await apiLogout();
       clearAuthClient();
     } catch (err) {
       console.error("Logout API failed:", err);
+      clearAuthClient(); // Clear even if logout API fails
     } finally {
       setIsLoggedIn(false);
       setUser(null);
@@ -189,10 +194,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logoutAll = async () => {
     setLoading(true);
     try {
+      // Clear state FIRST to prevent any API calls
+      setIsLoggedIn(false);
+      setUser(null);
+      
       await apiLogoutAllDevices();
       clearAuthClient();
     } catch (err) {
       console.error("Logout All API failed:", err);
+      clearAuthClient(); // Clear even if logout API fails
     } finally {
       setIsLoggedIn(false);
       setUser(null);

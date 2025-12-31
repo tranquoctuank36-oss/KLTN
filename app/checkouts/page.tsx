@@ -202,7 +202,7 @@ export default function CheckoutPage() {
             onVoucherApplied={handleVoucherApplied}
             onVoucherCleared={handleVoucherCleared}
             currentVoucherCode={voucherCode || undefined}
-            disabled={!isFormValid || hasShippingError}
+            disabled={false}
           />
         </div>
 

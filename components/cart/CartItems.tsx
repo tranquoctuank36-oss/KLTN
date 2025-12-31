@@ -173,9 +173,11 @@ export default function CartItems({
               />
 
               <div className="flex flex-col justify-center">
-                <h2 className="font-semibold text-xl transition">
-                  {item.product.name}
-                </h2>
+                <Link href={productUrl}>
+                  <h2 className="font-semibold text-lg hover:font-bold transition-all duration-200 cursor-pointer">
+                    {item.product.name}
+                  </h2>
+                </Link>
 
                 {/* <p className="text-sm pt-2">
                   <span className="text-gray-600 font-bold">Color:</span>{" "}
@@ -335,16 +337,6 @@ export default function CartItems({
             </div>
 
             <div className="absolute bottom-2 right-2 flex items-center text-sm">
-              <Link href={productUrl}>
-                <Button
-                  variant="ghost"
-                  disabled={isRemoving}
-                  className="text-blue-600 hover:text-blue-800 hover:bg-transparent hover:bg-blue-50"
-                >
-                  <Pencil className="w-5 h-5" />
-                </Button>
-              </Link>
-              <span className="text-gray-500 px-2"> | </span>
               <ConfirmPopover
                 title={`${item.product.name}`}
                 onConfirm={() => {

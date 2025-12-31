@@ -76,7 +76,7 @@ export default function DeleteConfirmDialog({
           <Button
             variant="outline"
             type="button"
-            className="h-12 w-25 bg-white border border-2 border-gray-400 hover:border-gray-800 text-lg font-bold text-gray-400 hover:text-gray-800 hover:bg-white rounded-full"
+            className="h-12 w-30 bg-white border border-2 border-gray-400 hover:border-gray-800 text-lg font-bold text-gray-400 hover:text-gray-800 hover:bg-white rounded-full"
             onClick={onClose}
           >
             Cancel
@@ -85,7 +85,7 @@ export default function DeleteConfirmDialog({
             type="button"
             onClick={handleDelete}
             disabled={saving}
-            className="h-12 w-25 bg-blue-600 text-white text-lg font-bold hover:bg-blue-800 rounded-full"
+            className="h-12 w-30 bg-blue-600 text-white text-lg font-bold hover:bg-blue-800 rounded-full"
           >
             {saving ? "Deleting..." : "Delete"}
           </Button>

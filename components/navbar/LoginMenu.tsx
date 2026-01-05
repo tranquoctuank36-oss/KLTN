@@ -61,7 +61,7 @@ export default function LoginMenu() {
           <HoverCardTrigger asChild>
             <Button className="drop-shadow-none flex items-center gap-2 !px-3 !py-6 text-black bg-white hover:bg-gray-100">
               <User className="!h-6 !w-6" />
-              <span className="text-base font-normal">Log In</span>
+              <span className="text-base font-normal">Đăng Nhập</span>
             </Button>
           </HoverCardTrigger>
         </div>
@@ -87,7 +87,7 @@ export default function LoginMenu() {
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-2xl text-gray-500">Welcome</h2>
+            <h2 className="text-2xl text-gray-500">Chào mừng quay lại</h2>
             <hr className="border-gray-300 mt-2 mb-4" />
 
             <div className="space-y-3 flex flex-col items-center">
@@ -98,7 +98,7 @@ export default function LoginMenu() {
                   setLoginOpen(true);
                 }}
               >
-                Log In
+                Đăng Nhập
               </Button>
 
               <Button
@@ -109,7 +109,7 @@ export default function LoginMenu() {
                   setSignupOpen(true);
                 }}
               >
-                Create Account
+                Tạo Tài Khoản
               </Button>
             </div>
 

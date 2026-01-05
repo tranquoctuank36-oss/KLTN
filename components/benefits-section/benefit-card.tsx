@@ -4,12 +4,12 @@ import { Benefit } from "@/types/benefit";
 
 type BenefitCardProps = Benefit;
 
-export default function BenefitCard({ icon, title, desc }: BenefitCardProps) {
+export default function BenefitCard({ icon: Icon, title, desc }: BenefitCardProps) {
   return (
     <div className="flex flex-col items-center text-center">
       {/* Icon wrapper */}
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f4fafe] ring-1 ring-sky-100 mb-5">
-        {icon}
+        <Icon className="h-7 w-7 text-sky-600" />
       </div>
 
       {/* Title */}

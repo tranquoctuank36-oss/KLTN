@@ -13,6 +13,7 @@ import { UserAddress } from "@/types/userAddress";
 import { deleteAddress } from "@/services/userService";
 import toast from "react-hot-toast";
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -33,7 +34,7 @@ export default function DeleteConfirmDialog({
     try {
       setSaving(true);
       await deleteAddress(address.id as string);
-      toast.success("Address deleted successfully!", {
+      toast.success("Địa chỉ đã được xóa thành công!", {
         duration: 2000,
         position: "top-center",
       });
@@ -52,11 +53,11 @@ export default function DeleteConfirmDialog({
         {/* Header */}
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
-            Delete address
+            Xóa địa chỉ
           </DialogTitle>
         </DialogHeader>
         <DialogDescription className="text-base text-gray-600 -mt-2">
-          Are you sure you want to delete the following address?
+          Bạn có chắc chắn muốn xóa địa chỉ sau đây?
         </DialogDescription>
 
         <hr className="border-t-2 border-gray-200 my-2" />
@@ -79,15 +80,22 @@ export default function DeleteConfirmDialog({
             className="h-12 w-30 bg-white border border-2 border-gray-400 hover:border-gray-800 text-lg font-bold text-gray-400 hover:text-gray-800 hover:bg-white rounded-full"
             onClick={onClose}
           >
-            Cancel
+            Hủy bỏ
           </Button>
           <Button
             type="button"
             onClick={handleDelete}
             disabled={saving}
-            className="h-12 w-30 bg-blue-600 text-white text-lg font-bold hover:bg-blue-800 rounded-full"
+            className="h-12 w-30 bg-blue-600 text-white text-lg font-bold hover:bg-blue-800 rounded-full flex items-center justify-center gap-2"
           >
-            {saving ? "Deleting..." : "Delete"}
+            {saving ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Xóa
+              </>
+            ) : (
+              "Xóa"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

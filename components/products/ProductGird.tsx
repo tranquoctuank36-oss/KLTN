@@ -39,7 +39,7 @@ export default function ProductGrid({ brandSlug, title, initialFilters }: Props)
   const [currentPage, setCurrentPage] = useState(0);
 
   // sort + filters runtime
-  const [sort, setSort] = useState<string>("relevant");
+  const [sort, setSort] = useState<string>("popular");
   const [runtimeFilters, setRuntimeFilters] = useState<Partial<ElasticSearchFilters>>(
     initialFilters ?? {}
   );
@@ -57,10 +57,28 @@ export default function ProductGrid({ brandSlug, title, initialFilters }: Props)
     };
     if (brandSlug) merged.brands = [brandSlug];
 
-    // nếu bạn có sort mapping thì set vào merged.sortBy ở đây
+    // Map sort UI values to API format
+    if (sort) {
+      switch (sort) {
+        case "popular":
+          merged.sortField = "popular";
+          break;
+        case "newest":
+          merged.sortField = "newest";
+          break;
+        case "price-asc":
+          merged.sortField = "price";
+          merged.sortOrder = "ASC";
+          break;
+        case "price-desc":
+          merged.sortField = "price";
+          merged.sortOrder = "DESC";
+          break;
+      }
+    }
 
     return merged;
-  }, [brandSlug, initialFilters, runtimeFilters /*, sort*/]);
+  }, [brandSlug, initialFilters, runtimeFilters, sort]);
 
   // fetch
   useEffect(() => {
@@ -91,7 +109,7 @@ export default function ProductGrid({ brandSlug, title, initialFilters }: Props)
         setAggregations(undefined);
         setTotalItems(0);
         setTotalPages(1);
-        setError(err?.response?.data?.message || err?.message || "Failed to load products");
+        setError(err?.response?.data?.message || err?.message || "Không thể tải sản phẩm");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -149,6 +167,7 @@ export default function ProductGrid({ brandSlug, title, initialFilters }: Props)
         sort={sort}
         onSortChange={handleSortChange}
         onFiltersChange={handleFiltersChange}
+        initialFilters={initialFilters}
       />
 
       {/* Grid + overlay spinner */}
@@ -161,7 +180,7 @@ export default function ProductGrid({ brandSlug, title, initialFilters }: Props)
 
         {products.length === 0 && !loading ? (
           <div className="p-6 text-center min-h-[240px] flex items-center justify-center">
-            No products found
+            Không tìm thấy sản phẩm
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7 min-h-[240px]">
@@ -178,7 +197,7 @@ export default function ProductGrid({ brandSlug, title, initialFilters }: Props)
           <button
             onClick={() => setCurrentPage(0)}
             disabled={currentPage === 0}
-            aria-label="Go to first page"
+            aria-label="Đi tới trang đầu tiên"
             className={`rounded-md ${
               currentPage === 0 ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
             }`}
@@ -214,7 +233,7 @@ export default function ProductGrid({ brandSlug, title, initialFilters }: Props)
           <button
             onClick={() => setCurrentPage(totalPages - 1)}
             disabled={currentPage === totalPages - 1}
-            aria-label="Go to last page"
+            aria-label="Đi tới trang cuối cùng"
             className={`rounded-md ${
               currentPage === totalPages - 1 ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
             }`}

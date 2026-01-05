@@ -55,7 +55,7 @@ export default function LoginDialog({
     setLoading(true);
     try {
       await login(email.trim(), password.trim());
-      toast.success("Login successful!", {
+      toast.success("Đăng nhập thành công!", {
         duration: 2000,
         position: "top-center",
       });
@@ -75,22 +75,22 @@ export default function LoginDialog({
           if (detail.includes("chưa được kích hoạt")) {
             setIsUnverified(true);
             setErrorMsg(
-              "Your account is not verified. Please check your email!"
+              "Tài khoản của bạn chưa được xác minh. Vui lòng kiểm tra email!"
             );
           } else if (detail.includes("mật khẩu không đúng")) {
             setIsUnverified(false);
-            setErrorMsg("Incorrect email or password!");
+            setErrorMsg("Email hoặc mật khẩu không đúng!");
           } else {
             setIsUnverified(false);
-            setErrorMsg("Unauthorized. Please try again.");
+            setErrorMsg("Không được phép. Vui lòng thử lại.");
           }
         } else {
           setIsUnverified(false);
-          setErrorMsg("Login failed. Please try again later!");
+          setErrorMsg("Đăng nhập thất bại. Vui lòng thử lại sau!");
         }
       } else {
         setIsUnverified(false);
-        setErrorMsg("Login failed. Please try again later!");
+        setErrorMsg("Đăng nhập thất bại. Vui lòng thử lại sau!");
       }
     } finally {
       setLoading(false);
@@ -99,16 +99,16 @@ export default function LoginDialog({
 
   const handleResendVerification = async () => {
     if (!email.trim()) {
-      setErrorMsg("Please enter your email to resend the verification link.");
+      setErrorMsg("Vui lòng nhập email của bạn để gửi lại liên kết xác minh.");
       return;
     }
     try {
       setResendLoading(true);
       await resendVerification(email.trim());
-      toast.success("Verification email sent. Please check your inbox.");
+      toast.success("Email xác minh đã được gửi. Vui lòng kiểm tra hộp thư của bạn.");
     } catch {
       toast.error(
-        "Failed to resend verification email. Please try again later."
+        "Không thể gửi lại email xác minh. Vui lòng thử lại sau."
       );
     } finally {
       setResendLoading(false);
@@ -128,10 +128,10 @@ export default function LoginDialog({
         >
           <DialogHeader>
             <DialogTitle className="mt-2 text-center text-2xl font-bold">
-              Log in.
+              Đăng nhập.
             </DialogTitle>
             <p className="text-center text-sm leading-5">
-              Log in to track your orders and manage your account.
+              Đăng nhập để theo dõi đơn hàng và quản lý tài khoản của bạn.
             </p>
           </DialogHeader>
 
@@ -139,7 +139,7 @@ export default function LoginDialog({
             {/* Email */}
             <FloatingInput
               id="email"
-              label="Email Address"
+              label="Địa chỉ Email"
               type="email"
               required
               value={email}
@@ -152,7 +152,7 @@ export default function LoginDialog({
             {/* Password */}
             <FloatingInput
               id="password"
-              label="Password"
+              label="Mật khẩu"
               type={showPwd ? "text" : "password"}
               required
               value={password}
@@ -167,7 +167,7 @@ export default function LoginDialog({
                   className="drop-shadow-none bg-white
                   w-9 h-9 flex items-center justify-center
                   rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition"
-                  aria-label={showPwd ? "Hide password" : "Show password"}
+                  aria-label={showPwd ? "Ẩn Mật Khẩu" : "Hiển Thị Mật Khẩu"}
                 >
                   {showPwd ? (
                     <EyeOff className="!h-5 !w-5" />
@@ -189,7 +189,7 @@ export default function LoginDialog({
                   disabled={resendLoading}
                   className="text-sm text-blue-600 underline hover:text-blue-700 cursor-pointer disabled:opacity-60"
                 >
-                  {resendLoading ? "Sending..." : "Resend verification email"}
+                  {resendLoading ? "Đang gửi..." : "Gửi lại email xác minh"}
                 </button>
               </div>
             ) : (
@@ -215,12 +215,12 @@ export default function LoginDialog({
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               ) : (
-                <span className="font-semibold text-lg">Continue</span>
+                <span className="font-semibold text-lg">Tiếp tục</span>
               )}
             </Button>
 
             <p className="text-center text-sm text-gray-500 mt-2">
-              Don’t have an account?{" "}
+              Chưa có tài khoản?{" "}
               <Button
                 type="button"
                 onClick={() => {
@@ -229,7 +229,7 @@ export default function LoginDialog({
                 }}
                 className="underline text-blue-500 pl-0 drop-shadow-none"
               >
-                Sign up
+                Đăng ký
               </Button>
             </p>
           </form>

@@ -56,20 +56,11 @@ export default function SalePage() {
 
   const calculateDiscount = (type: string, value: string) => {
     if (type === "percentage") {
-      return `${value}%`;
+      return `${Number(value) / 100}%`;
     }
     return `${Number(value).toLocaleString("en-US")}đ`;
   };
 
-  // Check if discount/voucher is expiring soon (within 7 days)
-  const isExpiringSoon = (endDate: string) => {
-    const end = new Date(endDate);
-    const now = new Date();
-    const daysLeft = Math.ceil(
-      (end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    return daysLeft > 0 && daysLeft <= 7;
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -91,7 +82,7 @@ export default function SalePage() {
             <div className="flex justify-center lg:justify-end">
               <Image
                 src="/sale-banner-glasses.avif"
-                alt="Glasses"
+                alt="Kính"
                 width={400}
                 height={400}
                 className="object-contain"
@@ -117,7 +108,7 @@ export default function SalePage() {
                 }`}
               >
                 <Percent className="w-5 h-5" />
-                Discounts
+                Giảm giá
               </button>
             )}
             {vouchers.length > 0 && (
@@ -130,7 +121,7 @@ export default function SalePage() {
                 }`}
               >
                 <Tag className="w-5 h-5" />
-                Vouchers
+                Mã giảm giá
               </button>
             )}
           </div>
@@ -141,7 +132,7 @@ export default function SalePage() {
           <div className="text-center py-16 text-gray-500 bg-white rounded-lg">
             <Tag className="w-16 h-16 mx-auto mb-4 opacity-30" />
             <p className="text-lg">
-              There are currently no promotions or vouchers available.
+              Hiện tại không có chương trình khuyến mãi hoặc mã giảm giá nào có sẵn.
             </p>
           </div>
         )}
@@ -150,7 +141,7 @@ export default function SalePage() {
         {activeTab === "discounts" && (
           <section className="mb-16">
             <p className="text-gray-600 mb-8">
-              Promotional program - The best deals for you
+              Chương trình khuyến mãi - Tiết kiệm lớn trên các sản phẩm chọn lọc
             </p>
 
             {loading ? (
@@ -238,7 +229,7 @@ export default function SalePage() {
             ) : (
               <div className="text-center py-16 text-gray-500 bg-white rounded-lg">
                 <Tag className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                <p className="text-lg">There are currently no promotions.</p>
+                <p className="text-lg">Hiện tại không có chương trình khuyến mãi nào.</p>
               </div>
             )}
           </section>
@@ -305,15 +296,15 @@ export default function SalePage() {
                         </div>
                         <span className="bg-green-100 text-green-700 text-sx font-bold px-3 py-1 rounded-full whitespace-nowrap ml-4">
                           {voucher.type === "free_shipping" 
-                            ? "Free Shipping" 
-                            : `${calculateDiscount(voucher.type, voucher.value)} OFF`}
+                            ? "Miễn phí vận chuyển " 
+                            : `Giảm giá ${calculateDiscount(voucher.type, voucher.value)}`}
                         </span>
                       </div>
 
                       <div className="space-y-2 text-base text-gray-600">
                         <div className="flex items-center justify-between">
                           <span>
-                            Min order:{" "}
+                            Đơn hàng tối thiểu:{" "}
                             <span className="font-semibold">
                               {Number(voucher.minOrderAmount).toLocaleString(
                                 "en-US"
@@ -337,7 +328,7 @@ export default function SalePage() {
                         <div className="flex items-center justify-between">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
-                            Valid:
+                            Có hiệu lực:
                             <span className="font-semibold">
                               {formatDate(voucher.validFrom)} -{" "}
                               {formatDate(voucher.validTo)}
@@ -345,7 +336,7 @@ export default function SalePage() {
                           </span>
                           {isFullyUsed && (
                             <span className="inline-block bg-red-100 text-red-600 text-base font-semibold px-3 py-1 rounded-full">
-                              Usage limit reached
+                              Hạn mục sử dụng đã đạt
                             </span>
                           )}
                         </div>
@@ -365,7 +356,9 @@ export default function SalePage() {
                               }`}
                             >
                               {/* {voucher.usedCount}/{voucher.maxUsage} */}
-                              {Math.round((voucher.usedCount / voucher.maxUsage) * 100)}%
+                              {voucher.maxUsage === 0 
+                                ? "100" 
+                                : Math.round((voucher.usedCount / voucher.maxUsage) * 100)}%
                             </span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
@@ -393,7 +386,7 @@ export default function SalePage() {
             ) : (
               <div className="text-center py-12 text-gray-500">
                 <Tag className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>No vouchers available at the moment</p>
+                <p>Hiện tại không có mã giảm giá</p>
               </div>
             )}
           </section>

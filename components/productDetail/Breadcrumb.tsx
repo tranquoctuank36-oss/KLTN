@@ -26,7 +26,7 @@ export default function Breadcrumb({ product, selectedVariant }: Props) {
           href={Routes.home()}
           className="text-xs font-medium hover:underline"
         >
-          Home
+          Trang Chủ
         </Link>
         <span>›</span>
         <Link

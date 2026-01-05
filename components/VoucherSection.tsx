@@ -74,7 +74,7 @@ export default function VoucherSection({
 
     // Validate location before calling API
     if (!toWardId || !toDistrictId || toWardId === "" || toDistrictId === "") {
-      setError("Please complete shipping address first");
+      setError("Vui lòng hoàn tất địa chỉ giao hàng trước");
       return;
     }
 
@@ -149,7 +149,7 @@ export default function VoucherSection({
       setAvailableVouchers(eligible);
       setShowVoucherList(true);
     } catch (err) {
-      console.error("Failed to load vouchers:", err);
+      console.error("Không Thể Tải Danh Sách Mã Voucher:", err);
       toast.error("Không thể tải danh sách voucher");
     } finally {
       setLoadingVouchers(false);
@@ -162,7 +162,7 @@ export default function VoucherSection({
     
     // Validate location before calling API
     if (!toWardId || !toDistrictId || toWardId === "" || toDistrictId === "") {
-      setError("Please complete shipping address first");
+      setError("Vui lòng hoàn tất địa chỉ giao hàng trước");
       return;
     }
     
@@ -210,7 +210,7 @@ export default function VoucherSection({
   return (
     <div className="bg-white rounded-lg shadow p-6 mt-6 pb-10">
       <div className="flex items-center justify-between mb-5">
-        <h2 className={`text-2xl font-bold ${disabled ? 'text-gray-300' : ''}`}>4. Voucher/Coupon</h2>
+        <h2 className={`text-2xl font-bold ${disabled ? 'text-gray-300' : ''}`}>4. Mã giảm giá</h2>
         <button
           onClick={handleViewAll}
           disabled={disabled || loadingVouchers || !toWardId || !toDistrictId}
@@ -223,14 +223,14 @@ export default function VoucherSection({
           ) : (
             <ChevronDown className="h-4 w-4" />
           )}
-          View all
+          Xem tất cả
         </button>
       </div>
 
       <div className="flex items-center gap-3">
         <input
           type="text"
-          placeholder="Enter voucher code (if any)"
+          placeholder="Nhập mã giảm giá (nếu có)"
           value={voucherInput}
           onChange={(e) => {
             setVoucherInput(e.target.value);
@@ -250,7 +250,7 @@ export default function VoucherSection({
             disabled={disabled}
             className="text-white px-6 h-[52px] bg-red-500 hover:bg-red-600 min-w-[100px]"
           >
-            <span className="text-lg">Cancel</span>
+            <span className="text-lg">Hủy</span>
           </Button>
         ) : (
           <Button
@@ -265,7 +265,7 @@ export default function VoucherSection({
             {isValidating ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              <span className="text-lg">Apply</span>
+              <span className="text-lg">Áp dụng</span>
             )}
           </Button>
         )}
@@ -284,11 +284,11 @@ export default function VoucherSection({
           <div className="absolute z-50 mt-2 right-0 w-[500px] bg-white border border-gray-300 rounded-lg shadow-lg p-4 max-h-[350px] overflow-y-auto">
             <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
               <Tag className="h-5 w-5" />
-              Available Vouchers for You
+              Các mã giảm giá có sẵn cho bạn
             </h3>
             {availableVouchers.length === 0 ? (
               <p className="text-gray-500 text-center py-4">
-                No vouchers available for your current order amount
+                Không có mã giảm giá nào có sẵn cho số tiền đơn hàng hiện tại
               </p>
             ) : (
               <div className="space-y-3">
@@ -310,12 +310,12 @@ export default function VoucherSection({
                           </span>
                           <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded">
                             {voucher.type === "free_shipping"
-                              ? "Free Shipping"
+                              ? "Miễn phí vận chuyển"
                               : voucher.type === "percentage"
-                              ? `${Number(voucher.value) / 100}% OFF`
-                              : `${Number(voucher.value).toLocaleString(
+                              ? `Giảm giá ${Number(voucher.value) / 100}%`
+                              : `Giảm giá ${Number(voucher.value).toLocaleString(
                                   "en-US"
-                                )}đ OFF`}
+                                )}đ`}
                           </span>
                         </div>
                         <p className="text-gray-700 text-sm mb-2">

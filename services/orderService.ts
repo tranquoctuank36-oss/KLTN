@@ -118,3 +118,19 @@ export const previewOrder = async (payload: PreviewOrderPayload): Promise<Previe
     throw err;
   }
 };
+
+export type CreateReturnRequestPayload = {
+  reason: string;
+  customerNote?: string;
+  imageIds?: string[];
+};
+
+export const createReturnRequest = async (orderId: string, payload: CreateReturnRequestPayload) => {
+  try {
+    const res = await api.post(`/orders/${orderId}/return`, payload);
+    return res.data?.data ?? res.data;
+  } catch (err: any) {
+    console.error("Error creating return request:", err?.response?.data);
+    throw err;
+  }
+};

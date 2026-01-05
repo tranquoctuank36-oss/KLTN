@@ -1,75 +1,29 @@
-import { type FilterGroup } from "@/types/filter";
-
-export const FILTER_GROUPS: FilterGroup[] = [
-  {
-    key: "type",
-    label: "Glasses Type",
+export const FILTER_OPTIONS = {
+  color: {
+    label: "Màu Sắc",
     options: [
-      { id: "eyeglasses", label: "Eyeglasses", count: 507 },
-      { id: "sunglasses", label: "Sunglasses", count: 420 },
+      { id: "black", label: "Đen", count: 45, hexCode: "#000000" },
+      { id: "brown", label: "Nâu", count: 38, hexCode: "#8B4513" },
+      { id: "gold", label: "Vàng", count: 32, hexCode: "#FFD700" },
+      { id: "silver", label: "Bạc", count: 28, hexCode: "#C0C0C0" },
     ],
   },
-  {
-    key: "gender",
-    label: "Gender",
+  price: {
+    label: "Giá",
     options: [
-      { id: "women", label: "Women", count: 493 },
-      { id: "men", label: "Men", count: 519 },
+      { id: "under50", label: "Dưới 50$", count: 120 },
+      { id: "50to100", label: "50$ - 100$", count: 85 },
+      { id: "100to200", label: "100$ - 200$", count: 65 },
+      { id: "above200", label: "Trên 200$", count: 40 },
     ],
   },
-  {
-    key: "shape",
-    label: "Shape",
+  shape: {
+    label: "Hình Dáng",
     options: [
-      { id: "round", label: "Round" },
-      { id: "square", label: "Square" },
-      { id: "cat-eye", label: "Cat-eye" },
-      { id: "aviator", label: "Aviator" },
+      { id: "round", label: "Tròn", count: 55 },
+      { id: "square", label: "Vuông", count: 48 },
+      { id: "oval", label: "Hình Bầu Dục", count: 42 },
+      { id: "cat-eye", label: "Mắt Mèo", count: 38 },
     ],
   },
-  {
-    key: "size",
-    label: "Size",
-    options: [
-      { id: "n", label: "Narrow", count: 57 },
-      { id: "a", label: "Average", count: 590 },
-      { id: "w", label: "Wide", count: 274 },
-      { id: "e", label: "Extra Wide", count: 81 },
-    ],
-  },
-  {
-    key: "features",
-    label: "Features",
-    options: [
-      { id: "blue-light", label: "Blue light" },
-      { id: "progressive", label: "Progressive" },
-      { id: "photochromic", label: "Photochromic" },
-    ],
-  },
-  {
-    key: "brands",
-    label: "Brands",
-    options: [
-      { id: "rayban", label: "Ray-Ban" },
-      { id: "oakley", label: "Oakley" },
-      { id: "gucci", label: "Gucci" },
-    ],
-  },
-  {
-    key: "color",
-    label: "Color",
-    options: [
-      { id: "black", label: "Black" },
-      { id: "tortoise", label: "Tortoise" },
-      { id: "gold", label: "Gold" },
-    ],
-  },
-  {
-    key: "price",
-    label: "Price",
-    options: [
-      { id: "clipon", label: "Clip-on" },
-      { id: "lightweight", label: "Lightweight" },
-    ],
-  },
-];
+};

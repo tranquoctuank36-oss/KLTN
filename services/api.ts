@@ -36,7 +36,7 @@ const hardLogout = () => {
   // đồng bộ các tab
   localStorage.setItem("__app:logout", String(Date.now()));
 
-  toast.error("Your session expired, please log in again!", {
+  toast.error("Phiên làm việc của bạn đã hết hạn, vui lòng đăng nhập lại!", {
     duration: 2000,
     position: "top-center",
   });

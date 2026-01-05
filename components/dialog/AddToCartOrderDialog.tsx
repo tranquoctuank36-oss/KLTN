@@ -29,7 +29,7 @@ export default function AddToCartOrderDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="md:max-w-2xl w-full p-0">
         <DialogHeader className="px-6 pt-2">
-          <DialogTitle className="text-lg font-bold">ADD TO CART</DialogTitle>
+          <DialogTitle className="text-lg font-bold">THÊM VÀO GIỎ HÀNG</DialogTitle>
           <DialogClose />
         </DialogHeader>
         <div className="px-6 pb-6">
@@ -39,7 +39,7 @@ export default function AddToCartOrderDialog({
                 <div className="w-25 h-25 rounded bg-gray-100 flex items-center justify-center">
                   <Image
                     src={item.imageUrl || "/placeholder.png"}
-                    alt={item.productName || "Product Image"}
+                    alt={item.productName || "Ảnh Sản Phẩm"}
                     width={200}
                     height={200}
                     className="object-contain mix-blend-multiply"
@@ -50,11 +50,11 @@ export default function AddToCartOrderDialog({
                     {item.productName}
                   </div>
                   <p className="text-sm text-gray-600 mt-1">
-                    <span className="font-semibold">Color:</span> {item.colors}
+                    <span className="font-semibold">Màu:</span> {item.colors}
                   </p>
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-sm text-gray-600">
-                      <span className="font-semibold">Quantity:</span>{" "}
+                      <span className="font-semibold">Số lượng:</span>{" "}
                       {item.quantity}
                     </span>
                     <div className="flex items-center gap-2">
@@ -89,7 +89,7 @@ export default function AddToCartOrderDialog({
                   <Loader2 className="!h-6 !w-6 animate-spin" />
                 </span>
               ) : (
-                "BUY AGAIN"
+                "MUA LẠI"
               )}
             </Button>
           </div>

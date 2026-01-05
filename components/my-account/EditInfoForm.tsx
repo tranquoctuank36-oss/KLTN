@@ -1,6 +1,7 @@
 "use client";
 import FloatingInput from "@/components/FloatingInput";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -48,7 +49,7 @@ export default function EditInfoForm({
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold">Edit Information</h3>
+        <h3 className="text-xl font-bold">Chỉnh sửa thông tin</h3>
         <Button
           type="button"
           onClick={cancelEdit}
@@ -59,8 +60,7 @@ export default function EditInfoForm({
       </div>
       <hr className="my-4 border-t-2" />
       <p className="text-gray-600 mb-6 font-normal">
-        Feel free to edit any of the details below so your account is up to
-        date.
+        Có thể chỉnh sửa bất kỳ thông tin nào dưới đây để cập nhật tài khoản của bạn.
       </p>
       <form
         onSubmit={async(e) => {
@@ -88,13 +88,13 @@ export default function EditInfoForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FloatingInput
               id="firstName"
-              label="First Name"
+              label="Tên"
               value={draftFirstName}
               onChange={setDraftFirstName}
             />
             <FloatingInput
               id="lastName"
-              label="Last Name"
+              label="Họ"
               value={draftLastName}
               onChange={setDraftLastName}
             />
@@ -102,7 +102,7 @@ export default function EditInfoForm({
           <FloatingInput
             id="email"
             type="email"
-            label="Email Address"
+            label="Email"
             value={draftEmail}
             onChange={setDraftEmail}
             disabled
@@ -112,7 +112,7 @@ export default function EditInfoForm({
               <div className="edit-user-form">
                 <FloatingInput
                 id="dateOfBirth"
-                label="Date of Birth"
+                label="Ngày sinh"
                 type="date"
                 required
                 placeholder=""
@@ -130,15 +130,15 @@ export default function EditInfoForm({
             <div>
               <FloatingInput
                 id="gender"
-                label="Gender"
+                label="Giới tính"
                 as="select"
                 required
                 value={draftGender}
                 onChange={setDraftGender}
                 options={[
-                  { value: "male", label: "male" },
-                  { value: "female", label: "female" },
-                  { value: "other", label: "other" },
+                  { value: "male", label: "Nam" },
+                  { value: "female", label: "Nữ" },
+                  { value: "other", label: "Khác" },
                 ]}
                 forceValidate={forceValidate}
               />
@@ -154,14 +154,14 @@ export default function EditInfoForm({
             onClick={cancelEdit}
             className="h-12 w-25 bg-white border border-2 border-gray-400 hover:border-gray-800 text-lg font-bold text-gray-400 hover:text-gray-800 rounded-full"
           >
-            Cancel
+            Hủy
           </Button>
           <Button
             type="submit"
             disabled={saving}
             className="h-12 w-25 bg-blue-600 text-white text-lg font-bold hover:bg-blue-800 rounded-full"
           >
-            {saving ? "Saving..." : "Save"}
+            {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : "Lưu"}
           </Button>
         </div>
       </form>

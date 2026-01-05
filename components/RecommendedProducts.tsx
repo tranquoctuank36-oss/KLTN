@@ -1,14 +1,13 @@
 // "use client";
 
-// import { useState, useEffect, useMemo } from "react";
-// import Image from "next/image";
-// import Link from "next/link";
-// import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
-// import { Button } from "@/components/ui/button";
-// import { Routes } from "@/lib/routes";
-// import { Product, ProductImageSet } from "@/types/product";
-// import { products } from "@/mocks/products-mock";
-// import ColorSelector from "./colorSelector";
+import { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Routes } from "@/lib/routes";
+import { PRODUCTS_MOCK as products } from "@/mocks/products-mock";
+import ColorSelector from "./colorSelector";
 
 // export default function RecommendedProducts() {
 //   const recommended = useMemo(() => products.slice(0, 12), []);
@@ -126,7 +125,7 @@
 //         <div className="absolute inset-x-3 top-3 z-20 flex items-center justify-between">
 //           {product.sale ? (
 //             <span className="bg-red-50 text-red-500 border border-red-200 text-sm px-2 py-1 rounded font-medium">
-//               Sale
+//               Khuyến mãi
 //             </span>
 //           ) : (
 //             <span />

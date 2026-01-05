@@ -22,7 +22,7 @@ export default function ChatFab({ bottom = 24, right = 24 }: ChatFabProps) {
         <Button
           variant="default"
           size="icon"
-          aria-label="Open chat"
+          aria-label="Mở Chat"
           className="
             fixed z-50 grid place-items-center rounded-full
             h-12 w-12 md:h-14 md:w-14
@@ -37,12 +37,12 @@ export default function ChatFab({ bottom = 24, right = 24 }: ChatFabProps) {
 
       <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden rounded-2xl" aria-describedby={undefined}>
         <DialogHeader className="px-5 pt-5 pb-3 border-b">
-          <DialogTitle>Chat with us</DialogTitle>
+          <DialogTitle>Chat với chúng tôi</DialogTitle>
         </DialogHeader>
 
         <div className="h-[380px] overflow-y-auto p-5 space-y-3 bg-white">
           <div className="text-sm text-slate-600">
-            👋 Hi! How can we help you today?
+            👋 Xin Chào! Chúng Tôi Có Thể Giúp Bạn Như Thế Nào Hôm Nay?
           </div>
           {/* …nhúng component chat thật ở đây */}
         </div>
@@ -56,9 +56,9 @@ export default function ChatFab({ bottom = 24, right = 24 }: ChatFabProps) {
         >
           <input
             className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300"
-            placeholder="Type a message…"
+            placeholder="Nhập tin nhắn…"
           />
-          <Button type="submit">Send</Button>
+          <Button type="submit">Gửi</Button>
         </form>
       </DialogContent>
     </Dialog>

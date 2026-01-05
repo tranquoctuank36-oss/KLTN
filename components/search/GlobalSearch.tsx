@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { searchProductsElastic } from "@/services/productService";
+import { autocompleteSearch } from "@/services/productService";
 import type { Product } from "@/types/product";
 import { Routes } from "@/lib/routes";
 
@@ -39,15 +39,12 @@ export default function GlobalSearch({ className = "", limit = 6 }: Props) {
     setLoading(true);
     const t = setTimeout(async () => {
       try {
-        const { data } = await searchProductsElastic({
-          search: q.trim(),
-          page: 1,
-          limit,
-        } as any); // search + page + limit là đủ
+        const data = await autocompleteSearch(q.trim(), limit);
         setResults(Array.isArray(data) ? data : []);
         setOpen(true);
         setActive(0);
       } catch (e) {
+        console.error('❌ Autocomplete Error:', e);
         setResults([]);
       } finally {
         setLoading(false);
@@ -92,8 +89,8 @@ export default function GlobalSearch({ className = "", limit = 6 }: Props) {
       setActive((i) => Math.max(i - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (results[active]) goToProduct(results[active]);
-      else goToListing(q);
+      // Luôn đi đến trang listing với search query khi nhấn Enter
+      goToListing(q);
     } else if (e.key === "Escape") {
       setOpen(false);
     }
@@ -107,7 +104,7 @@ export default function GlobalSearch({ className = "", limit = 6 }: Props) {
         onChange={(e) => setQ(e.target.value)}
         onFocus={() => q.trim() && setOpen(true)}
         onKeyDown={onKey}
-        placeholder="I’m Searching For..."
+        placeholder="Tôi đang tìm kiếm ..."
         className="w-full sm:w-64 rounded-full border px-4 py-2 pl-10 text-sm bg-gray-200 outline-none"
       />
       <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-600" />
@@ -116,7 +113,7 @@ export default function GlobalSearch({ className = "", limit = 6 }: Props) {
         <div className="absolute z-50 mt-2 w-full sm:w-96 rounded-lg border bg-white shadow-lg">
           {/* Header */}
           <div className="px-3 py-2 text-xs text-gray-500 border-b">
-            {loading ? "Searching..." : results.length ? "Top results" : "No results"}
+            {loading ? "Đang tìm kiếm..." : results.length ? "Kết quả hàng đầu" : "Không có kết quả"}
           </div>
 
           {/* Results */}
@@ -143,10 +140,10 @@ export default function GlobalSearch({ className = "", limit = 6 }: Props) {
           {/* Footer – đi tới trang listing với từ khoá */}
           {!!q.trim() && (
             <button
-              className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 border-t"
+              className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 border-t cursor-pointer"
               onClick={() => goToListing(q)}
             >
-              View all results for “{q}”
+              Xem tất cả kết quả cho "{q}"
             </button>
           )}
         </div>

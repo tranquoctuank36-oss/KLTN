@@ -15,7 +15,7 @@ export default function VerifyEmailClient() {
 
   const handleVerify = async () => {
     if (!token) {
-      setError("Token is invalid!");
+      setError("Token không hợp lệ!");
       return;
     }
     setLoading(true);
@@ -31,7 +31,7 @@ export default function VerifyEmailClient() {
       
       setTimeout(() => router.push(Routes.home()), 2000);
     } catch (err) {
-      setError("Verification failed! Token may be invalid or expired.");
+      setError("Xác minh thất bại! Token có thể không hợp lệ hoặc đã hết hạn.");
       throw err;
     } finally {
       setLoading(false);
@@ -41,20 +41,20 @@ export default function VerifyEmailClient() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[500px] bg-gray-50">
       <div className="bg-white shadow rounded-lg p-8 max-w-md w-full text-center">
-        <h1 className="text-2xl font-bold mb-4">Email Verification</h1>
+        <h1 className="text-2xl font-bold mb-4">Xác minh Email</h1>
         {verified ? (
           <p className="text-green-600 font-semibold">
-            ✅ Your email has been verified successfully!
+            ✅ Email của bạn đã được xác minh thành công!
           </p>
         ) : (
           <>
-            <p className="mb-4">Click the button below to verify your email.</p>
+            <p className="mb-4">Nhấp nút dưới đây để xác minh email của bạn.</p>
             <Button
               onClick={handleVerify}
               disabled={loading}
               className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white"
             >
-              {loading ? "Verifying..." : "Verify Email"}
+              {loading ? "Đang xác minh..." : "Xác minh email"}
             </Button>
             {error && <p className="text-red-500 mt-3">{error}</p>}
           </>

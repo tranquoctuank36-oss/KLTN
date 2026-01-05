@@ -40,8 +40,8 @@ export default function ShippingMethods({
   const [loading, setLoading] = useState(false);
   const [method, setMethod] = useState<ShippingMethod>({
     id: "standard",
-    label: "Standard delivery",
-    description: "Delivery during business hours",
+    label: "Giao hàng tiêu chuẩn",
+    description: "Vận chuyển trong giờ hành chính ",
     fee: 0,
   });
   const [error, setError] = useState<string | null>(null);
@@ -68,8 +68,8 @@ export default function ShippingMethods({
       // Set default method with 0 fee when validation fails
       const defaultMethod: ShippingMethod = {
         id: "standard",
-        label: "Standard delivery",
-        description: "Delivery during business hours",
+        label: "Giao hàng tiêu chuẩn",
+        description: "Giao hàng trong giờ hành chính",
         fee: 0,
       };
       setMethod(defaultMethod);
@@ -108,7 +108,7 @@ export default function ShippingMethods({
         setMethod(updatedMethod);
         onChange?.(updatedMethod);
       } catch (err) {
-        const errorMsg = "Delivery is not available in this area!";
+        const errorMsg = "Vận chuyển không có sẵn tại khu vực này!";
         setError(errorMsg);
         setFee(null);
         onErrorChange?.(errorMsg);
@@ -133,7 +133,7 @@ export default function ShippingMethods({
 
   return (
     <div className="bg-white rounded-lg shadow p-6 mt-6 pt-8 pb-10">
-      <h2 className="text-2xl font-bold mb-5">2. Shipping Method</h2>
+      <h2 className="text-2xl font-bold mb-5">2. Phương thức vận chuyển</h2>
 
       <label
         key="standard"

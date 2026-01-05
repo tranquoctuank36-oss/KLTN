@@ -31,7 +31,7 @@ const AddressSection = forwardRef<HTMLDivElement, Props>(
           setAddresses(list);
           if (onCountChange) onCountChange(list.length);
         } catch (err) {
-          console.error("Failed to load addresses:", err);
+          console.error("Không Thể Tải Địa Chỉ:", err);
           setAddresses([]);
         } finally {
           setLoading(false);
@@ -63,7 +63,7 @@ const AddressSection = forwardRef<HTMLDivElement, Props>(
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
           <MapPin className="h-6 w-6 text-gray-600" />
-          <h3 className="text-2xl font-semibold">Address Book</h3>
+          <h3 className="text-2xl font-semibold">Địa chỉ</h3>
           <span className="text-gray-500 text-xl">
             ({currentPage}/{totalPages || 1})
           </span>
@@ -72,7 +72,7 @@ const AddressSection = forwardRef<HTMLDivElement, Props>(
         {/* Nếu không có địa chỉ */}
         {addresses.length === 0 ? (
           <div className="text-center text-gray-600 py-10">
-            You have no saved addresses yet.
+            Bạn chưa lưu địa chỉ nào.
           </div>
         ) : (
           <div>
@@ -92,7 +92,7 @@ const AddressSection = forwardRef<HTMLDivElement, Props>(
                       <p className="font-semibold">{addr.recipientName}</p>
                       {addr.isDefault && (
                         <span className="bg-gray-400 text-white text-sm font-medium px-1.5 py-0.5 rounded">
-                          Default
+                          Mặc định
                         </span>
                       )}
                     </div>
@@ -108,7 +108,7 @@ const AddressSection = forwardRef<HTMLDivElement, Props>(
                       onClick={() => onEditAddress(addr)}
                       className="text-blue-600 underline text-sm hover:no-underline drop-shadow-none"
                     >
-                      Edit
+                      Chỉnh sửa
                     </Button>
                   </div>
                 </div>
@@ -137,7 +137,7 @@ const AddressSection = forwardRef<HTMLDivElement, Props>(
                 onAddAddress();
               }}
             >
-              Add New Address
+              Thêm địa chỉ mới
             </Button>
           </div>
 

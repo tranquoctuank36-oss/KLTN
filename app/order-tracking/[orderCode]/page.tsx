@@ -45,7 +45,7 @@ function OrderItem({ item }: { item: any }) {
         <div className="w-25 h-25 rounded bg-gray-100 flex items-center justify-center">
           <Image
             src={item.imageUrl || "/placeholder.png"}
-            alt={item.productName || "Product Image"}
+            alt={item.productName || "Ảnh Sản Phẩm"}
             width={200}
             height={200}
             className="object-contain mix-blend-multiply"
@@ -191,7 +191,7 @@ export default function OrderTrackingDetailPage() {
 
   if (!order)
     return (
-      <div className="text-center py-10 text-gray-600">Order not found.</div>
+      <div className="text-center py-10 text-gray-600">Không tìm thấy đơn hàng.</div>
     );
 
   return (
@@ -201,11 +201,11 @@ export default function OrderTrackingDetailPage() {
           <button
             onClick={() => router.back()}
             className="p-2 rounded-full hover:bg-gray-200 transition cursor-pointer"
-            aria-label="Go back"
+            aria-label="Trở lại"
           >
             <ArrowLeft className="w-6 h-6 text-gray-700" />
           </button>
-          <h1 className="text-3xl font-bold text-gray-800">Order Details</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Chi tiết đơn hàng</h1>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6">
@@ -291,7 +291,7 @@ export default function OrderTrackingDetailPage() {
 
             {/* Payment Info */}
             <div className="border border-gray-200 rounded-lg p-4">
-              <h3 className="font-semibold text-base mb-1">Payment Method</h3>
+              <h3 className="font-semibold text-base mb-1">Phương thức thanh toán</h3>
               <div className="text-sm text-gray-700">
                 <p className="mb-3 text-black">
                   {order.paymentMethod === "COD"
@@ -330,9 +330,9 @@ export default function OrderTrackingDetailPage() {
 
             {/* Shipping Method */}
             <div className="border border-gray-200 rounded-lg p-4">
-              <h3 className="font-semibold text-base mb-3">Shipping Method</h3>
+              <h3 className="font-semibold text-base mb-3">Phương thức vận chuyển</h3>
               <p className="text-sm text-black">
-                {order.shippingInfo || "No shipping information available"}
+                {order.shippingInfo || "Không có thông tin vận chuyển"}
               </p>
             </div>
           </div>
@@ -345,7 +345,7 @@ export default function OrderTrackingDetailPage() {
           {/* Cart Items */}
           <div className="border border-gray-200 rounded-lg p-6">
             <h3 className="font-bold text-lg mb-4">
-              Shopping cart information
+              Thông tin giỏ hàng
             </h3>
 
             <div className="space-y-4">
@@ -357,25 +357,25 @@ export default function OrderTrackingDetailPage() {
             {/* Price Summary */}
             <div className="mt-6 space-y-2 border-t border-gray-800 pt-4">
               <div className="flex justify-between">
-                <span className="text-gray-800 text-base">Subtotal</span>
+                <span className="text-gray-800 text-base">Tổng</span>
                 <span className="font-semibold text-lg text-gray-800">
                   {Number(order.subtotal)?.toLocaleString("en-US") || "--"}đ
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-800 text-base">Discount</span>
+                <span className="text-gray-800 text-base">Giảm giá</span>
                 <span className="font-semibold text-lg text-gray-800">
                   {Number(order.discountFee)?.toLocaleString("en-US") || "--"}đ
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-800 text-base">Shipping Fee</span>
+                <span className="text-gray-800 text-base">Phí vận chuyển</span>
                 <span className="font-semibold text-lg text-gray-800">
                   {Number(order.shippingFee)?.toLocaleString("en-US") || "--"}đ
                 </span>
               </div>
               <div className="flex justify-between text-xl font-bold pt-2 border-t border-gray-400">
-                <span>Grand Total</span>
+                <span>Thành tiền</span>
                 <span className="text-blue-600">
                   {Number(order.grandTotal)?.toLocaleString("en-US") || "--"}đ
                 </span>

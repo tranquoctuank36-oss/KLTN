@@ -46,9 +46,9 @@ export default function OrderTrackingPage() {
       console.log("❌ API Error:", err);
 
       if (err?.response?.status === 404) {
-        errorMsg = "Incorrect Order ID";
+        errorMsg = "Mã đơn hàng không tồn tại.";
       } else {
-        errorMsg = "An error occurred. Please try again.";
+        errorMsg = "Có lỗi xảy ra. Vui lòng thử lại.";
       }
     } finally {
       const elapsedTime = Date.now() - startTime;
@@ -70,9 +70,9 @@ export default function OrderTrackingPage() {
       <div className="max-w-2xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4">TRACKING ORDER</h1>
+          <h1 className="text-4xl font-bold mb-4">THEO DÕI ĐƠN HÀNG</h1>
           <p className="text-black">
-            Track your order easily with just the order ID
+            Theo dõi đơn hàng của bạn dễ dàng chỉ với mã đơn hàng
           </p>
         </div>
 
@@ -81,7 +81,7 @@ export default function OrderTrackingPage() {
           <form onSubmit={handleSearch} className="space-y-4">
             <FloatingInput
               id="orderCode"
-              label="Order Code"
+              label="Mã ĐƠn Hàng"
               type="text"
               placeholder=""
               required
@@ -119,14 +119,14 @@ export default function OrderTrackingPage() {
 
           <div className="mt-6 text-center">
             <p className="text-gray-600 text-sm">
-              Or{" "}
+              Hoặc{" "}
               <button
                 onClick={() => setLoginOpen(true)}
                 className="text-blue-600 font-semibold underline hover:no-underline cursor-pointer"
               >
-                Login
+                Đăng Nhập
               </button>{" "}
-              for faster tracking.
+              để theo dõi nhanh hơn.
             </p>
           </div>
         </div>

@@ -21,9 +21,9 @@ export default function ConfirmPopover({
   children,
   title,
   onConfirm,
-  description = "Are you sure you want to remove",
-  confirmText = "Remove",
-  cancelText = "Cancel",
+  description = "Bạn chắc chắn muốn xóa",
+  confirmText = "Xóa",
+  cancelText = "Hủy",
 }: ConfirmPopoverProps) {
   return (
     <Popover>

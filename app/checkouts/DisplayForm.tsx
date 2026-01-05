@@ -112,12 +112,12 @@ export default function DisplayForm({
   return (
     <div>
       <div className="flex justify-between items-center mb-2">
-        <h1 className="text-2xl font-bold">1. Shipping Information</h1>
+        <h1 className="text-2xl font-bold">1. Thông tin vận chuyển</h1>
         <Button
           onClick={onEdit}
           className="bg-gray-100 text-gray-800 hover:bg-gray-300 rounded-full w-32 h-10"
         >
-          Edit
+          Chỉnh sửa
         </Button>
       </div>
 
@@ -127,7 +127,7 @@ export default function DisplayForm({
             <p className="font-semibold">{recipientName}</p>
             {isDefault && (
               <span className="bg-gray-400 text-white text-sm font-medium px-1.5 py-0.5 rounded">
-                Default
+                Mặc định
               </span>
             )}
           </div>
@@ -135,7 +135,7 @@ export default function DisplayForm({
             onClick={onNewAddress}
             className="bg-gray-100 text-gray-800 hover:bg-gray-300 rounded-full w-32 h-10"
           >
-            New Address
+            Địa chỉ mới
           </Button>
         </div>
         <p className="text-gray-400">{phone}</p>
@@ -160,7 +160,7 @@ export default function DisplayForm({
             }}
             className="text-gray-800 underline hover:no-underline text-base font-bold cursor-pointer"
           >
-            Choose different address from my address book &gt;
+            Chọn địa chỉ khác từ địa chỉ của tôi &gt;
           </button>
 
           {showAddressList && (
@@ -196,7 +196,7 @@ export default function DisplayForm({
                           </span>
                           {addr.isDefault && (
                             <span className="text-xs bg-gray-400 text-white px-1.5 py-0.5 rounded">
-                              Default
+                              Mặc định
                             </span>
                           )}
                         </div>
@@ -219,7 +219,7 @@ export default function DisplayForm({
       <textarea
         value={note}
         onChange={(e) => onNoteChange(e.target.value)}
-        placeholder="Note"
+        placeholder="Ghi chú"
         rows={3}
         className="w-full border border-gray-300 rounded-lg px-3 py-2 resize-none mt-5 text-base focus:border-gray-500 focus:outline-none"
       />

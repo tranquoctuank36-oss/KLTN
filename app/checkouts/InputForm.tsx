@@ -108,7 +108,7 @@ export default function InputForm({
   return (
     <form onSubmit={handleSubmit}>
       <div className="flex justify-between items-center mb-5">
-        <h1 className="text-2xl font-bold">1. Shipping Information</h1>
+        <h1 className="text-2xl font-bold">1. Thông tin vận chuyển</h1>
         {/* <span className="text-sm text-gray-500">* Required Fields</span> */}
       </div>
 
@@ -116,7 +116,7 @@ export default function InputForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FloatingInput
             id="firstName"
-            label="First Name"
+            label="Họ"
             required
             value={firstName}
             onChange={onFirstNameChange}
@@ -124,7 +124,7 @@ export default function InputForm({
           />
           <FloatingInput
             id="lastName"
-            label="Last Name"
+            label="Tên"
             required
             value={lastName}
             onChange={onLastNameChange}
@@ -137,7 +137,7 @@ export default function InputForm({
             <FloatingInput
               id="email"
               type="email"
-              label="Email Address"
+              label="Địa chỉ Email"
               required
               value={email}
               onChange={onEmailChange}
@@ -154,7 +154,7 @@ export default function InputForm({
           <div>
             <FloatingInput
               id="phone"
-              label="Phone Number"
+              label="Số điện thoại"
               required
               value={phone}
               onChange={onPhoneChange}
@@ -167,19 +167,19 @@ export default function InputForm({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FloatingInput
+          {/* <FloatingInput
             id="country"
-            label="Country"
+            label="Quốc gia"
             as="select"
             value={country}
             onChange={onCountryChange}
-            options={[{ value: "VN", label: "Vietnam" }]}
+            options={[{ value: "VN", label: "Việt Nam" }]}
             required
-          />
+          /> */}
 
           <FloatingInput
             id="province"
-            label="Province"
+            label="Tỉnh/Thành Phố"
             as="select"
             value={selectedProvince}
             onChange={onProvinceChange}
@@ -195,7 +195,7 @@ export default function InputForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
           <FloatingInput
             id="district"
-            label="District"
+            label="Quận/Thị Xã"
             as="select"
             value={selectedDistrict}
             onChange={onDistrictChange}
@@ -205,14 +205,14 @@ export default function InputForm({
                     value: String(d.id),
                     label: d.name,
                   }))
-                : [{ value: "", label: "No data" }]
+                : [{ value: "", label: "Không có dữ liệu" }]
             }
             required
             forceValidate={forceValidate}
           />
           <FloatingInput
             id="ward"
-            label="Ward"
+            label="Phường/Xã"
             as="select"
             value={selectedWard}
             onChange={onWardChange}
@@ -222,7 +222,7 @@ export default function InputForm({
                     value: String(w.id),
                     label: w.name,
                   }))
-                : [{ value: "", label: "No data" }]
+                : [{ value: "", label: "Không có dữ liệu" }]
             }
             required
             forceValidate={forceValidate}
@@ -231,7 +231,7 @@ export default function InputForm({
 
         <FloatingInput
           id="address"
-          label="Building, House Number, Street Name"
+          label="Tòa Nhà, Số Nhà, Tên Đườıng"
           required
           value={address}
           onChange={onAddressChange}
@@ -246,7 +246,7 @@ export default function InputForm({
               disabled={isLoading}
               className="h-12 w-50 bg-white border border-2 border-gray-400 hover:border-gray-800 text-lg font-bold text-gray-400 hover:text-gray-800 rounded-lg"
             >
-              Cancel
+              Hủy Bỏ
             </Button>
             <Button
               type="submit"
@@ -258,7 +258,7 @@ export default function InputForm({
                   <Loader2 className="!w-6 !h-6 animate-spin" />
                 </div>
               ) : (
-                "Save"
+                "Lưu"
               )}
             </Button>
           </div>
@@ -274,7 +274,7 @@ export default function InputForm({
                   <Loader2 className="!w-6 !h-6 animate-spin" />
                 </div>
               ) : (
-                "Continue"
+                "Tiếp Tục"
               )}
             </Button>
           </div>

@@ -21,7 +21,7 @@ export type OrderStatus =
 export type CreateOrderPayload = {
   items: OrderItemPayload[];
   voucherCode?: string;
-  note?: string;
+  customerNote?: string;
   recipientName: string;
   recipientEmail: string;
   recipientPhone: string;
@@ -40,7 +40,7 @@ export type Order = {
   shippingFee: number;   
   grandTotal: number;   
   couponCode?: string;  
-  note?: string;              
+  customerNote?: string;              
 
   recipientName: string;
   recipientEmail: string;

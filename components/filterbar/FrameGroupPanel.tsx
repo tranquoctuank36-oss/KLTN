@@ -97,19 +97,19 @@ export default function FrameGroupPanel({
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Column
-            title="Frame Shape"
+            title="Hình dáng Gọng"
             items={data.shapes}
             isActive={(id) => isActive("shapes", id)}
             onItem={(id) => toggle("shapes", id)}
           />
           <Column
-            title="Frame Type"
+            title="Loại Gọng"
             items={data.types}
             isActive={(id) => isActive("types", id)}
             onItem={(id) => toggle("types", id)}
           />
           <Column
-            title="Frame Material"
+            title="Chất liệu Gọng"
             items={data.materials}
             isActive={(id) => isActive("materials", id)}
             onItem={(id) => toggle("materials", id)}
@@ -125,7 +125,7 @@ export default function FrameGroupPanel({
              hover:text-slate-700 hover:bg-gray-100 border-0
              focus:outline-none focus:ring-0 focus-visible:ring-0 shadow-none cursor-pointer rounded"
         >
-          Close
+          Đóng
         </button>
       </div>
     </div>
@@ -167,8 +167,8 @@ function Column({
                   onItem(it.id);
                 }}  
                 className={[
-                  "flex w-32 h-14 border bg-white hover:bg-white text-sm",
-                  "transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300",
+                  "flex flex-col items-center justify-center w-45 h-20 border bg-white hover:bg-white text-sm",
+                  "transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 whitespace-normal",
                   active
                     ? "border-blue-500 ring-1 ring-blue-200 bg-blue-50"
                     : "border-slate-200 hover:border-gray-800",
@@ -179,21 +179,21 @@ function Column({
                 <span
                   className={[
                     active ? "text-blue-600" : "text-gray-800",
-                    "text-sm",
+                    "text-sm text-center line-clamp-2",
                   ].join(" ")}
                 >
                   {it.name}
-                  {typeof it.count === "number" && (
-                    <span
-                      className={[
-                        "ml-1 text-sm opacity-70",
-                        active ? "text-blue-600" : "text-gray-800",
-                      ].join(" ")}
-                    >
-                      ({it.count})
-                    </span>
-                  )}
                 </span>
+                {typeof it.count === "number" && (
+                  <span
+                    className={[
+                      "text-xs opacity-70",
+                      active ? "text-blue-600" : "text-gray-800",
+                    ].join(" ")}
+                  >
+                    ({it.count})
+                  </span>
+                )}
               </Button>
             </motion.div>
           );

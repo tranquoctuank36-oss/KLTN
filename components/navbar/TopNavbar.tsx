@@ -7,8 +7,8 @@ import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 
 const messages = [
-  "100% Money-Back Guarantee + 365 Day Warranty + Free Shipping and Returns",
-  "Invite friends & you’ll both get $25 off  Get it Now",
+  "Bảo đảm hoàn tiền 100% + Bảo hành 365 Ngày + Giao hàng Và Trả hàng miễn phí",
+  "Áp dụng nhiều ưu đãi hấp dẫn  Nhận ngay",
 ];
 
 export default function Topbar() {
@@ -73,9 +73,9 @@ export default function Topbar() {
                   <span>{messages[index]}</span>
                 ) : (
                   <span>
-                    Invite friends & you’ll both get $25 off{" "}
-                    <a href="#" className="underline hover:text-white">
-                      Get it Now
+                    Áp dụng nhiều ưu đãi hấp dẫn{" "}
+                    <a href="/sale" className="underline hover:text-white">
+                      Nhận Ngay
                     </a>
                   </span>
                 )}
@@ -108,7 +108,7 @@ export default function Topbar() {
           <span>1900 12 34 56 cskh.glassesshop@gmail.com</span>
           <span className="text-gray-500">|</span>
           <Link href="#" className="hover:underline">
-            Help & Support
+            Hỗ trợ & Giải đáp
           </Link>
         </div>
       </div>

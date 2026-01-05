@@ -20,7 +20,7 @@ export default function PaymentMethods({
   
   return (
     <div className="bg-white rounded-lg shadow p-6 mt-6 pt-8 pb-10">
-      <h2 className="text-2xl font-bold mb-4">3. Payment</h2>
+      <h2 className="text-2xl font-bold mb-4">3. Thanh toán</h2>
 
       <div className="space-y-4">
         {/* COD */}
@@ -41,13 +41,13 @@ export default function PaymentMethods({
               className="w-5 h-5 text-blue-600 focus:ring-blue-500"
             />
             <span className="font-semibold text-lg text-gray-800">
-              Cash on Delivery (COD)
+              Thanh toán khi nhận hàng (COD)
             </span>
           </label>
 
           {value === "COD" && (
             <div className="mt-4 pl-7 text-gray-600 text-base font-medium">
-              Pay the courier upon receipt of goods.
+              Thanh toán cho nhân viên giao hàng khi nhận hàng.
             </div>
           )}
         </div>
@@ -68,7 +68,7 @@ export default function PaymentMethods({
             />
             <Image
               src="/vnpay_logo.png"
-              alt="VNPAY"
+              alt="Logo VNPAY"
               width={60}
               height={30}
               className="object-contain"
@@ -77,8 +77,7 @@ export default function PaymentMethods({
 
           {value === "VNPAY" && (
             <p className="mt-4 pl-7 text-gray-600 text-base font-semibold">
-              You will be redirected to the VNPAY payment gateway to complete
-              your payment.
+              Bạn sẽ được chuyển hướng đến cổng thanh toán VNPAY để hoàn tất thanh toán của bạn.
             </p>
           )}
         </div>
@@ -87,7 +86,7 @@ export default function PaymentMethods({
       {/* Error nếu submit mà chưa chọn */}
       {!value && (
         <p className="text-xs text-red-500 mt-2">
-          Please select a payment method
+          Vui lòng chọn phương thức thanh toán.
         </p>
       )}
     </div>

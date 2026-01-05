@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,23 @@ import { useCart } from "@/context/CartContext";
 import { ProductVariants } from "@/types/productVariants";
 import CancelOrderDialog from "@/components/dialog/CancelOrderDialog";
 import OrderStatusTimeline from "@/components/OrderStatusTimeline";
+import CreateReviewForm from "@/components/CreateReviewForm";
+import { getMyReviews } from "@/services/reviewService";
+import CreateReturnForm from "@/components/CreateReturnForm";
 
-function OrderItem({ item }: { item: any }) {
+type OrderItemProps = {
+  item: any;
+  orderStatus: string;
+  onReviewClick?: (item: any) => void;
+  isReviewed?: boolean;
+};
+
+function OrderItem({
+  item,
+  orderStatus,
+  onReviewClick,
+  isReviewed,
+}: OrderItemProps) {
   const [slug, setSlug] = useState<string | null>(null);
 
   useEffect(() => {
@@ -37,11 +52,11 @@ function OrderItem({ item }: { item: any }) {
       ? Routes.product(slug)
       : "#";
 
+  const canAction = orderStatus === "delivered" || orderStatus === "completed";
+
   return (
-    <div
-      key={item.id}
-      className="flex justify-between items-center pb-4 border-b last:border-b-0"
-    >
+    <div className="flex justify-between items-start pb-4 border-b last:border-b-0">
+      {/* LEFT */}
       <div className="flex gap-4">
         <div className="w-25 h-25 rounded bg-gray-100 flex items-center justify-center">
           <Image
@@ -52,6 +67,7 @@ function OrderItem({ item }: { item: any }) {
             className="object-contain mix-blend-multiply"
           />
         </div>
+
         <div className="mt-2">
           <Link
             href={productUrl}
@@ -59,23 +75,53 @@ function OrderItem({ item }: { item: any }) {
           >
             {item.productName}
           </Link>
+
           <p className="text-sm text-gray-600 mt-1">
             <span className="font-semibold">Color:</span> {item.colors}
           </p>
+
           <p className="text-sm text-gray-600 mt-2">
             <span className="font-semibold">Quantity:</span> {item.quantity}
           </p>
+
+          {/* ACTIONS: đặt dưới item */}
+          {canAction && (
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+              {/* Review */}
+              {isReviewed ? (
+                <button
+                  type="button"
+                  onClick={() => onReviewClick?.(item)}
+                  className="text-blue-600 underline hover:text-blue-800 transition font-semibold text-sm cursor-pointer"
+                >
+                  Cập nhật đánh giá
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onReviewClick?.(item)}
+                  className="text-blue-600 underline hover:text-blue-800 transition font-semibold text-sm cursor-pointer"
+                >
+                  Đánh giá
+                </button>
+              )}
+
+
+            </div>
+          )}
         </div>
       </div>
-      <div className="flex items-center gap-3">
+
+      {/* RIGHT: chỉ để giá */}
+      <div className="flex items-center gap-3 mt-2">
         {item.originalPrice &&
           Number(item.originalPrice) > Number(item.finalPrice) && (
             <p className="text-gray-400 line-through text-sm">
-              {Number(item.originalPrice)?.toLocaleString("en-US")}đ
+              {Number(item.originalPrice).toLocaleString("en-US")}đ
             </p>
           )}
         <p className="font-semibold text-base text-black">
-          {Number(item.finalPrice)?.toLocaleString("en-US")}đ
+          {Number(item.finalPrice).toLocaleString("en-US")}đ
         </p>
       </div>
     </div>
@@ -88,6 +134,10 @@ export default function OrderDetailPage() {
   const orderId = params.orderId as string;
 
   const [order, setOrder] = useState<any>(null);
+  const [reviewedItemIds, setReviewedItemIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [reviewsData, setReviewsData] = useState<Map<string, any>>(new Map());
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -96,6 +146,23 @@ export default function OrderDetailPage() {
   const [buyAgainLoading, setBuyAgainLoading] = useState(false);
 
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [showReviewFormForItemId, setShowReviewFormForItemId] = useState<
+    string | null
+  >(null);
+  const [showReturnForm, setShowReturnForm] = useState(false);
+  const returnFormRef = useRef<HTMLDivElement>(null);
+  const pageTopRef = useRef<HTMLDivElement>(null);
+
+  const scrollToFormWithOffset = (offset = 120) => {
+    const element = returnFormRef.current;
+    if (element) {
+      const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({
+        top: elementPosition - offset,
+        behavior: "smooth",
+      });
+    }
+  };
 
   const handleBuyAgain = async () => {
     if (!selectedOrder) return;
@@ -173,6 +240,39 @@ export default function OrderDetailPage() {
         }
 
         setOrder(orderData);
+
+        // Load reviewed items from my reviews API
+        try {
+          const reviewsResponse = await getMyReviews();
+          if (reviewsResponse?.data) {
+            // Get all order item IDs that have been reviewed
+            const reviewedIds = new Set<string>(
+              reviewsResponse.data
+                .filter((review: any) => review.orderItem?.id)
+                .map((review: any) => review.orderItem.id as string)
+            );
+
+            // Match with current order items
+            const currentOrderReviewedIds = new Set<string>(
+              orderData.items
+                ?.filter((item: any) => reviewedIds.has(item.id))
+                .map((item: any) => item.id as string) || []
+            );
+
+            setReviewedItemIds(currentOrderReviewedIds);
+
+            // Store review data by item ID
+            const reviewsMap = new Map<string, any>();
+            reviewsResponse.data.forEach((review: any) => {
+              if (review.orderItem?.id) {
+                reviewsMap.set(review.orderItem.id, review);
+              }
+            });
+            setReviewsData(reviewsMap);
+          }
+        } catch (err) {
+          console.error("Error loading reviews:", err);
+        }
       } catch (err) {
         console.error("Error loading order:", err);
       } finally {
@@ -192,28 +292,28 @@ export default function OrderDetailPage() {
 
   if (!order)
     return (
-      <div className="text-center py-10 text-gray-600">Order not found.</div>
+      <div className="text-center py-10 text-gray-600">Không tìm thấy đơn hàng.</div>
     );
 
   return (
     <div className="max-w-full px-20 lg:px-30 py-10 bg-gray-100 min-h-screen">
-      <div className="mx-auto">
+      <div className="mx-auto" ref={pageTopRef}>
         <div className="flex items-center gap-3 mb-5">
           <button
             onClick={() => router.back()}
             className="p-2 rounded-full hover:bg-gray-200 transition cursor-pointer"
-            aria-label="Go back"
+            aria-label="Trở lại"
           >
             <ArrowLeft className="w-6 h-6 text-gray-700" />
           </button>
-          <h1 className="text-3xl font-bold text-gray-800">Order Details</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Chi tiết đơn hàng</h1>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6">
           {/* Order Header */}
           <div className="mb-6">
             <h2 className="text-xl font-bold mb-2">
-              Order code:{" "}
+              Mã Đơn Hàng:{" "}
               <span className="font-bold text-blue-600 uppercase ml-3">
                 {order.orderCode}
               </span>
@@ -232,7 +332,7 @@ export default function OrderDetailPage() {
                     : "bg-blue-600 text-white hover:bg-blue-800 text-white hover:text-white"
                 }`}
               >
-                BUY AGAIN
+                Mua lại
               </Button>
               {selectedOrder && (
                 <AddToCartOrderDialog
@@ -255,19 +355,27 @@ export default function OrderDetailPage() {
                 />
               )}
 
-              {order.status === "pending" || order.status === "awaiting_payment" ? (
+              {order.status === "pending" ||
+              order.status === "awaiting_payment" ? (
                 <Button
                   onClick={() => setCancelDialogOpen(true)}
-                  className="bg-red-600 rounded-full text-white px-3 py-5 hover:bg-red-800 transition font-semibold w-[140px]"
+                  className="bg-red-600 rounded-full text-white px-3 py-5 hover:bg-red-700 transition font-semibold w-[140px]"
                 >
                   CANCEL ORDER
                 </Button>
-              ) : order.status === "cancelled" ? (
+              ) : null}
+
+              {order.status === "delivered" || order.status === "completed" ? (
                 <Button
-                  disabled
-                  className="bg-red-300 text-red-800 rounded-full px-3 py-5 font-semibold w-[140px]"
+                  onClick={() => {
+                    setShowReturnForm(true);
+                    setTimeout(() => {
+                      scrollToFormWithOffset();
+                    }, 0);
+                  }}
+                  className="bg-orange-600 rounded-full text-white px-3 py-5 hover:bg-orange-700 transition font-semibold w-[140px]"
                 >
-                  CANCELLED
+                  Trả hàng
                 </Button>
               ) : null}
             </div>
@@ -277,7 +385,7 @@ export default function OrderDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="border border-gray-200 rounded-lg p-4">
               <h3 className="font-semibold text-base mb-3">
-                Shipping Information
+                Thông tin vận chuyển
               </h3>
               <div className="text-sm black space-y-1">
                 <p className="font-medium">{order.recipientName || "--"}</p>
@@ -293,11 +401,11 @@ export default function OrderDetailPage() {
             </div>
 
             <div className="border border-gray-200 rounded-lg p-4">
-              <h3 className="font-semibold text-base mb-1">Payment Method</h3>
+              <h3 className="font-semibold text-base mb-1">Phương thức thanh toán</h3>
               <div className="text-sm text-gray-700">
                 <p className="mb-3 text-black">
                   {order.paymentMethod === "COD"
-                    ? "Cash on Delivery (COD)"
+                    ? "Thanh toán khi nhận hàng (COD)"
                     : order.paymentMethod === "VNPAY"
                     ? "VNPay"
                     : order.paymentMethod}
@@ -317,10 +425,10 @@ export default function OrderDetailPage() {
                 >
                   {order.paymentMethod === "COD"
                     ? order.status === "completed"
-                      ? "✓ Payment successful"
-                      : `Please pay ${Number(order.grandTotal)?.toLocaleString(
+                      ? "✓ Thanh Toán Thành Công"
+                      : `Vui Lòng Thanh Toán ${Number(order.grandTotal)?.toLocaleString(
                           "en-US"
-                        )}đ upon delivery.`
+                        )}đ khi nhận hàng.`
                     : order.paymentMethod === "VNPAY"
                     ? order.status === "awaiting_payment"
                       ? "✕ Payment failed"
@@ -331,73 +439,169 @@ export default function OrderDetailPage() {
             </div>
 
             <div className="border border-gray-200 rounded-lg p-4">
-              <h3 className="font-semibold text-base mb-3">Shipping Method</h3>
+              <h3 className="font-semibold text-base mb-3">Phương thức vận chuyển</h3>
               <p className="text-sm text-black">
-                {order.shippingInfo || "No shipping information available"}
+                {order.shippingInfo || "Không có thông tin vận chuyển"}
               </p>
             </div>
           </div>
 
           {/* Order Status Timeline */}
           <div className="mb-8">
-            <OrderStatusTimeline
-              status="SHIPPING" // "PLACED" | "CONFIRMED" | "SHIPPING" | "DELIVERED" | "CANCELLED"
-              timestamps={{
-                PLACED: "một phút trước",
-                CONFIRMED: "30 phút trước",
-                SHIPPING: "đang vận chuyển",
-              }}
-            />
+            <OrderStatusTimeline status={order.status || "pending"} />
           </div>
 
           {/* Cart Items */}
           <div className="border border-gray-200 rounded-lg p-6">
             <h3 className="font-bold text-lg mb-4">
-              Shopping cart information
+              Thông tin vận chuyển 
             </h3>
 
             <div className="space-y-4">
               {order.items?.map((item: any, index: number) => (
-                <OrderItem key={item.id || index} item={item} />
+                <div key={item.id || index}>
+                  <OrderItem
+                    item={item}
+                    isReviewed={reviewedItemIds.has(item.id)}
+                    orderStatus={order.status}
+                    onReviewClick={(selectedItem: any) => {
+                      setShowReviewFormForItemId((prev) =>
+                        prev === selectedItem.id ? null : selectedItem.id
+                      );
+                    }}
+                  />
+
+                  {/* Review Form for this specific item */}
+                  {showReviewFormForItemId === item.id && (
+                    <div className="mt-4 mb-4">
+                      <CreateReviewForm
+                        orderItem={{
+                          id: item.id,
+                          productName: item.productName,
+                          thumbnailUrl: item.thumbnailUrl,
+                          colors: item.colors,
+                        }}
+                        existingReview={reviewsData.get(item.id)}
+                        onSuccess={async () => {
+                          // Reload reviews data
+                          try {
+                            const reviewsResponse = await getMyReviews();
+                            if (reviewsResponse?.data) {
+                              const reviewedIds = new Set<string>(
+                                reviewsResponse.data
+                                  .filter((review: any) => review.orderItem?.id)
+                                  .map(
+                                    (review: any) =>
+                                      review.orderItem.id as string
+                                  )
+                              );
+
+                              const currentOrderReviewedIds = new Set<string>(
+                                order.items
+                                  ?.filter((item: any) =>
+                                    reviewedIds.has(item.id)
+                                  )
+                                  .map((item: any) => item.id as string) || []
+                              );
+
+                              setReviewedItemIds(currentOrderReviewedIds);
+
+                              const reviewsMap = new Map<string, any>();
+                              reviewsResponse.data.forEach((review: any) => {
+                                if (review.orderItem?.id) {
+                                  reviewsMap.set(review.orderItem.id, review);
+                                }
+                              });
+                              setReviewsData(reviewsMap);
+                            }
+                          } catch (err) {
+                            console.error("Error reloading reviews:", err);
+                          }
+
+                          setShowReviewFormForItemId(null);
+                        }}
+                        onCancel={() => {
+                          setShowReviewFormForItemId(null);
+                        }}
+                      />
+                    </div>
+                  )}
+
+
+                </div>
               ))}
             </div>
 
             <div className="mt-6 space-y-2 border-t border-gray-800 pt-4">
               <div className="flex justify-between">
-                <span className="text-gray-800 text-base">Subtotal:</span>
+                <span className="text-gray-800 text-base">Tổng:</span>
                 <span className="font-semibold text-lg text-gray-800">
                   {Number(order.subtotal || 0).toLocaleString("en-US")}đ
                 </span>
               </div>
-              {(Number(order.voucherOrderDiscount || 0) > 0) && (
+              {Number(order.voucherOrderDiscount || 0) > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-gray-800 text-base">Discount:</span>
+                  <span className="text-gray-800 text-base">Giảm giá:</span>
                   <span className="font-semibold text-lg text-red-600">
-                    - {Number(order.voucherOrderDiscount || 0).toLocaleString("en-US")}đ
+                    -{" "}
+                    {Number(order.voucherOrderDiscount || 0).toLocaleString(
+                      "en-US"
+                    )}
+                    đ
                   </span>
                 </div>
               )}
               <div className="flex justify-between">
-                <span className="text-gray-800 text-base">Shipping Fee:</span>
-                <span className={`font-semibold ${
-                  Number(order.voucherShippingDiscount || 0) > 0 
-                    ? "text-green-600 text-sx" 
-                    : "text-gray-800 text-lg"
-                }`}>
-                  {Number(order.voucherShippingDiscount || 0) > 0 
-                    ? "Free Shipping" 
-                    : `${Number(order.shippingFee || 0).toLocaleString("en-US")}đ`
-                  }
+                <span className="text-gray-800 text-base">Phí vận chuyển:</span>
+                <span
+                  className={`font-semibold ${
+                    Number(order.voucherShippingDiscount || 0) > 0
+                      ? "text-green-600 text-sx"
+                      : "text-gray-800 text-lg"
+                  }`}
+                >
+                  {Number(order.voucherShippingDiscount || 0) > 0
+                    ? "Miễn phí vận chuyển"
+                    : `${Number(order.shippingFee || 0).toLocaleString(
+                        "en-US"
+                      )}đ`}
                 </span>
               </div>
               <div className="flex justify-between text-xl font-bold pt-2 border-t border-gray-400">
-                <span>Grand Total:</span>
+                <span>Thành tiền:</span>
                 <span className="text-blue-600">
                   {Number(order.grandTotal || 0).toLocaleString("en-US")}đ
                 </span>
               </div>
             </div>
           </div>
+
+          {/* Return Form for Order */}
+          {showReturnForm && (
+            <div ref={returnFormRef} className="mt-6 border border-orange-200 rounded-lg p-6 bg-orange-50">
+              <CreateReturnForm
+                orderItem={{
+                  id: order.id,
+                  productName: "Chi tiết đơn hàng",
+                  thumbnailUrl: order.items?.[0]?.thumbnailUrl || "/placeholder.png",
+                  colors: "",
+                }}
+                orderId={order.id}
+                onSuccess={() => {
+                  setShowReturnForm(false);
+                  setTimeout(() => {
+                    pageTopRef.current?.scrollIntoView({ behavior: "smooth" });
+                  }, 0);
+                }}
+                onCancel={() => {
+                  setShowReturnForm(false);
+                  setTimeout(() => {
+                    pageTopRef.current?.scrollIntoView({ behavior: "smooth" });
+                  }, 0);
+                }}
+              />
+            </div>
+          )}
         </div>
 
         <CancelOrderDialog

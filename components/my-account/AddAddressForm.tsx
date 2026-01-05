@@ -82,13 +82,13 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
     setSaving(true);
     const newErrors: { [key: string]: string } = {};
 
-    if (!phoneRegex.test(phone)) newErrors.phone = "Invalid phone number";
+    if (!phoneRegex.test(phone)) newErrors.phone = "Số điện thoại không hợp lệ";
 
     if (
       country === "VN" &&
       (!selectedProvince || !selectedDistrict || !selectedWard)
     ) {
-      newErrors.location = "Please select Province, District and Ward";
+      newErrors.location = "Vui lòng chọn Tỉnh, Huyện và Xã";
     }
 
     setErrors(newErrors);
@@ -115,7 +115,7 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
       };
 
       await createAddress(payload);
-      toast.success("Changes Saved!", {
+      toast.success("Đã lưu thay đổi!", {
         duration: 2000,
         position: "top-center",
       });
@@ -131,7 +131,7 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
           position: "top-center",
         });
       } else {
-        toast.error("Failed to save address", {
+        toast.error("Lỗi lưu địa chỉ", {
           duration: 3000,
           position: "top-center",
         });
@@ -147,7 +147,7 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
       className="bg-white rounded-lg p-6 shadow-lg w-full max-w-auto"
     >
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold">Add new address</h3>
+        <h3 className="text-xl font-bold">Thêm địa chỉ mới</h3>
         <Button
           type="button"
           onClick={onCancel}
@@ -162,7 +162,7 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3">
         <FloatingInput
           id="name"
-          label="Name"
+          label="Tên"
           value={name}
           onChange={setName}
           required
@@ -180,7 +180,7 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
       <div className="grid grid-cols-1 gap-4 pt-3">
         <FloatingInput
           id="phone"
-          label="Phone Number"
+          label="Số điện thoại"
           value={phone}
           onChange={setPhone}
           required
@@ -192,17 +192,17 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
         <FloatingInput
           id="country"
-          label="Country"
+          label="Quốc gia"
           as="select"
           value={country}
           onChange={setCountry}
-          options={[{ value: "VN", label: "Vietnam" }]}
+          options={[{ value: "VN", label: "Việt Nam" }]}
           required
         />
 
         <FloatingInput
           id="province"
-          label="Province"
+          label="Tỉnh/Thành phố"
           as="select"
           value={selectedProvince}
           onChange={setSelectedProvince}
@@ -219,37 +219,37 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
           <FloatingInput
             id="district"
-            label="District"
+            label="Huyện"
             as="select"
             value={selectedDistrict}
             onChange={setSelectedDistrict}
             options={
               !selectedProvince
-                ? [{ value: "", label: "No data" }]
+                ? [{ value: "", label: "Không có dữ liệu" }]
                 : districts.length > 0
                 ? districts.map((d) => ({
                     value: String(d.id),
                     label: d.name,
                   }))
-                : [{ value: "", label: "No data" }]
+                : [{ value: "", label: "Không có dữ liệu" }]
             }
             required
           />
           <FloatingInput
             id="ward"
-            label="Ward"
+            label="Xã/Phường"
             as="select"
             value={selectedWard}
             onChange={setSelectedWard}
             options={
               !selectedDistrict
-                ? [{ value: "", label: "No data" }]
+                ? [{ value: "", label: "Không có dữ liệu" }]
                 : wards.length > 0
                 ? wards.map((w) => ({
                     value: String(w.id),
                     label: w.name,
                   }))
-                : [{ value: "", label: "No data" }]
+                : [{ value: "", label: "Không có dữ liệu" }]
             }
             required
           />
@@ -263,7 +263,7 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
       <div className="mt-4">
         <FloatingInput
           id="address"
-          label="Building, House Number, Street Name"
+          label="Tòa nhà, Số nhà, Tên đường"
           value={address}
           onChange={setAddress}
           required
@@ -278,7 +278,7 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
           onChange={(e) => setIsDefaultDelivery(e.target.checked)}
           className="w-4 h-4 accent-blue-600 cursor-pointer disabled:cursor-not-allowed"
         />
-        <span className="cursor-pointer">Default</span>
+        <span className="cursor-pointer">Mặc định</span>
       </label>
 
       <div className="flex items-center justify-end gap-4 mt-8">

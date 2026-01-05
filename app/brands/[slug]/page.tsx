@@ -29,7 +29,7 @@ export default function BrandDetailPage() {
         setBrand(data);
         setError(null);
       })
-      .catch(() => setError("Brand not found"))
+      .catch(() => setError("Không tìm thấy thương hiệu"))
       .finally(() => setLoading(false));
   }, [slug]);
 
@@ -43,8 +43,8 @@ export default function BrandDetailPage() {
   if (!brand || error)
     return (
       <div className="text-center py-20">
-        <h1 className="text-2xl font-bold text-red-500">
-          {error || "Brand not found"}
+        <h1 className="text-1xl text-gray-500">
+          {error || "Không tìm thấy thương hiệu"}
         </h1>
       </div>
     );
@@ -81,7 +81,7 @@ export default function BrandDetailPage() {
         </div>
       </section>
 
-      <ProductGrid brandSlug={slug} title={`${brand.name} Eyewear`} />
+      <ProductGrid brandSlug={slug} title={`${brand.name} - Kính`} />
     </main>
   );
 }

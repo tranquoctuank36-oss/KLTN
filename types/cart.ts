@@ -6,4 +6,5 @@ export type CartItem = {
   product: Product;
   selectedVariant: ProductVariants;
   quantity: number;
+  status?: "unknown" | "out_of_stock" | "low_stock" | "in_stock" | "unavailable"; // Status của item trong cart từ API
 };

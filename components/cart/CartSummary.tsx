@@ -15,6 +15,7 @@ type Props = {
   totalQuantity: number;
   isEmpty?: boolean;
   selectedItems?: Set<string>;
+  hasOutOfStockItems?: boolean;
 };
 
 export default function CartSummary({
@@ -22,6 +23,7 @@ export default function CartSummary({
   totalQuantity,
   isEmpty = false,
   selectedItems = new Set(),
+  hasOutOfStockItems = false,
 }: Props) {
   const { discountCode, discountAmount, cart } = useCart();
   const { isLoggedIn } = useAuth();
@@ -62,18 +64,18 @@ export default function CartSummary({
   return (
     <div className="rounded-lg p-6 h-fit bg-white">
       <div className="flex justify-between items-center text-lg font-bold mb-2">
-        <span>Grand total:</span>
+        <span>Tổng cộng:</span>
         <span>{grandTotal.toLocaleString("en-US")}đ</span>
       </div>
 
       <ul className="space-y-2 text-sm text-blue-500 font-semibold mb-6">
         <li className="flex items-center gap-2">
-          <Check className="w-4 h-4 text-blue-500 mt-1" /> Free shipping and
-          returns
+          <Check className="w-4 h-4 text-blue-500 mt-1" /> Miễn phí vận chuyển
+          và trả hàng
         </li>
         <li className="flex items-center gap-2">
-          <Check className="w-4 h-4 text-blue-500 mt-1" /> 100% money-back
-          guarantee
+          <Check className="w-4 h-4 text-blue-500 mt-1" /> Bảo hành hoàn tiền
+          100%
         </li>
       </ul>
 
@@ -85,14 +87,14 @@ export default function CartSummary({
 
       <Button
         onClick={handleCheckout}
-        disabled={isEmpty}
+        disabled={isEmpty || hasOutOfStockItems}
         className={`w-full h-12 text-lg font-bold text-white ${
-          isEmpty
+          isEmpty || hasOutOfStockItems
             ? "bg-blue-400 cursor-not-allowed"
             : "bg-blue-600 hover:bg-blue-700"
         }`}
       >
-        Proceed to Checkout
+        Thanh toán
       </Button>
 
       {cart.length > 0 && (
@@ -101,7 +103,7 @@ export default function CartSummary({
             variant="outline"
             className="bg-white text-blue-600 border-2 border-blue-600 hover:border-blue-700 hover:bg-white hover:text-blue-700 w-full h-12 text-lg font-bold mb-5 mt-3"
           >
-            Continue shopping
+            Tiếp tục mua sắm
           </Button>
         </Link>
       )}

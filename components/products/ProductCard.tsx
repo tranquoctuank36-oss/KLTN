@@ -48,7 +48,7 @@ export default function ProductCard({ product: productProp, slug }: Props) {
     getProductBySlug(slug)
       .then((res) => {
         if (!res) {
-          setError("Product not found");
+          setError("Sản phẩm không tìm thấy");
           return;
         }
         setProduct(res);
@@ -85,7 +85,7 @@ export default function ProductCard({ product: productProp, slug }: Props) {
     return (
       <div className="bg-white rounded-xl p-6 shadow text-center">
         <div className="text-red-500 mb-2">
-          {error || "Product not available"}
+          {error || "Sản phẩm không có sẵn"}
         </div>
       </div>
     );
@@ -149,7 +149,7 @@ export default function ProductCard({ product: productProp, slug }: Props) {
             </div>
           ) : (
             <div className="w-full h-[200px] flex items-center justify-center bg-gray-100 text-gray-400">
-              No image
+              Không có ảnh
             </div>
           )}
         </Link>
@@ -158,7 +158,7 @@ export default function ProductCard({ product: productProp, slug }: Props) {
         <div className="absolute inset-x-3 top-3 z-20 flex items-center justify-end">
           {isOnSale ? (
             <span className="bg-red-50 text-red-500 border border-red-200 text-sm px-3 py-1 rounded font-medium">
-              Sale
+              Khuyến mãi
             </span>
           ) : (
             <span />
@@ -171,7 +171,7 @@ export default function ProductCard({ product: productProp, slug }: Props) {
             <span className="text-gray-400 text-sm">
               {product.variants?.filter((v) => v?.colors && v.colors.length > 0)
                 .length || 0}{" "}
-              colors
+              màu
             </span>
           ) : activeVariant?.colors?.length && product.variants ? (
             <ColorSelector
@@ -203,7 +203,7 @@ export default function ProductCard({ product: productProp, slug }: Props) {
             <span className={isOnSale ? "text-red-600 font-semibold" : ""}>
               {finalPrice.toLocaleString("en-US")}đ
             </span>{" "}
-            <span className="text-gray-400">Including lenses</span>
+            <span className="text-gray-400">Bao gồm tròng kính</span>
           </div>
 
           {/* Action Buttons */}
@@ -221,7 +221,7 @@ export default function ProductCard({ product: productProp, slug }: Props) {
               }}
             >
               <Copy className="w-4 h-4 mr-2" />
-              <div className="text-base">Similar Frames</div>
+              <div className="text-base">Gọng kính tương Tự</div>
             </Button>
           </div>
         </div>

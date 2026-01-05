@@ -39,13 +39,13 @@ export default function BrandsPage() {
       <div className="relative w-full h-90 bg-gray-100">
         <Image
           src="/banner_brands.jpg"
-          alt="Brands banner"
+          alt="Banner Thương Hiệu"
           fill
           className="object-cover"
         />
         <div className="absolute inset-0 flex items-center justify-start">
           <h1 className="text-2xl md:text-3xl font-bold text-black px-6 py-2 rounded-lg">
-            Explore your favorite eyewear brands.
+            Khám phá thế giới thương hiệu kính mắt
           </h1>
         </div>
       </div>
@@ -65,7 +65,7 @@ export default function BrandsPage() {
 
           <input
             type="text"
-            placeholder="Search by brand"
+            placeholder="Tìm kiếm thương hiệu..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1 outline-none text-gray-700 bg-transparent ml-3"
@@ -84,14 +84,14 @@ export default function BrandsPage() {
         {/* Overlay thông báo */}
         {searchTerm && filteredBrands.length === 0 && (
           <div className="absolute left-0 right-0 mt-3 bg-white shadow-[0_0_6px_rgba(0,0,0,0.2)] rounded-lg p-4 text-gray-600 text-base font-medium">
-            No results found for your search.
+            Không tìm thấy kết quả cho tìm kiếm của bạn.
           </div>
         )}
       </div>
 
       {/* Popular brands */}
       {/* <div className="mt-10">
-        <h2 className="text-lg font-semibold mb-4">Our most popular brands:</h2>
+        <h2 className="text-lg font-semibold mb-4">Những Thương Hiệu Phổ Biến Nhất Của Chúng Tôi:</h2>
         <div className="flex flex-wrap gap-4">
           {popularBrands.map((brand) => (
             <Link
@@ -107,7 +107,7 @@ export default function BrandsPage() {
 
       {/* A-Z Brands */}
       <div className="mt-14">
-        <h2 className="text-lg font-bold mb-8">A-Z BRANDS</h2>
+        <h2 className="text-lg font-bold mb-8">Thương Hiệu A-Z</h2>
 
         {/* Alphabet filter */}
         <div className="flex flex-wrap gap-3 mb-15">

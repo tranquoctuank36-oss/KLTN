@@ -8,15 +8,29 @@ import { useCart } from "@/context/CartContext";
 import { Routes } from "@/lib/routes";
 import { useEffect, useState } from "react";
 import { Brand } from "@/types/brand";
+import { Category } from "@/types/categories";
 import { getBrands } from "@/services/brandsService";
+import { getCategoriesTree } from "@/services/categoryService";
+import GlobalSearch from "../search/GlobalSearch";
 
 export default function Mainbar() {
   const { totalQuantity } = useCart();
 
-
+  const [categories, setCategories] = useState<Category[]>([]);
   const [randomBrands, setRandomBrands] = useState<Brand[]>([]);
 
   useEffect(() => {
+    // Lấy danh sách categories
+    getCategoriesTree(2)
+      .then((data) => {
+        console.log("Categories data từ API:", data);
+        setCategories(data);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch categories:", err);
+      });
+
+    // Lấy danh sách brands
     getBrands({
       sortField: "priority",
       sortOrder: "ASC",
@@ -40,7 +54,7 @@ export default function Mainbar() {
         <a href={Routes.home()} className="block">
           <Image
             src="/glasses_logo.png"
-            alt="GlassesShop"
+            alt="Logo Cửa Hàng"
             width={60}
             height={60}
           />
@@ -49,8 +63,87 @@ export default function Mainbar() {
 
       {/* Menu */}
       <div className="flex flex-1 justify-start items-center gap-4 text-gray-600 font-normal text-lg ml-10">
-        <Link href="#">Eyeglasses</Link>
-        <Link href="#">Sunglasses</Link>
+        {/* Hiển thị categories động từ API */}
+        {categories.map((category) => {
+          const hasChildren = category.children && category.children.length > 0;
+          // Đảm bảo URL luôn bắt đầu với /
+          const categoryUrl = category.relativeUrl?.startsWith('/') 
+            ? category.relativeUrl 
+            : `/${category.relativeUrl || ''}`; 
+          
+          if (hasChildren) {
+            return (
+              <div key={category.id} className="relative group flex hover:font-medium">
+                <Link
+                  href={categoryUrl || "/"}
+                  className="px-2 group-hover:text-gray-800 transition relative hover:cursor-pointer"
+                >
+                  {category.name}
+                  <span className="absolute left-0 -bottom-5 w-full h-[2px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform cursor-pointer"></span>
+                </Link>
+
+                {/* Dropdown panel for children */}
+                <div
+                  className="absolute left-0 top-full mt-6 
+                    min-w-[600px] bg-white p-6 shadow-xl rounded-md
+                    opacity-0 group-hover:opacity-100 invisible group-hover:visible 
+                    transition-all duration-300 ease-out 
+                    before:content-[''] before:absolute before:-top-6 before:left-0 before:w-full before:h-6 before:bg-transparent
+                    overflow-visible z-50"
+                >
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-base font-normal">
+                    {category.children?.map((childCategory) => {
+                      // Level 1: Map sang productTypes filter
+                      const childFilterUrl = `/products?productTypes=${encodeURIComponent(childCategory.slug)}`;
+                      
+                      return (
+                        <div key={childCategory.id} className="space-y-2">
+                          <Link
+                            href={childFilterUrl}
+                            className="font-semibold text-gray-800 hover:underline underline-offset-4 block"
+                          >
+                            {childCategory.name}
+                          </Link>
+                          {/* Hiển thị sub-children nếu có */}
+                          {childCategory.children && childCategory.children.length > 0 && (
+                            <div className="pl-4 space-y-1">
+                              {childCategory.children?.map((subChild) => {
+                                // Level 2: Extract gender từ slug (VD: "kinh-mat-nam" -> "nam")
+                                // Lấy phần cuối cùng sau dấu gạch nối cuối
+                                const genderSlug = subChild.slug.split('-').pop() || subChild.slug;
+                                const subChildFilterUrl = `/products?productTypes=${encodeURIComponent(childCategory.slug)}&genders=${encodeURIComponent(genderSlug)}`;
+                                
+                                return (
+                                  <Link
+                                    key={subChild.id}
+                                    href={subChildFilterUrl}
+                                    className="block text-sm text-gray-600 hover:text-gray-800 hover:underline underline-offset-4"
+                                  >
+                                    {subChild.name}
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // Category không có children
+          return (
+            <Link 
+              key={category.id} 
+              href={categoryUrl || "/"}
+            >
+              {category.name}
+            </Link>
+          );
+        })}
 
         {/* Brands dropdown */}
         <div className="relative group flex hover:font-medium">
@@ -58,13 +151,13 @@ export default function Mainbar() {
             href={Routes.brands()}
             className="px-2 group-hover:text-gray-800 transition relative hover:cursor-pointer"
           >
-            Brands
+            Thương Hiệu
             <span className="absolute left-0 -bottom-5 w-full h-[2px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform"></span>
           </Link>
 
           {/* Dropdown panel */}
           <div
-            className="absolute left-1/2 -translate-x-1/2 top-full mt-6 
+            className="absolute left-0 top-full mt-6 
               w-[520px] bg-white p-4 shadow-xl rounded-md
               opacity-0 group-hover:opacity-100 invisible group-hover:visible 
               transition-all duration-300 ease-out 
@@ -85,14 +178,11 @@ export default function Mainbar() {
                 href={Routes.brands()}
                 className="font-medium hover:underline underline-offset-4 text-gray-800"
               >
-                Brands A-Z
+                Tất cả Thương Hiệu
               </Link>
             </div>
           </div>
         </div>
-
-        <Link href="#">Contacts</Link>
-        <Link href="#">Stores</Link>
         
         {/* Sale link with hover effect */}
         <div className="relative group flex hover:font-medium">
@@ -100,7 +190,7 @@ export default function Mainbar() {
             href={Routes.sale()}
             className="px-2 text-red-500 group-hover:text-red-600 transition relative hover:cursor-pointer"
           >
-            Sale
+            Khuyến Mãi
             <span className="absolute left-0 -bottom-5 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform"></span>
           </Link>
         </div>
@@ -109,7 +199,7 @@ export default function Mainbar() {
       {/* Right icons */}
       <div className="flex flex-wrap justify-center items-center gap-6">
         {/* Search */}
-        {/* <GlobalSearch className="flex-1" limit={6} /> */}
+        <GlobalSearch className="flex-1" limit={6} />
 
         {/* Cart */}
         <Link
@@ -126,7 +216,7 @@ export default function Mainbar() {
           </div>
           <div className="absolute top-12 opacity-0 group-hover:opacity-100 transition-opacity">
             <span className="relative bg-black text-white text-xs px-2 py-1 rounded-md whitespace-nowrap">
-              Cart
+              Giỏ hàng
               <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-black"></span>
             </span>
           </div>

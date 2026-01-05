@@ -162,7 +162,7 @@ export default function FloatingInput({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search..."
+                    placeholder="Tìm kiếm..."
                     className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-400"
                     onClick={(e) => e.stopPropagation()}
                   />
@@ -170,7 +170,7 @@ export default function FloatingInput({
                 <div className="max-h-48 overflow-y-auto">
                   {filteredOptions.length === 0 ? (
                     <div className="px-4 py-3 text-sm text-gray-500 text-center">
-                      {searchQuery ? "No results found" : "No options available"}
+                      {searchQuery ? "Không tìm thấy kết quả" : "Không có tuỳ chọn nào"}
                     </div>
                   ) : (
                     filteredOptions.map((opt, idx) => (
@@ -235,7 +235,7 @@ export default function FloatingInput({
       </div>
 
       {showError && (
-        <p className="text-xs text-red-500 mt-1">Please enter your details</p>
+        <p className="text-xs text-red-500 mt-1">Vui lòng nhập chi tiết</p>
       )}
     </div>
   );

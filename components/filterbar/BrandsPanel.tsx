@@ -79,7 +79,7 @@ export default function BrandsPanel({
 
   const displayOptions =
     activeTab === "popular"
-      ? [...popularOptions, { id: "__all_brands__", label: "All Brands", count: 0, isAllBrands: true }]
+      ? [...popularOptions, { id: "__all_brands__", label: "Tất cả thương hiệu", count: 0, isAllBrands: true }]
       : options.map(opt => ({ ...opt, isAllBrands: false }));
 
   return (
@@ -94,7 +94,7 @@ export default function BrandsPanel({
               : "text-gray-500 hover:text-gray-700"
           }`}
         >
-          Popular
+          Phổ biến
         </button>
         <button
           onClick={() => setActiveTab("all")}
@@ -104,7 +104,7 @@ export default function BrandsPanel({
               : "text-gray-500 hover:text-gray-700"
           }`}
         >
-          All Brands
+          Tất cả thương hiệu
         </button>
       </div>
 
@@ -140,6 +140,8 @@ export default function BrandsPanel({
                       "flex border bg-white hover:bg-white",
                       activeTab === "all" && !isAllBrandsButton 
                         ? "w-40 h-14 text-sm" 
+                        : isAllBrandsButton
+                        ? "w-48 h-20 text-base"
                         : "w-40 h-20 text-base",
                       "transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300",
                       isAllBrandsButton
@@ -192,7 +194,7 @@ export default function BrandsPanel({
              hover:text-slate-700 hover:bg-gray-100 border-0
              focus:outline-none focus:ring-0 focus-visible:ring-0 shadow-none cursor-pointer rounded"
         >
-          Close
+          Đóng
         </button>
       </div>
     </div>

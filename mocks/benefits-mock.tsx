@@ -1,25 +1,31 @@
 import { Truck, BadgeDollarSign, Sparkles, ShieldCheck } from "lucide-react";
-import type { Benefit } from "@/types/benefit";
+import { ComponentType } from "react";
+
+export interface Benefit {
+  icon: ComponentType<{ className?: string }>;
+  title: string;
+  desc: string;
+}
 
 export const BENEFITS: Benefit[] = [
   {
-    icon: <Truck className="h-7 w-7 text-sky-600" />,
-    title: "Free shipping and returns",
-    desc: "Enjoy free shipping and returns on all glasses and contact lenses, no minimum (US & Canada).",
+    icon: Truck,
+    title: "Miễn Phí Vận Chuyển Và Trả Hàng",
+    desc: "Tận hưởng vận chuyển miễn phí và trả hàng trên tất cả các loại kính và gọng kính trong nước.",
   },
   {
-    icon: <BadgeDollarSign className="h-7 w-7 text-sky-600" />,
-    title: "100% money-back guarantee",
-    desc: "Return your glasses within the first 14 days for a full refund, no questions asked, including any prescription and lens upgrade.",
+    icon: BadgeDollarSign,
+    title: "Bảo Hành Hoàn Tiền 100%",
+    desc: "Trả lại kính của bạn trong 45 ngày đầu để hoàn tiền nếu có lỗi từ nhà sản xuất.",
   },
   {
-    icon: <Sparkles className="h-7 w-7 text-sky-600" />,
-    title: "State-of-the-art lenses",
-    desc: "Our high-quality lenses are expertly crafted and digitally surfaced in the US, made only from premium-grade materials.",
+    icon: Sparkles,
+    title: "Gọng Kính Hiện Đại",
+    desc: "Gọng kính chất lượng cao của chúng tôi được chế tác chuyên nghiệp từ các vật liệu cao cấp.",
   },
   {
-    icon: <ShieldCheck className="h-7 w-7 text-sky-600" />,
-    title: "Authorized Reseller",
-    desc: "All brands and designer eyewear on our site are 100% authentic, guaranteeing you're getting the finest frames and lenses.",
+    icon: ShieldCheck,
+    title: "Nhà Bán Lẻ Được Phép",
+    desc: "Tất cả các thương hiệu và kính mắt thiết kế trên trang web của chúng tôi đều xác thực 100%.",
   },
 ];

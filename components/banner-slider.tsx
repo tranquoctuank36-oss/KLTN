@@ -70,7 +70,7 @@ export default function BannerSlider() {
               >
                 <Image
                   src={src}
-                  alt={`Slide ${i}`}
+                  alt={`Trang ${i}`}
                   fill
                   priority={i === index}              
                 />
@@ -80,14 +80,14 @@ export default function BannerSlider() {
 
           <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-3 md:px-6 ">
             <Button
-              aria-label="Previous slide"
+              aria-label="Trang Trước"
               onClick={prev}
               className="pointer-events-auto w-12 h-12 rounded-full bg-white/80 hover:bg-white/100 drop-shadow-md p-2"
             >
               <ChevronLeft className="!h-7 !w-7 text-gray-400 hover:text-gray-600 " />
             </Button>
             <Button
-              aria-label="Next slide"
+              aria-label="Trang Tiếp"
               onClick={next}
               className="pointer-events-auto w-12 h-12 rounded-full bg-white/80 hover:bg-white/100 drop-shadow-md p-2"
             >

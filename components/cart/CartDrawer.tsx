@@ -70,7 +70,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
         }`}
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-500">
-          <h2 className="text-xl font-bold">My shopping cart</h2>
+          <h2 className="text-xl font-bold">Giỏ hàng của tôi</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition cursor-pointer"
@@ -82,7 +82,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
         {/* Cart Items */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {cart.length === 0 ? (
-            <div className="text-center py-10 text-gray-500">Cart is empty</div>
+            <div className="text-center py-10 text-gray-500">Giỏ hàng trống</div>
           ) : (
             cart.map((item, index) => {
               
@@ -204,7 +204,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
           <div className="border-t border-gray-500 p-6">
             <Link href={Routes.cart()} onClick={onClose}>
               <Button className="w-full h-12 text-base font-semibold bg-blue-600 text-white hover:bg-blue-700">
-                VIEW CART ({totalQuantity} ITEMS)
+                XEM GIỎ HÀNG ({totalQuantity} MỤC)
               </Button>
             </Link>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
@@ -41,18 +41,67 @@ export default function CartItems({
   const [editingQuantities, setEditingQuantities] = useState<
     Map<string, number | string>
   >(new Map());
+  const [loadingItems, setLoadingItems] = useState<Set<string>>(new Set());
+  const debounceTimers = useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+  // Debounced function to update quantity
+  const debouncedSetItemQuantity = (
+    cartItemId: string,
+    quantity: number,
+    key: string
+  ) => {
+    // Clear existing timer for this item
+    const existingTimer = debounceTimers.current.get(key);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    // Set loading state
+    setLoadingItems((prev) => new Set(prev).add(key));
+
+    // Set new timer
+    const timer = setTimeout(async () => {
+      try {
+        await setItemQuantity(cartItemId, quantity);
+      } finally {
+        setLoadingItems((prev) => {
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
+        debounceTimers.current.delete(key);
+      }
+    }, 500);
+
+    debounceTimers.current.set(key, timer);
+  };
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      debounceTimers.current.forEach((timer) => clearTimeout(timer));
+      debounceTimers.current.clear();
+    };
+  }, []);
 
   useEffect(() => {
     if (cart.length > 0) {
-      const allKeys = new Set(
-        cart.map(
-          (item) =>
-            item.cartItemId ||
-            `${item.product.slug}__${item.selectedVariant.id}`
-        )
+      // Only auto-select items that are in stock
+      const inStockKeys = new Set(
+        cart
+          .filter((item) => {
+            const maxInv = item.selectedVariant.availableQuantity ?? item.selectedVariant.quantityAvailable ?? Infinity;
+            const isOutOfStock = item.status === "out_of_stock" || item.status === "unavailable" || maxInv <= 0;
+            return !isOutOfStock;
+          })
+          .map(
+            (item) =>
+              item.cartItemId ||
+              `${item.product.slug}__${item.selectedVariant.id}`
+          )
       );
-      setSelected(allKeys);
-      onSelectionChange?.(allKeys);
+      setSelected(inStockKeys);
+      onSelectionChange?.(inStockKeys);
     } else {
       // Khi cart rỗng, reset selected
       setSelected(new Set());
@@ -72,19 +121,27 @@ export default function CartItems({
   };
 
   const handleToggleAll = () => {
-    if (selected.size === cart.length) {
+    // Count only in-stock items
+    const inStockItems = cart.filter((item) => {
+      const maxInv = item.selectedVariant.availableQuantity ?? item.selectedVariant.quantityAvailable ?? Infinity;
+      const isOutOfStock = item.status === "out_of_stock" || item.status === "unavailable" || maxInv <= 0;
+      return !isOutOfStock;
+    });
+
+    if (selected.size === inStockItems.length && inStockItems.length > 0) {
       setSelected(new Set());
       onSelectionChange?.(new Set());
     } else {
-      const allKeys = new Set(
-        cart.map(
+      // Only select in-stock items
+      const inStockKeys = new Set(
+        inStockItems.map(
           (item) =>
             item.cartItemId ||
             `${item.product.slug}__${item.selectedVariant.id}`
         )
       );
-      setSelected(allKeys);
-      onSelectionChange?.(allKeys);
+      setSelected(inStockKeys);
+      onSelectionChange?.(inStockKeys);
     }
   };
 
@@ -100,7 +157,13 @@ export default function CartItems({
     }, 400);
   };
 
-  const isAllSelected = cart.length > 0 && selected.size === cart.length;
+  // Check if all in-stock items are selected
+  const inStockItemsCount = cart.filter((item) => {
+    const maxInv = item.selectedVariant.availableQuantity ?? item.selectedVariant.quantityAvailable ?? Infinity;
+    const isOutOfStock = item.status === "out_of_stock" || item.status === "unavailable" || maxInv <= 0;
+    return !isOutOfStock;
+  }).length;
+  const isAllSelected = inStockItemsCount > 0 && selected.size === inStockItemsCount;
 
   return (
     <div className="rounded-lg lg:col-span-2 space-y-1 bg-gray-100">
@@ -114,7 +177,7 @@ export default function CartItems({
             className="w-5 h-5 cursor-pointer accent-blue"
           />
           <span className="font-semibold text-base select-none">
-            Select all
+            Chọn tất cả
           </span>
         </label>
       )}
@@ -122,9 +185,16 @@ export default function CartItems({
       {cart.map((item, index) => {
         const key =
           item.cartItemId || `${item.product.slug}__${item.selectedVariant.id}`;
-        const maxInv = item.selectedVariant.availableQuantity ?? Infinity;
+        const maxInv = item.selectedVariant.availableQuantity ?? item.selectedVariant.quantityAvailable ?? 0;
+        // Check if item is out of stock or unavailable - prioritize item.status from API
+        const isOutOfStock = item.status === "out_of_stock" || item.status === "unknown" || item.status === "unavailable" || maxInv === 0;
+        
+        // Temporary debug for out of stock items
+        console.log(`📦 Item: ${item.product.name} | Status: ${item.status} | MaxInv: ${maxInv} | IsOutOfStock: ${isOutOfStock}`);
+        
         const isSelected = selected.has(key);
         const isRemoving = removingItems.has(key) || isClearing;
+        const isLoading = loadingItems.has(key);
         const finalPrice = Number(item.selectedVariant.finalPrice);
         const originalPrice = Number(item.selectedVariant.originalPrice);
         const isOnSale = finalPrice < originalPrice;
@@ -140,7 +210,7 @@ export default function CartItems({
               isRemoving
                 ? "opacity-0 scale-95 -translate-x-4"
                 : "opacity-100 scale-100 translate-x-0"
-            }`}
+            } ${isOutOfStock ? "opacity-60" : ""}`}
             style={{
               transitionDelay: isRemoving
                 ? isClearing
@@ -149,28 +219,37 @@ export default function CartItems({
                 : `${index * 30}ms`,
             }}
           >
+            {/* Out of Stock Overlay */}
+            {isOutOfStock && (
+              <div className="absolute top-4 left-4 bg-red-100 text-red-600 px-3 py-1 rounded-md text-sm font-semibold z-10">
+                {item.status === "unavailable" ? "Không có sẵn" : "Hết hàng"}
+              </div>
+            )}
+
             {/* Checkbox */}
             <div className="absolute top-1/2 -translate-y-1/2 left-4">
               <input
                 type="checkbox"
                 checked={isSelected}
                 onChange={() => handleToggleItem(key)}
-                disabled={isRemoving}
-                className="w-5 h-5 cursor-pointer accent-blue"
+                disabled={isRemoving || isOutOfStock}
+                className="w-5 h-5 cursor-pointer accent-blue disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
 
             <div className="flex items-center gap-4 flex-1 ml-8">
-              <Image
-                src={
-                  item?.selectedVariant?.images?.[0]?.publicUrl ||
-                  "/placeholder.png"
-                }
-                alt={item?.product?.name || "Product image"}
-                width={260}
-                height={130}
-                className="object-contain rounded-md"
-              />
+              <div className="relative">
+                <Image
+                  src={
+                    item?.selectedVariant?.images?.[0]?.publicUrl ||
+                    "/placeholder.png"
+                  }
+                  alt={item?.product?.name || "Ảnh Sản Phẩm"}
+                  width={260}
+                  height={130}
+                  className={`object-contain rounded-md ${isOutOfStock ? "grayscale" : ""}`}
+                />
+              </div>
 
               <div className="flex flex-col justify-center">
                 <Link href={productUrl}>
@@ -180,7 +259,7 @@ export default function CartItems({
                 </Link>
 
                 {/* <p className="text-sm pt-2">
-                  <span className="text-gray-600 font-bold">Color:</span>{" "}
+                  <span className="text-gray-600 font-bold">Màu:</span>{" "}
                   <span className="text-gray-500">
                     {Array.isArray(item.selectedVariant.colors)
                       ? item.selectedVariant.colors
@@ -191,7 +270,7 @@ export default function CartItems({
                 </p> */}
 
                 <p className="text-base pt-2">
-                  <span className="text-gray-600">Price:</span>{" "}
+                  <span className="text-gray-600">Giá:</span>{" "}
                   {isOnSale ? (
                     <>
                       {/* Original price (gạch ngang) */}
@@ -216,21 +295,33 @@ export default function CartItems({
                   <Button
                     onClick={() => {
                       if (item.cartItemId && item.quantity > 1) {
-                        setItemQuantity(item.cartItemId, item.quantity - 1);
+                        const newQty = item.quantity - 1;
+                        // Update local state immediately
+                        setEditingQuantities((prev) =>
+                          new Map(prev).set(key, newQty)
+                        );
+                        // Debounced API call
+                        debouncedSetItemQuantity(item.cartItemId, newQty, key);
                       }
                     }}
                     disabled={
-                      item.quantity <= 1 || isRemoving || !item.cartItemId
+                      item.quantity <= 1 || isRemoving || !item.cartItemId || isLoading || isOutOfStock
                     }
                     className="w-8 h-full text-xl p-0 hover:bg-white text-gray-400"
                     variant="ghost"
                   >
-                    -
+                    {isLoading ? (
+                      <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      "-"
+                    )}
                   </Button>
                   <input
                     type="text"
                     value={editingQuantities.get(key) ?? item.quantity}
                     onChange={(e) => {
+                      if (isOutOfStock) return; // Don't allow changes if out of stock
+                      
                       const val = e.target.value;
 
                       // Allow empty string temporarily for user to clear and type
@@ -259,6 +350,8 @@ export default function CartItems({
                       }
                     }}
                     onBlur={() => {
+                      if (isOutOfStock) return; // Don't validate if out of stock
+                      
                       const currentVal = editingQuantities.get(key);
 
                       // If empty or invalid, reset to current quantity
@@ -283,33 +376,43 @@ export default function CartItems({
 
                         // Update if different from current
                         if (finalQty !== item.quantity && item.cartItemId) {
-                          setItemQuantity(item.cartItemId, finalQty);
+                          debouncedSetItemQuantity(item.cartItemId, finalQty, key);
+                        } else {
+                          // Clear editing state if no change
+                          setEditingQuantities((prev) => {
+                            const next = new Map(prev);
+                            next.delete(key);
+                            return next;
+                          });
                         }
-
-                        // Clear editing state
-                        setEditingQuantities((prev) => {
-                          const next = new Map(prev);
-                          next.delete(key);
-                          return next;
-                        });
                       }
                     }}
-                    disabled={isRemoving || !item.cartItemId}
+                    disabled={isRemoving || !item.cartItemId || isLoading || isOutOfStock}
                     className="w-10 flex items-center justify-center text-base font-medium text-center border-0 focus:outline-none focus:ring-0"
                   />
                   <Button
                     onClick={() => {
                       if (item.cartItemId && item.quantity < maxInv) {
-                        setItemQuantity(item.cartItemId, item.quantity + 1);
+                        const newQty = item.quantity + 1;
+                        // Update local state immediately
+                        setEditingQuantities((prev) =>
+                          new Map(prev).set(key, newQty)
+                        );
+                        // Debounced API call
+                        debouncedSetItemQuantity(item.cartItemId, newQty, key);
                       }
                     }}
                     disabled={
-                      item.quantity >= maxInv || isRemoving || !item.cartItemId
+                      item.quantity >= maxInv || isRemoving || !item.cartItemId || isLoading || isOutOfStock
                     }
                     className="w-8 h-full text-xl p-0 hover:bg-white text-gray-400"
                     variant="ghost"
                   >
-                    +
+                    {isLoading ? (
+                      <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      "+"
+                    )}
                   </Button>
                 </div>
               </div>
@@ -360,9 +463,9 @@ export default function CartItems({
 
       <div className="flex justify-end">
         <ConfirmPopover
-          title="All items in your cart"
-          description="Are you sure you want to clear"
-          confirmText="Clear Cart"
+          title="Tất cả các mục trong giỏ hàng của bạn"
+          description="Bạn có chắc chắn muốn xóa"
+          confirmText="Xóa giỏ hàng"
           onConfirm={handleClearCart}
         >
           <Button
@@ -370,7 +473,7 @@ export default function CartItems({
             disabled={isClearing}
             className="border-none italic text-red-600 hover:text-red-600 drop-shadow-none bg-gray-100 hover:bg-gray-100 hover:underline"
           >
-            Clear Cart
+            Xóa giỏ hàng
           </Button>
         </ConfirmPopover>
       </div>

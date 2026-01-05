@@ -94,7 +94,7 @@ export default function FilterPanel({
              hover:text-slate-700 hover:bg-gray-100 border-0
              focus:outline-none focus:ring-0 focus-visible:ring-0 shadow-none cursor-pointer rounded"
         >
-          Close
+          Đóng
         </button>
       </div>
     </div>

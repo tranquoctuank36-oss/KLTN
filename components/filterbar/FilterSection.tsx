@@ -13,6 +13,7 @@ type Props = {
   onFiltersChange?: (filters: Partial<ElasticSearchFilters>) => void;
   sort?: string;
   onSortChange?: (s: string) => void;
+  initialFilters?: Partial<ElasticSearchFilters>;
 };
 
 const isEqual = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b);
@@ -25,6 +26,7 @@ export default function FilterSection({
   onFiltersChange,
   sort,
   onSortChange,
+  initialFilters,
 }: Props) {
   const count = totalItems ?? products.length;
 
@@ -46,9 +48,9 @@ export default function FilterSection({
   return (
     <section className="mx-auto max-w-[1440px] py-5">
       <h1 className="flex items-baseline gap-2 text-3xl font-bold tracking-tight">
-        {title || "Luxury Eyewear Boutique"}{" "}
+        {title || "Cửa Hàng Kính Mắt Cao Cấp"}{" "}
         <span className="relative -translate-y-0.5 text-black/70 text-xl font-medium">
-          ({count} Items)
+          ({count} Sản phẩm)
         </span>
       </h1>
 
@@ -58,6 +60,7 @@ export default function FilterSection({
           onChange={handleChange}
           sort={sort}
           onSortChange={onSortChange}
+          initialFilters={initialFilters}
         />
       </div>
     </section>

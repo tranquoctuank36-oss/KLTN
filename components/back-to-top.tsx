@@ -22,7 +22,7 @@ export default function BackToTop() {
 
   return (
     <Button
-      aria-label="Back to top"
+      aria-label="Lên Đầu Trang"
       onClick={goTop}
       className={[
         "fixed right-6 md:right-15 bottom-40 z-50",

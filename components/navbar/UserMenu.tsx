@@ -24,7 +24,7 @@ export default function UserMenu() {
   const handleLogout: () => Promise<void> = async () => {
     try {
       await logout();
-      toast.success("You have been logged out successfully!", {
+      toast.success("Đăng xuất thành công!", {
         duration: 2000,
         position: "top-center",
       });
@@ -43,7 +43,7 @@ export default function UserMenu() {
           <Button className="!shadow-none flex items-center gap-2 !px-3 !py-6 text-black bg-white hover:bg-gray-100 drop-shadow-none">
             <User className="!h-6 !w-6" />
             <span className="text-base font-normal">
-              Hi, {user?.firstName?.trim() ? user.firstName : "You"}
+Xin chào, {user?.firstName?.trim() ? user.firstName : "Bạn"}
             </span>
           </Button>
         </SheetTrigger>
@@ -52,7 +52,7 @@ export default function UserMenu() {
       <SheetContent side="right" className="w-[300px] sm:w-[350px]">
         <SheetHeader>
           <SheetTitle className="text-xl font-bold">
-            Welcome Back, {user?.firstName?.trim() ? user.firstName : "You"}
+            Chào mừng trở lại, {user?.firstName?.trim() ? user.firstName : "Bạn"}
           </SheetTitle>
         </SheetHeader>
 
@@ -62,7 +62,7 @@ export default function UserMenu() {
           <Button variant="ghost" className="w-full justify-start gap-2 text-lg font-normal text-gray-500 hover:bg-white hover:font-semibold">
             <Link href={Routes.users()} onClick={() => setOpen(false)} className="flex items-center gap-3">
               <UserCircle className="!h-6 !w-6" />
-              My Account
+              Tài Khoản Của Tôi
             </Link>
           </Button>
 
@@ -71,7 +71,7 @@ export default function UserMenu() {
           <Button variant="ghost" className="w-full justify-start gap-2 text-lg font-normal text-gray-500 hover:bg-white hover:font-semibold">
             <Link href={`${Routes.users()}?section=my-orders`} onClick={() => setOpen(false)} className="flex items-center gap-3">
               <ShoppingBag className="!h-6 !w-6" />
-              Orders History
+              Lịch Sử Đơn Hàng
             </Link>
           </Button>
 
@@ -79,7 +79,7 @@ export default function UserMenu() {
 
           <Button variant="ghost" className="w-full justify-start gap-2 text-lg font-normal text-gray-500 hover:bg-white hover:font-semibold gap-3">
             <Undo2 className="!h-6 !w-6 ml-1" />
-            Returns
+            Trả Hàng
           </Button>
 
           <hr className="border-t border-gray-200" />
@@ -90,7 +90,7 @@ export default function UserMenu() {
             className="w-full justify-start gap-2 text-red-600 hover:text-red-700 text-lg font-normal hover:bg-white hover:font-semibold gap-3"
           >
             <LogOut className="!h-6 !w-6 ml-1" />
-            Log out
+            Đăng Xuất
           </Button>
         </div>
       </SheetContent>

@@ -6,31 +6,31 @@ interface StatusBadgeProps {
 export default function StatusBadge({ status, size = "md" }: StatusBadgeProps) {
   const statusConfig: Record<string, { label: string; className: string }> = {
     PENDING: {
-      label: "Pending",
+      label: "Chờ xử lý",
       className: "bg-yellow-100 text-yellow-800"
     },
     PAID: {
-      label: "Paid",
+      label: "Đã thanh toán",
       className: "bg-blue-100 text-blue-800"
     },
     PROCESSING: {
-      label: "Processing",
+      label: "Đang xử lý",
       className: "bg-purple-100 text-purple-800"
     },
     SHIPPED: {
-      label: "Shipped",
+      label: "Đã gửi",
       className: "bg-indigo-100 text-indigo-800"
     },
     DELIVERED: {
-      label: "Delivered",
+      label: "Đã giao",
       className: "bg-teal-100 text-teal-800"
     },
     COMPLETED: {
-      label: "Completed",
+      label: "Hoàn tất",
       className: "bg-green-100 text-green-800"
     },
     CANCELLED: {
-      label: "Cancelled",
+      label: "Đã hủy",
       className: "bg-red-100 text-red-800"
     }
   };

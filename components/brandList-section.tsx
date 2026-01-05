@@ -30,7 +30,7 @@ export default function BrandListButton() {
             href={Routes.brand(brand.slug)}
             className="flex items-center border rounded-full px-6 py-2 bg-gray-200 
                        hover:drop-shadow-md hover:bg-white/80 transition font-medium text-gray-500"
-            aria-label={`View ${brand.name} collection`}
+            aria-label={`Xem Bộ Sưu Tập ${brand.name}`}
           >
             {brand.name}
           </Link>
@@ -41,7 +41,7 @@ export default function BrandListButton() {
           className="flex items-center border rounded-full px-6 py-2 bg-gray-200 text-gray-800 
                      font-medium hover:drop-shadow-md hover:bg-white/80 transition"
         >
-          All Brands
+          Tất cả thương hiệu
         </Link>
       </div>
     </section>

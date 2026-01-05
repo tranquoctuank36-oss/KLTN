@@ -57,11 +57,11 @@ export default function SimilarFramesDrawer({
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold">Similar Frames</h2>
+          <h2 className="text-xl font-bold">Gọng kính tương tự</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition cursor-pointer"
-            aria-label="Close"
+            aria-label="Đóng"
           >
             <X className="w-6 h-6" />
           </button>
@@ -85,7 +85,7 @@ export default function SimilarFramesDrawer({
             </div>
           ) : similarProducts.length === 0 ? (
             <div className="text-center py-10 text-gray-500">
-              No similar frames found
+              Không tìm thấy gọng kính tương tự
             </div>
           ) : (
             similarProducts.map((product, index) => {

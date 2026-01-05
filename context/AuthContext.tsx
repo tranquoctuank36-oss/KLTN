@@ -139,7 +139,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { accessToken } = res.data;
 
       if (!accessToken) {
-        throw new Error("No access token received");
+        throw new Error("Không nhận được token truy cập");
       }
 
       localStorage.setItem("token", accessToken);
@@ -230,6 +230,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  if (!ctx) throw new Error("useAuth phải được sử dụng trong AuthProvider");
   return ctx;
 };

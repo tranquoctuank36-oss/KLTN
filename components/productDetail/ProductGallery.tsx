@@ -38,7 +38,6 @@ export default function ProductGallery({ product, selectedVariant, isSale }: Pro
       <div className="relative mt-5">
         {isSale && (
           <span className="absolute z-20 top-5 left-5 bg-red-50 text-red-600 border border-red-200 text-sm px-3 py-1 rounded">
-            Sale
           </span>
         )}
         <div 
@@ -61,7 +60,7 @@ export default function ProductGallery({ product, selectedVariant, isSale }: Pro
             />
           ) : (
             <div className="flex items-center justify-center text-gray-400">
-              No image
+              Không có ảnh
             </div>
           )}
         </div>
@@ -108,11 +107,11 @@ export default function ProductGallery({ product, selectedVariant, isSale }: Pro
               >
                 {showAll ? (
                   <>
-                    Show Less <ChevronUp className="w-4 h-4" />
+                    Ít hơn <ChevronUp className="w-4 h-4" />
                   </>
                 ) : (
                   <>
-                    Show More <ChevronDown className="w-4 h-4" />
+                    Nhiều hơn <ChevronDown className="w-4 h-4" />
                   </>
                 )}
               </Button>
@@ -181,7 +180,7 @@ export default function ProductGallery({ product, selectedVariant, isSale }: Pro
           >
             <img
               src={selectedImage}
-              alt="Product variant"
+              alt="Biến thể sản phẩm"
               className="max-w-full max-h-[80vh] object-contain rounded-lg"
             />
 

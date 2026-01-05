@@ -43,17 +43,31 @@ type Props = {
   onSortChange?: (s: string) => void;
   priceBounds?: { min: number; max: number };
   currency?: string;
+  loading?: boolean;
+  initialFilters?: Partial<ElasticSearchFilters>;
 };
 
 const LABELS: Record<FilterGroup["key"], string> = {
-  productTypes: "Glasses Type",
-  genders: "Gender",
-  frameShapes: "Frame Shape",
-  frameTypes: "Frame Type",
-  frameMaterials: "Frame Material",
-  brands: "Brands",
-  tags: "Tags",
-  colors: "Colors",
+  productTypes: "Loại kính",
+  genders: "Giới tính",
+  frameShapes: "Hình dáng Gọng",
+  frameTypes: "Loại Gọng",
+  frameMaterials: "Chất liệu Gọng",
+  brands: "Thương hiệu",
+  tags: "Nhãn",
+  colors: "Màu sắc",
+};
+
+const PRODUCT_TYPE_LABELS: Record<string, string> = {
+  eyeglasses: "Gọng kính",
+  sunglasses: "Kính mát",
+};
+
+const GENDER_LABELS: Record<string, string> = {
+  male: "Nam",
+  female: "Nữ",
+  unisex: "Unisex",
+  kid: "Trẻ em",
 };
 
 const FRAME_KEYS: Array<FilterGroup["key"]> = [
@@ -74,8 +88,43 @@ function FilterBar({
   aggregations,
   onChange,
   priceBounds,
+  loading = false,
+  sort,
+  onSortChange,
+  initialFilters,
 }: Props) {
-  const [selected, setSelected] = useState<Record<string, Set<string>>>({});
+  // Khởi tạo selected state từ initialFilters
+  const [selected, setSelected] = useState<Record<string, Set<string>>>(() => {
+    const initial: Record<string, Set<string>> = {};
+    if (initialFilters) {
+      if (initialFilters.productTypes) initial.productTypes = new Set(initialFilters.productTypes);
+      if (initialFilters.genders) initial.genders = new Set(initialFilters.genders);
+      if (initialFilters.frameShapes) initial.frameShapes = new Set(initialFilters.frameShapes);
+      if (initialFilters.frameTypes) initial.frameTypes = new Set(initialFilters.frameTypes);
+      if (initialFilters.frameMaterials) initial.frameMaterials = new Set(initialFilters.frameMaterials);
+      if (initialFilters.brands) initial.brands = new Set(initialFilters.brands);
+      if (initialFilters.tags) initial.tags = new Set(initialFilters.tags);
+      if (initialFilters.colors) initial.colors = new Set(initialFilters.colors);
+    }
+    return initial;
+  });
+  
+  // Cập nhật selected state khi initialFilters thay đổi (navigate từ navbar)
+  useEffect(() => {
+    if (initialFilters) {
+      setSelected({
+        productTypes: new Set(initialFilters.productTypes || []),
+        genders: new Set(initialFilters.genders || []),
+        frameShapes: new Set(initialFilters.frameShapes || []),
+        frameTypes: new Set(initialFilters.frameTypes || []),
+        frameMaterials: new Set(initialFilters.frameMaterials || []),
+        brands: new Set(initialFilters.brands || []),
+        tags: new Set(initialFilters.tags || []),
+        colors: new Set(initialFilters.colors || []),
+      });
+      setSearchQuery(initialFilters.search || "");
+    }
+  }, [initialFilters]);
   const [expandedKey, setExpandedKey] = useState<
     FilterGroup["key"] | "frame" | "price" | null
   >(null);
@@ -83,6 +132,8 @@ function FilterBar({
   const [selectedPrice, setSelectedPrice] = useState<[number, number] | null>(
     null
   );
+  
+  const [searchQuery, setSearchQuery] = useState<string>(initialFilters?.search || "");
 
   const reopenFrameRef = useRef(false);
 
@@ -90,36 +141,55 @@ function FilterBar({
     if (!aggregations) {
       return [];
     }
-    
+
     const build = (key: FilterGroup["key"]) => {
       const data = aggregations[key] ?? [];
-      const optionsMap = new Map<string, { id: string; label: string; count: number; hexCode: string }>();
-      
+      const optionsMap = new Map<
+        string,
+        { id: string; label: string; count: number; hexCode: string }
+      >();
+
       // Add options from aggregations
       data.forEach((x: any) => {
+        const id = String(x.key ?? x.value ?? x.label);
+        const baseLabel = String(x.label ?? x.key);
+        // Translate productTypes and genders
+        let label = baseLabel;
+        if (key === "productTypes") {
+          label = PRODUCT_TYPE_LABELS[id] || baseLabel;
+        } else if (key === "genders") {
+          label = GENDER_LABELS[id] || baseLabel;
+        }
+
         const option = {
-          id: String(x.key ?? x.value ?? x.label),
-          label: String(x.label ?? x.key),
+          id: id,
+          label: label,
           count: Number(x.count ?? 0),
-          hexCode: x.hexCode, // This should work if API returns it
+          hexCode: x.hexCode,
         };
-        
+
         optionsMap.set(option.id, option);
       });
-      
+
       // Add selected options that might be missing from aggregations
       const selectedIds = Array.from(selected[key] ?? []);
       selectedIds.forEach((id) => {
         if (!optionsMap.has(id)) {
+          let label = id;
+          if (key === "productTypes") {
+            label = PRODUCT_TYPE_LABELS[id] || id;
+          } else if (key === "genders") {
+            label = GENDER_LABELS[id] || id;
+          }
           optionsMap.set(id, {
             id: id,
-            label: id,
-            count: 0, // We don't know the count, set to 0
-            hexCode: "#CCCCCC", // No hexCode available
+            label: label,
+            count: 0,
+            hexCode: "#CCCCCC",
           });
         }
       });
-      
+
       return {
         key,
         label: LABELS[key],
@@ -136,17 +206,17 @@ function FilterBar({
     () => ({
       shapes: (aggregations?.frameShapes ?? []).map((x: any) => ({
         id: String(x.key),
-        name: String(x.key),
+        name: String(x.label ?? x.key),
         count: Number(x.count ?? 0),
       })),
       types: (aggregations?.frameTypes ?? []).map((x: any) => ({
         id: String(x.key),
-        name: String(x.key),
+        name: String(x.label ?? x.key),
         count: Number(x.count ?? 0),
       })),
       materials: (aggregations?.frameMaterials ?? []).map((x: any) => ({
         id: String(x.key),
-        name: String(x.key),
+        name: String(x.label ?? x.key),
         count: Number(x.count ?? 0),
       })),
     }),
@@ -192,11 +262,6 @@ function FilterBar({
     []
   );
 
-  const clearAll = useCallback(() => {
-    setSelected({});
-    setSelectedPrice(null);
-  }, []);
-
   const bounds = useMemo(() => {
     const apiMin = Number(aggregations?.price?.min ?? NaN);
     const apiMax = Number(aggregations?.price?.max ?? NaN);
@@ -220,6 +285,11 @@ function FilterBar({
     return { min: Math.min(min, max), max: Math.max(min, max) };
   }, [aggregations?.price, priceBounds]);
 
+  const clearAll = useCallback(() => {
+    setSelected({});
+    setSelectedPrice(null);
+  }, []);
+
   const disabledPrice = bounds.min === bounds.max;
 
   const apiFilters = useMemo(() => {
@@ -239,9 +309,13 @@ function FilterBar({
       (base as any).minPrice = String(selectedPrice[0]);
       (base as any).maxPrice = String(selectedPrice[1]);
     }
+    
+    if (searchQuery) {
+      (base as any).search = searchQuery;
+    }
 
     return base;
-  }, [selected, selectedPrice]);
+  }, [selected, selectedPrice, searchQuery]);
 
   const lastEmittedRef = useRef<string>("");
   useEffect(() => {
@@ -260,64 +334,96 @@ function FilterBar({
   }, [aggregations]);
 
   // format VNĐ (or other currency)
-  const currencyFormatter = (n: number) => `${Number(n).toLocaleString("en-US")}đ`;
-
+  const currencyFormatter = (n: number) =>
+    `${Number(n).toLocaleString("en-US")}đ`;
 
   return (
     <>
-      <div className="rounded-xl border border-slate-200 bg-gray-100">
+      <div className="rounded-xl border border-slate-200 bg-gray-100 relative">
         {/* Chips */}
         <div className="flex flex-wrap items-center gap-2 p-4">
-          {/* 1) productTypes + genders */}
-          {GROUPS_NO_FRAME.filter(
-            (g) => g.key === "productTypes" || g.key === "genders"
-          ).map((g) => (
-            <FilterChip
-              key={g.key}
-              label={g.label}
-              active={activeMap[g.key]}
-              expanded={expandedKey === g.key}
-              onClick={() =>
-                setExpandedKey((prev) => (prev === g.key ? null : g.key))
-              }
-            />
-          ))}
+          {loading ? (
+            // Skeleton loading state
+            <>
+              <div className="h-8 w-24 bg-gray-300 rounded-full animate-pulse"></div>
+              <div className="h-8 w-20 bg-gray-300 rounded-full animate-pulse"></div>
+              <div className="h-8 w-28 bg-gray-300 rounded-full animate-pulse"></div>
+              <div className="h-8 w-32 bg-gray-300 rounded-full animate-pulse"></div>
+              <div className="h-8 w-20 bg-gray-300 rounded-full animate-pulse"></div>
+              <div className="h-8 w-24 bg-gray-300 rounded-full animate-pulse"></div>
+              <div className="h-8 w-20 bg-gray-300 rounded-full animate-pulse"></div>
+            </>
+          ) : (
+            <>
+              {/* 1) productTypes + genders */}
+              {GROUPS_NO_FRAME.filter(
+                (g) => g.key === "productTypes" || g.key === "genders"
+              ).map((g) => (
+                <FilterChip
+                  key={g.key}
+                  label={g.label}
+                  active={activeMap[g.key]}
+                  expanded={expandedKey === g.key}
+                  onClick={() =>
+                    !loading &&
+                    setExpandedKey((prev) => (prev === g.key ? null : g.key))
+                  }
+                />
+              ))}
 
-          {/* 2) Frame (gộp) — đứng ngay sau Gender */}
-          <FilterChip
-            label="Frame"
-            active={activeFrame}
-            expanded={expandedKey === "frame"}
-            onClick={() =>
-              setExpandedKey((prev) => (prev === "frame" ? null : "frame"))
-            }
-          />
+              {/* 2) Frame (gộp) — đứng ngay sau Gender */}
+              <FilterChip
+                label="Gọng kính"
+                active={activeFrame}
+                expanded={expandedKey === "frame"}
+                onClick={() =>
+                  !loading &&
+                  setExpandedKey((prev) => (prev === "frame" ? null : "frame"))
+                }
+              />
 
-          {/* 3) Brands, Tags, Colors */}
-          {GROUPS_NO_FRAME.filter(
-            (g) => !["productTypes", "genders"].includes(g.key as string)
-          ).map((g) => (
-            <FilterChip
-              key={g.key}
-              label={g.label}
-              active={activeMap[g.key]}
-              expanded={expandedKey === g.key}
-              onClick={() =>
-                setExpandedKey((prev) => (prev === g.key ? null : g.key))
-              }
-            />
-          ))}
+              {/* 3) Brands, Tags, Colors */}
+              {GROUPS_NO_FRAME.filter(
+                (g) => !["productTypes", "genders"].includes(g.key as string)
+              ).map((g) => (
+                <FilterChip
+                  key={g.key}
+                  label={g.label}
+                  active={activeMap[g.key]}
+                  expanded={expandedKey === g.key}
+                  onClick={() =>
+                    !loading &&
+                    setExpandedKey((prev) => (prev === g.key ? null : g.key))
+                  }
+                />
+              ))}
 
-          {/* 4) Price chip */}
-          <FilterChip
-            key="price"
-            label="Price"
-            active={!!selectedPrice}
-            expanded={expandedKey === "price"}
-            onClick={() =>
-              setExpandedKey((prev) => (prev === "price" ? null : "price"))
-            }
-          />
+              {/* 4) Price chip */}
+              <FilterChip
+                key="price"
+                label="Giá tiền"
+                active={!!selectedPrice}
+                expanded={expandedKey === "price"}
+                onClick={() =>
+                  !loading &&
+                  setExpandedKey((prev) => (prev === "price" ? null : "price"))
+                }
+              />
+
+              {/* Sort dropdown - inline with chips */}
+              <select
+                value={sort || "newest"}
+                onChange={(e) => onSortChange?.(e.target.value)}
+                disabled={loading}
+                className="ml-auto px-3 py-1.5 text-sm border border-gray-300 cursor-pointer rounded-md bg-white hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="popular">Phổ biến nhất</option>
+                <option value="newest">Mới nhất</option>
+                <option value="price-asc">Giá tăng dần</option>
+                <option value="price-desc">Giá giảm dần</option>
+              </select>
+            </>
+          )}
         </div>
 
         {/* Panel chi tiết */}
@@ -504,7 +610,8 @@ function FilterBar({
           <Button
             type="button"
             onClick={clearAll}
-            className="text-xs text-slate-500 hover:text-gray-800 hover:underline ml-2 drop-shadow-none !p-0"
+            disabled={loading}
+            className="text-xs text-slate-500 hover:text-gray-800 hover:underline ml-2 drop-shadow-none !p-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Clear All
           </Button>

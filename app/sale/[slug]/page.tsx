@@ -36,7 +36,7 @@ export default function DiscountDetailPage() {
         setDiscount(data);
       } catch (err) {
         console.error("Failed to fetch discount details:", err);
-        setError("Failed to load discount details");
+        setError("Không thể tải chi tiết giảm giá");
       } finally {
         setLoading(false);
       }
@@ -107,7 +107,7 @@ export default function DiscountDetailPage() {
           <div className="text-center py-16">
             <Tag className="w-16 h-16 mx-auto mb-4 text-gray-400" />
             <p className="text-lg text-gray-600 mb-4">
-              {error || "Discount not found"}
+              {error || "Không tìm thấy chương trình giảm giá"}
             </p>
           </div>
         </div>
@@ -168,7 +168,7 @@ export default function DiscountDetailPage() {
             <button
               onClick={() => setCurrentPage(0)}
               disabled={currentPage === 0}
-              aria-label="Go to first page"
+              aria-label="Đi tới trang đầu tiên"
               className={`rounded-md ${
                 currentPage === 0 ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
               }`}
@@ -204,7 +204,7 @@ export default function DiscountDetailPage() {
             <button
               onClick={() => setCurrentPage(totalPages - 1)}
               disabled={currentPage === totalPages - 1}
-              aria-label="Go to last page"
+              aria-label="Đi tới trang cuối cùng"
               className={`rounded-md ${
                 currentPage === totalPages - 1 ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
               }`}

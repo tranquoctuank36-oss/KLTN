@@ -1,7 +1,7 @@
-import { ReactNode } from "react";
+import { ComponentType } from "react";
 
 export type Benefit = {
-  icon: ReactNode;
+  icon: ComponentType<{ className?: string }>;
   title: string;
   desc: string;
 };

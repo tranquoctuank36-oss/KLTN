@@ -63,7 +63,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="border-t border-gray-700/80 pt-6 text-center text-xs text-gray-500">
-          © {new Date().getFullYear()} GlassesShop. All rights reserved.
+          © {new Date().getFullYear()} GlassesShop. Bảo lưu mọi quyền.
         </div>
       </div>
     </footer>

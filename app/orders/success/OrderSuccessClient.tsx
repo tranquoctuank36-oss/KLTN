@@ -23,8 +23,8 @@ export default function OrderSuccessClient() {
 
     navigator.clipboard
       .writeText(orderCode)
-      .then(() => toast.success("Order code copied!"))
-      .catch(() => toast.error("Failed to copy order code"));
+      .then(() => toast.success("Mã đơn hàng đã được sao chép!"))
+      .catch(() => toast.error("Không thể sao chép mã đơn hàng"));
   }, [orderCode]);
 
   if (!orderCode) {
@@ -60,8 +60,8 @@ export default function OrderSuccessClient() {
           type="button"
           onClick={handleCopy}
           className="ml-2 text-gray-600 hover:text-black transition cursor-pointer"
-          title="Copy order code"
-          aria-label="Copy order code"
+          title="Sao chép mã đơn hàng"
+          aria-label="Sao chép mã đơn hàng"
         >
           <Copy size={20} />
         </button>

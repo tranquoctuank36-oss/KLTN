@@ -3,41 +3,67 @@
 import * as React from "react";
 import { CheckCheck, DollarSign, ReceiptText, Truck, X } from "lucide-react";
 
+// Backend status types
 type OrderStatus =
-  | "PLACED"
-  | "CONFIRMED"
-  | "SHIPPING"
-  | "DELIVERED"
-  | "CANCELLED";
-type StepKey = "PLACED" | "CONFIRMED" | "SHIPPING" | "DELIVERED";
+  | "pending"
+  | "awaiting_payment"
+  | "processing"
+  | "shipping"
+  | "delivered"
+  | "completed"
+  | "cancelled"
+  | "expired"
+  | "return_requested"
+  | "returning"
+  | "returned";
+
+type StepKey = "PLACED" | "CONFIRMED" | "SHIPPING" | "DELIVERED" | "CANCELLED";
 type Timestamps = Partial<Record<StepKey, string>>;
 
 interface Props {
-  status: OrderStatus;
+  status: OrderStatus | string;
   timestamps?: Timestamps;
   className?: string;
 }
 
 const STEPS: { key: StepKey; label: string; Icon: React.ComponentType<any> }[] =
   [
-    { key: "PLACED", label: "Order Placed", Icon: ReceiptText },
-    { key: "CONFIRMED", label: "Order Confirmed", Icon: DollarSign },
-    { key: "SHIPPING", label: "In Delivery", Icon: Truck },
-    { key: "DELIVERED", label: "Delivered Successfully", Icon: CheckCheck },
+    { key: "PLACED", label: "Đã đặt hàng", Icon: ReceiptText },
+    { key: "CONFIRMED", label: "Đã xác nhận", Icon: DollarSign },
+    { key: "SHIPPING", label: "Đang vận chuyển", Icon: Truck },
+    { key: "DELIVERED", label: "Đã giao hàng", Icon: CheckCheck },
   ];
+
+// Map backend status to timeline step
+function mapStatusToStep(status: string): StepKey | null {
+  const statusLower = status.toLowerCase();
+  
+  if (statusLower === "pending") {
+    return "PLACED";
+  }
+  if (statusLower === "processing") {
+    return "CONFIRMED";
+  }
+  if (statusLower === "shipping") {
+    return "SHIPPING";
+  }
+  if (statusLower === "delivered" || statusLower === "completed") {
+    return "DELIVERED";
+  }
+  
+  return null;
+}
 
 export default function OrderStatusTimeline({
   status,
   timestamps,
   className = "",
 }: Props) {
-  const cancelled = status === "CANCELLED";
-  const currentIndex = cancelled
+  const cancelled = status.toLowerCase() === "cancelled";
+  const currentStep = mapStatusToStep(status);
+  const currentIndex = cancelled || !currentStep
     ? -1
-    : Math.max(
-        0,
-        STEPS.findIndex((s) => s.key === status)
-      );
+    : STEPS.findIndex((s) => s.key === currentStep);
 
   return (
     <div className={`w-full ${className}`}>
@@ -114,12 +140,21 @@ function TimelineHorizontal({
   timestamps?: Timestamps;
 }) {
   const DOT = 32;
-  const N = steps.length;
+  
+  // Nếu cancelled, chỉ hiển thị 2 bước: PLACED và CANCELLED
+  const displaySteps = cancelled 
+    ? [
+        { key: "PLACED" as StepKey, label: "Đã đặt hàng", Icon: ReceiptText },
+        { key: "CANCELLED" as StepKey, label: "Đã hủy", Icon: X },
+      ]
+    : steps;
+  
+  const N = displaySteps.length;
 
   // tỉ lệ để baseline bám đúng tâm icon đầu/cuối
   const leftPct = (1 / (2 * N)) * 100;
   const trackPct = ((N - 1) / N) * 100;
-  const ratio = cancelled ? 0 : Math.max(0, currentIndex) / (N - 1);
+  const ratio = cancelled ? 1 : Math.max(0, currentIndex) / (steps.length - 1);
 
   return (
     <div className="relative">
@@ -128,15 +163,15 @@ function TimelineHorizontal({
           className="absolute top-1/2 -translate-y-1/2 h-1 bg-gray-200 rounded"
           style={{ left: `${leftPct}%`, right: `${leftPct}%` }}
         />
-        {!cancelled && (
-          <div
-            className="absolute top-1/2 -translate-y-1/2 h-1 bg-blue-500 rounded transition-[width] duration-500"
-            style={{
-              left: `${leftPct}%`,
-              width: `calc(${trackPct}% * ${ratio})`,
-            }}
-          />
-        )}
+        <div
+          className={`absolute top-1/2 -translate-y-1/2 h-1 rounded transition-[width] duration-500 ${
+            cancelled ? "bg-black" : "bg-blue-500"
+          }`}
+          style={{
+            left: `${leftPct}%`,
+            width: `calc(${trackPct}% * ${ratio})`,
+          }}
+        />
       </div>
 
       {/* Grid bước: mỗi cột là 1 KHỐI (icon + label + timestamp) */}
@@ -144,9 +179,10 @@ function TimelineHorizontal({
         className="relative grid gap-0"
         style={{ gridTemplateColumns: `repeat(${N}, minmax(0, 1fr))` }}
       >
-        {steps.map((s, idx) => {
-          const done = !cancelled && idx <= currentIndex;
-          const active = !cancelled && idx === currentIndex;
+        {displaySteps.map((s, idx) => {
+          const done = cancelled ? true : idx <= currentIndex;
+          const active = cancelled ? idx === 1 : idx === currentIndex;
+          const isCancelledStep = s.key === "CANCELLED";
 
           return (
             <div key={s.key} className="flex flex-col items-center">
@@ -154,7 +190,9 @@ function TimelineHorizontal({
                 <div
                   className={[
                     "flex items-center justify-center w-8 h-8 rounded-full border transition-colors",
-                    done
+                    done && isCancelledStep
+                      ? "bg-red-500 text-white border-red-500"
+                      : done
                       ? "bg-blue-500 text-white border-blue-500"
                       : "bg-white text-gray-400 border-gray-300",
                     active && !done ? "ring-2 ring-black/20" : "",
@@ -168,7 +206,7 @@ function TimelineHorizontal({
               <div className="w-full max-w-[14rem] mx-auto mt-2 text-center">
                 <div
                   className={`text-sm font-medium ${
-                    done ? "text-black" : "text-gray-500"
+                    done && isCancelledStep ? "text-red-600" : done ? "text-black" : "text-gray-500"
                   }`}
                 >
                   {s.label}

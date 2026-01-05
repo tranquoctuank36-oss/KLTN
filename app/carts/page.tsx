@@ -21,6 +21,15 @@ export default function CartPage() {
   } = useCart();
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate initial loading
+    const timer = setTimeout(() => {
+      setInitialLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const selectedCart = cart.filter((item) => {
     const key = item.cartItemId || `${item.product.slug}__${item.selectedVariant.id}`;
@@ -36,6 +45,12 @@ export default function CartPage() {
     (sum, item) => sum + item.quantity,
     0
   );
+
+  // Check if any selected item is out of stock or unavailable
+  const hasOutOfStockItems = selectedCart.some((item) => {
+    const maxInv = item.selectedVariant.availableQuantity ?? item.selectedVariant.quantityAvailable ?? Infinity;
+    return item.status === "out_of_stock" || item.status === "unavailable" || maxInv <= 0;
+  });
 
   const handleSetItemQuantity = async (cartItemId: string, quantity: number) => {
     clearDiscount();
@@ -74,12 +89,22 @@ export default function CartPage() {
     }, 300);
   };
 
-  if (cartLoading) {
+  // Show loading skeleton only on initial load
+  if (initialLoading) {
     return (
       <div className="max-w-full px-20 lg:px-30 py-10 bg-gray-100">
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <div className="h-10 bg-gray-200 rounded w-1/3 mb-8 animate-pulse"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left skeleton */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="h-16 bg-gray-200 rounded animate-pulse"></div>
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-40 bg-gray-200 rounded animate-pulse"></div>
+            ))}
+          </div>
+          {/* Right skeleton */}
+          <div className="lg:col-span-1">
+            <div className="h-96 bg-gray-200 rounded animate-pulse"></div>
           </div>
         </div>
       </div>
@@ -95,23 +120,23 @@ export default function CartPage() {
               <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-6 bg-white rounded-md">
                 <Image
                   src="/cart_empty_background.png"
-                  alt="Empty Cart"
+                  alt="Giỏ Hàng Trống"
                   width={100}
                   height={100}
                   className="mb-6"
                 />
 
                 {/* Tiêu đề */}
-                <h1 className="text-2xl font-bold mb-2">Your cart is empty.</h1>
+                <h1 className="text-2xl font-bold mb-2">Giỏ hàng của bạn trống</h1>
                 <p className="text-gray-500 mb-6">
-                  Shop now on the home page!!!
+                  Mua sắm ngay trên trang chủ!!!
                 </p>
 
                 <Link
                   href={Routes.home()}
                   className="inline-block px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
                 >
-                  Continue Shopping
+                  Tiếp tục mua sắm
                 </Link>
               </div>
             </div>
@@ -127,6 +152,7 @@ export default function CartPage() {
                 totalQuantity={selectedQuantity}
                 isEmpty={selectedItems.size === 0}
                 selectedItems={selectedItems}
+                hasOutOfStockItems={hasOutOfStockItems}
               />
             </div>
           </div>
@@ -138,9 +164,9 @@ export default function CartPage() {
   return (
     <div className="max-w-full px-20 lg:px-30 py-10 bg-gray-100">
       <h1 className="text-3xl font-bold mb-8">
-        <span>Shopping Cart</span>
+        <span>Giỏ hàng</span>
         <span className="ml-4 text-gray-500 text-base font-bold">
-          {totalQuantity} {totalQuantity === 1 ? "ITEM" : "ITEMS"} IN CART
+          {totalQuantity} {totalQuantity === 1 ? "sản phẩm" : "sản phẩm"} trong giỏ
         </span>
       </h1>
 
@@ -168,6 +194,7 @@ export default function CartPage() {
               totalQuantity={selectedQuantity}
               isEmpty={selectedItems.size === 0}
               selectedItems={selectedItems}
+              hasOutOfStockItems={hasOutOfStockItems}
             />
           </div>
         </div>

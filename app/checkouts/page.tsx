@@ -129,7 +129,7 @@ export default function CheckoutPage() {
     provinceId: "",
     districtId: "",
     wardId: "",
-    note: "",
+    customerNote: "",
     couponCode: "",
   });
 
@@ -156,7 +156,7 @@ export default function CheckoutPage() {
       grandTotal: Math.max(0, calculatedGrandTotal),
       paymentMethod,
       couponCode: voucherCode || "",
-      note,
+      customerNote: note,
     }));
   }, [
     checkoutCart,

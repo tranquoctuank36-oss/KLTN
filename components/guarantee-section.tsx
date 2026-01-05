@@ -14,9 +14,9 @@ type Item = {
 };
 
 const ITEMS: Item[] = [
-  { icon: <HandCoins className="h-7 w-7" />, title: "100% money-back guarantee" },
-  { icon: <RefreshCcw className="h-7 w-7" />, title: "45-day return or exchange" },
-  { icon: <CalendarDays className="h-7 w-7" />, title: "365-day warranty" },
+  { icon: <HandCoins className="h-7 w-7" />, title: "Đảm bảo hoàn tiền 100%" },
+  { icon: <RefreshCcw className="h-7 w-7" />, title: "Trả hàng hoặc trao đổi trong 45 ngày" },
+  { icon: <CalendarDays className="h-7 w-7" />, title: "Bảo hành 365 ngày" },
 ];
 
 export default function GuaranteeSection() {
@@ -29,12 +29,12 @@ export default function GuaranteeSection() {
           </div>
 
           <h2 className="text-1xl md:text-2xl font-bold text-slate-900">
-            Perfect Pair Guarantee.
+            Bảo đảm cặp kính hoàn hảo.
           </h2>
 
           <p className="max-w-1xl font-medium text-gray-500 leading-relaxed">
-            As glasses wearers, we&apos;re committed to ensuring you the perfect pair,
-            <br /> with stylish frames and premium quality lenses.
+            Là những người đeo kính, chúng tôi cam kết đảm bảo bạn nhận được cặp kính hoàn hảo,
+            <br /> với gọng kính đẹp mắt và tròng kính chất lượng cao.
           </p>
         </div>
 

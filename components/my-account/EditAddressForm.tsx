@@ -13,6 +13,7 @@ import { updateAddress, getAddressById } from "@/services/userService";
 import toast from "react-hot-toast";
 import DeleteConfirmDialog from "../dialog/DeleteConfirmDialog";
 import { District, Province, Ward } from "@/types/location";
+import { Loader2 } from "lucide-react";
 
 type Props = {
   initialData: any;
@@ -75,7 +76,7 @@ export default function EditAddressForm({
         setSelectedProvince(data.provinceId || "");
       } catch (error) {
         console.error("Failed to fetch address:", error);
-        toast.error("Failed to load address");
+        toast.error("Không thể tải địa chỉ.");
       } finally {
         setLoading(false);
       }
@@ -189,7 +190,7 @@ export default function EditAddressForm({
       try {
         await updateAddress(initialData.id, payload);
 
-        toast.success("Changes Saved!", {
+        toast.success("Thay đổi đã được lưu!", {
           duration: 2000,
           position: "top-center",
         });
@@ -205,7 +206,7 @@ export default function EditAddressForm({
             position: "top-center",
           });
         } else {
-          toast.error("Failed to update address", {
+          toast.error("Không thể cập nhật địa chỉ", {
             duration: 3000,
             position: "top-center",
           });
@@ -220,7 +221,7 @@ export default function EditAddressForm({
     return (
       <div className="bg-white rounded-lg p-6 shadow-lg w-full max-w-auto">
         <div className="flex justify-center items-center py-10">
-          <p className="text-gray-500">Loading address...</p>
+          <p className="text-gray-500">Đang tải địa chỉ...</p>
         </div>
       </div>
     );
@@ -232,7 +233,7 @@ export default function EditAddressForm({
       className="bg-white rounded-lg p-6 shadow-lg w-full max-w-auto"
     >
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold">Edit address</h3>
+        <h3 className="text-xl font-bold">Sửa địa chỉ</h3>
         <Button
           type="button"
           onClick={onCancel}
@@ -246,7 +247,7 @@ export default function EditAddressForm({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3">
         <FloatingInput
           id="name"
-          label="Name"
+          label="Tên"
           value={name}
           onChange={setName}
           required
@@ -263,7 +264,7 @@ export default function EditAddressForm({
       <div className="grid grid-cols-1 gap-4 pt-3">
         <FloatingInput
           id="phone"
-          label="Phone Number"
+          label="Số điện thoại"
           value={phone}
           onChange={setPhone}
           required
@@ -272,20 +273,20 @@ export default function EditAddressForm({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-        <FloatingInput
+        {/* <FloatingInput
           id="country"
-          label="Country"
+          label="Quốc gia"
           as="select"
           value={country}
           onChange={setCountry}
-          options={[{ value: "VN", label: "Vietnam" }]}
+          options={[{ value: "VN", label: "Việt Nam" }]}
           required
           forceValidate={forceValidate}
-        />
+        /> */}
 
         <FloatingInput
           id="province"
-          label="Province"
+          label="Tỉnh/Thành phố"
           as="select"
           value={selectedProvince}
           onChange={setSelectedProvince}
@@ -301,7 +302,7 @@ export default function EditAddressForm({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
         <FloatingInput
           id="district"
-          label="District"
+          label="Huyện/Quận"
           as="select"
           value={selectedDistrict}
           onChange={setSelectedDistrict}
@@ -311,7 +312,7 @@ export default function EditAddressForm({
                   value: String(d.id),
                   label: d.name,
                 }))
-              : [{ value: "", label: "No data" }]
+              : [{ value: "", label: "Không có dữ liệu" }]
           }
           required
           forceValidate={forceValidate}
@@ -319,7 +320,7 @@ export default function EditAddressForm({
 
         <FloatingInput
           id="ward"
-          label="Ward"
+          label="Xã/Phường"
           as="select"
           value={selectedWard}
           onChange={setSelectedWard}
@@ -329,7 +330,7 @@ export default function EditAddressForm({
                   value: String(w.id),
                   label: w.name,
                 }))
-              : [{ value: "", label: "No data" }]
+              : [{ value: "", label: "Không có dữ liệu" }]
           }
           required
           forceValidate={forceValidate}
@@ -339,7 +340,7 @@ export default function EditAddressForm({
       <div className="mt-4">
         <FloatingInput
           id="address"
-          label="Building, House Number, Street Name"
+          label="Tòa nhà, Số nhà, Tên đường"
           value={address}
           onChange={setAddress}
           required
@@ -349,7 +350,7 @@ export default function EditAddressForm({
       {initialData.isDefault ? (
         <div className="flex items-center gap-2 pt-5">
           <span className="bg-gray-400 text-white text-sm font-semibold px-2 py-1 rounded">
-            Default
+            Mặc định
           </span>
         </div>
       ) : (
@@ -360,7 +361,7 @@ export default function EditAddressForm({
             onChange={(e) => setIsDefaultDelivery(e.target.checked)}
             className="w-4 h-4 accent-blue-600 cursor-pointer"
           />
-          <span className="cursor-pointer">Set as default</span>
+          <span className="cursor-pointer">Đặt làm mặc định</span>
         </label>
       )}
 
@@ -370,7 +371,7 @@ export default function EditAddressForm({
           onClick={() => setShowDeleteDialog(true)}
           className="h-12 w-25 bg-white border border-2 border-gray-400 hover:border-gray-800 text-lg font-bold text-gray-400 hover:text-gray-800 rounded-full"
         >
-          Delete
+          Xoá
         </Button>
 
         <Button
@@ -378,7 +379,7 @@ export default function EditAddressForm({
           disabled={saving}
           className="h-12 w-25 bg-blue-600 text-white text-lg font-bold hover:bg-blue-800 rounded-full"
         >
-          {saving ? "Saving..." : "Save"}
+          {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : "Lưu"}
         </Button>
 
         <DeleteConfirmDialog

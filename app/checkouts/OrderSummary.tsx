@@ -11,7 +11,6 @@ import Link from "next/link";
 import { Routes } from "@/lib/routes";
 import toast from "react-hot-toast";
 import { useCart } from "@/context/CartContext";
-import { createPayment } from "@/services/paymentService";
 import { CalendarDays, DollarSign, Truck } from "lucide-react";
 
 type Props = {
@@ -56,7 +55,7 @@ export default function OrderSummary({
     const payload = {
       items,
       voucherCode: discountCode || undefined,
-      note: orderData.note || "",
+      customerNote: orderData.customerNote || "",
       recipientName: orderData.recipientName,
       recipientEmail: orderData.recipientEmail,
       recipientPhone: orderData.recipientPhone,
@@ -74,7 +73,7 @@ export default function OrderSummary({
 
       if (paymentMethod === "VNPAY") {
         if (!paymentUrl) {
-          toast.error("Payment URL not found. Please try again.");
+          toast.error("Không tìm thấy URL thanh toán VNPAY!");
           throw new Error("Payment URL not found");
         }
         return {
@@ -92,7 +91,7 @@ export default function OrderSummary({
       }
     } catch (err: any) {
       console.error(err);
-      toast.error("There was an error while ordering!");
+      toast.error("Có lỗi xảy ra khi đặt hàng!");
       throw err;
     }
   };
@@ -109,13 +108,13 @@ export default function OrderSummary({
 
   const getDisabledMessage = () => {
     if (hasShippingError) {
-      return "Delivery is not available for this address";
+      return "Giao hàng không có sẵn cho địa chỉ này";
     }
     if (!isFormValid) {
-      return "Please complete shipping information";
+      return "Vui lòng hoàn tất thông tin vận chuyển";
     }
     if (checkoutCart.length === 0) {
-      return "Your cart is empty";
+      return "Giỏ hàng của bạn đang trống";
     }
     return "";
   };
@@ -127,12 +126,12 @@ export default function OrderSummary({
     >
       <div className="bg-white rounded-lg shadow">
         <div className="flex items-center justify-between border-b px-3 py-4">
-          <h2 className="text-lg font-semibold">Your Cart ({totalQuantity})</h2>
+          <h2 className="text-lg font-semibold">Giỏ hàng của tôi ({totalQuantity})</h2>
           <Link
             href={Routes.cart()}
             className="text-gray-800 underline text-base font-medium hover:no-underline"
           >
-            Edit Cart
+            Chỉnh sửa giỏ hàng
           </Link>
         </div>
 
@@ -140,13 +139,13 @@ export default function OrderSummary({
           {checkoutCart.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-gray-500">
               <p className="text-base font-medium">
-                You have no products in your cart yet
+                Bạn chưa có sản phẩm nào trong giỏ hàng
               </p>
               <Link
                 href={Routes.home()}
                 className="mt-3 text-blue-600 font-semibold underline hover:no-underline"
               >
-                Continue shopping
+                Tiếp tục mua sắm
               </Link>
             </div>
           ) : (
@@ -203,7 +202,7 @@ export default function OrderSummary({
                       </div>
 
                       <p className="text-sm text-gray-500 font-medium pb-2">
-                        Quantity:{" "}
+                        Số lượng:{" "}
                         <span className="font-semibold text-gray-800">
                           {item.quantity}
                         </span>
@@ -219,7 +218,7 @@ export default function OrderSummary({
         <div className="border-t px-3 py-4 space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-600">
-              Subtotal ({totalQuantity} items):
+              Tổng ({totalQuantity} sản phẩm):
             </span>
             <span className="font-medium">
               {checkoutSubtotal.toLocaleString("en-US")}đ
@@ -229,7 +228,7 @@ export default function OrderSummary({
           {discountCode && orderDiscount > 0 && (
             <div className="flex justify-between text-red-600">
               <span>
-                Order Discount (
+                Giảm giá (
                 <span className="font-semibold">{discountCode}</span>):
               </span>
               <span>-{orderDiscount.toLocaleString("en-US")}đ</span>
@@ -237,10 +236,10 @@ export default function OrderSummary({
           )}
 
           <div className="flex justify-between">
-            <span className="text-gray-600">Shipping Fee:</span>
+            <span className="text-gray-600">Phí vận chuyển:</span>
             <span className={`font-medium ${discountCode && shippingDiscount > 0 ? "text-green-600 font-semibold" : ""}`}>
               {discountCode && shippingDiscount > 0 ? (
-                "Free Shipping"
+                "Miễn phí vận chuyển"
               ) : !shippingFee || shippingFee === 0 || isNaN(shippingFee) ? (
                 "0đ"
               ) : (
@@ -250,7 +249,7 @@ export default function OrderSummary({
           </div>
 
           <div className="flex justify-between pt-2 border-t font-bold text-xl">
-            <span>Grand Total:</span>
+            <span>Thanh tiền:</span>
             <span className="text-gray-900">
               {displayGrandTotal.toLocaleString("en-US")}đ
             </span>
@@ -300,7 +299,7 @@ export default function OrderSummary({
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : (
-              <span className="font-semibold text-lg">Order</span>
+              <span className="font-semibold text-lg">Đặt hàng</span>
             )}
           </Button>
         </div>
@@ -309,15 +308,15 @@ export default function OrderSummary({
       <div className="space-y-3 text-gray-700 text-sm bg-transparent px-2 mt-2">
         <div className="flex items-center gap-3">
           <Truck className="w-5 h-5 text-gray-500" />
-          <span>Free shipping & returns</span>
+          <span>Miễn phí vận chuyển & trả hàng</span>
         </div>
         <div className="flex items-center gap-3">
           <CalendarDays className="w-5 h-5 text-gray-500" />
-          <span>45-day return & exchange</span>
+          <span>45 Ngày trả hàng & đổi hàng</span>
         </div>
         <div className="flex items-center gap-3">
           <DollarSign className="w-5 h-5 text-gray-500" />
-          <span>100% money-back guarantee</span>
+          <span>Bảo hành hoàn đổi 100%</span>
         </div>
       </div>
     </div>

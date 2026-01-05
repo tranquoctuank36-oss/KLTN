@@ -25,7 +25,7 @@ export default function ProductTabs({ product }: Props) {
               data-[state=active]:rounded-none
               bg-transparent"
           >
-            About the frame
+            Về gọng
           </TabsTrigger>
           <TabsTrigger
             value="shipping"
@@ -39,7 +39,7 @@ export default function ProductTabs({ product }: Props) {
               data-[state=active]:rounded-none 
               bg-transparent"
           >
-            Shipping / Exchange & Return
+            Vận Chuyển / Đổi & Trả hàng
           </TabsTrigger>
         </TabsList>
 
@@ -49,15 +49,14 @@ export default function ProductTabs({ product }: Props) {
             <div className="flex-1 text-gray-700 text-sm">
               <p className="font-semibold mb-2">
                 {product.description ??
-                  "This is a premium quality frame, designed for comfort and timeless style."}
+                  "Gọng kính chất lượng cao, thiết kế cho sự bền bỉ và phong cách thời thượng."}
               </p>
 
               <div className="mt-4">
                 <p className="font-semibold">
-                  User Guide:{" "}
+                  Hướng Dẫn Sử Dụng:{" "}
                   <span className="font-normal">
-                    For eye wear only. Avoid high temperatures and strong
-                    impacts.
+                    Chỉ dùng cho kính mắt. Tránh tiếp xúc với nhiệt độ cao và tác động mạnh.
                   </span>
                 </p>
               </div>
@@ -67,7 +66,7 @@ export default function ProductTabs({ product }: Props) {
                 <tbody>
                   <tr className="border-b border-gray-200">
                     <td className="bg-gray-100 font-semibold px-3 py-2 w-1/2">
-                      Material:
+                      Chất Liệu:
                     </td>
                     <td className="px-3 py-2">
                       {product.frameDetail?.frameMaterial?.name}
@@ -75,7 +74,7 @@ export default function ProductTabs({ product }: Props) {
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="bg-gray-100 font-semibold px-3 py-2">
-                      Shape:
+                      Hình Dáng:
                     </td>
                     <td className="px-3 py-2">
                       {product.frameDetail?.frameShape?.name}
@@ -83,7 +82,7 @@ export default function ProductTabs({ product }: Props) {
                   </tr>
                   <tr className="border-b border-gray-200">
                     <td className="bg-gray-100 font-semibold px-3 py-2">
-                      Type:
+                      Loại:
                     </td>
                     <td className="px-3 py-2">
                       {product.frameDetail?.frameType?.name}
@@ -91,7 +90,7 @@ export default function ProductTabs({ product }: Props) {
                   </tr>
                   <tr>
                     <td className="bg-gray-100 font-semibold px-3 py-2">
-                      Gender:
+                      Giới Tính:
                     </td>
                     <td className="px-3 py-2">
                       {product.gender?.charAt(0).toUpperCase() +
@@ -108,23 +107,17 @@ export default function ProductTabs({ product }: Props) {
         <TabsContent value="shipping">
           <div className="bg-gray-50 rounded-md p-6 mt-4 text-gray-700 space-y-4">
             <div>
-              <p className="font-semibold">Shipping Policy</p>
+              <p className="font-semibold">Chính Sách Vận Chuyển</p>
               <p className="mt-1 text-sm">
-                - Once the purchase is completed on the website, the order will
-                be immediately packed and prepared for shipping. <br />- The
-                ordered items will be handed over to a third party and are
-                confirmed to be delivered within a maximum of 5 days per order.{" "}
-                <br />
+                - Sau khi hoàn tất giao dịch trên trang web, đơn hàng sẽ ngay lập tức được đóng gói và chuẩn bị vận chuyển. 
+                <br />- Các sản phẩm trong đơn hàng sẽ được giao cho bên thứ ba và được xác nhận giao hàng trong 5 ngày tối đa. <br />
               </p>
               <br />
 
-              <p className="font-semibold">Exchange and Return Policy</p>
+              <p className="font-semibold">Chính Sách Đổi và Trả Hàng</p>
               <p className="mt-1 text-sm">
-                - You can exchange the product or size within 45 days of
-                receiving your order. <br />
-                - If the product has a manufacturing defect or is damaged during
-                shipping, the customer will be offered a replacement or a full
-                refund. <br />
+                - Bạn có thể đổi sản phẩm trong 45 ngày kể từ khi nhận đơn hàng của bạn. <br />
+                - Nếu sản phẩm có lỗi sản xuất hoặc bị hỏng trên đường vận chuyển, khách hàng sẽ được đổi hoặc hoàn tiền đầy đủ. <br />
               </p>
             </div>
           </div>

@@ -43,7 +43,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, isLoggedIn } = useAuth();
+  const [prevIsLoggedIn, setPrevIsLoggedIn] = useState<boolean | null>(null);
 
   // Map API cart response to CartItem format
   const mapCartResponseToItems = async (apiCart: CartResponse): Promise<CartItem[]> => {
@@ -99,7 +100,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             originalPrice: item.originalPrice,
             stock: 0,
             quantityAvailable: item.quantity || 0,
-            stockStatus: (item.status === "available" ? "in_stock" : "unknown") as "in_stock" | "out_of_stock" | "low_stock" | "unknown",
+            stockStatus: (item.status === "in_stock" ? "in_stock" : item.status === "out_of_stock" ? "out_of_stock" : item.status === "low_stock" ? "low_stock" : "unknown") as "in_stock" | "out_of_stock" | "low_stock" | "unknown",
             colors: [],
             images: item.thumbnailImage ? [{
               ...item.thumbnailImage,
@@ -108,6 +109,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             }] : [],
           },
           quantity: item.quantity,
+          status: item.status as "unknown" | "out_of_stock" | "low_stock" | "in_stock", // Cast status to correct type
         };
       })
     );
@@ -142,10 +144,49 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Only run in browser
     if (typeof window !== 'undefined') {
-      refreshCart();
+      // Detect logout: isLoggedIn changed from true to false
+      if (prevIsLoggedIn === true && isLoggedIn === false) {
+        console.log("🧹 Logout detected, clearing cart immediately");
+        setCart([]);
+        setDiscountCode(null);
+        setDiscountAmount(0);
+        localStorage.removeItem("cartDiscount");
+        setCartLoading(false);
+        setPrevIsLoggedIn(isLoggedIn);
+        return;
+      }
+
+      // Update previous state
+      setPrevIsLoggedIn(isLoggedIn);
+
+      // Nếu không có cart identifier => clear cart
+      if (!hasCartIdentifier()) {
+        console.log("⚠️ No cart identifier, clearing cart");
+        setCart([]);
+        setCartLoading(false);
+      } else {
+        // Nếu có cart identifier => refresh cart từ API
+        refreshCart();
+      }
       setIsLoaded(true);
     }
-  }, [user]);
+  }, [user, isLoggedIn]);
+
+  // Listen to logout event from other tabs
+  useEffect(() => {
+    const handleStorageEvent = (e: StorageEvent) => {
+      if (e.key === "__app:logout") {
+        console.log("🧹 Logout detected from another tab, clearing cart");
+        setCart([]);
+        setDiscountCode(null);
+        setDiscountAmount(0);
+        localStorage.removeItem("cartDiscount");
+      }
+    };
+
+    window.addEventListener("storage", handleStorageEvent);
+    return () => window.removeEventListener("storage", handleStorageEvent);
+  }, []);
 
   // Merge cart khi user đăng nhập
   useEffect(() => {
@@ -197,8 +238,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const { autoOpenDrawer = true } = options || {};
     
     if (!item.selectedVariant?.id) {
-      console.error("Cannot add to cart: No variant ID");
-      throw new Error("Product variant ID is required");
+      console.error("Không thể thêm vào giỏ hàng: Không có ID biến thể");
+      throw new Error("ID biến thể sản phẩm là bắt buộc");
     }
     
     try {
@@ -318,7 +359,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 export function useCart() {
   const context = useContext(CartContext);
   if (!context) {
-    throw new Error("useCart must be used within a CartProvider");
+    throw new Error("useCart phải được sử dụng trong CartProvider");
   }
   return context;
 }

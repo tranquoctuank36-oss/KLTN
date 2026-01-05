@@ -58,6 +58,13 @@ export default function MyAccountClient() {
 
   const searchParams = useSearchParams();
   const section = searchParams.get("section");
+  
+  // Determine active menu based on section
+  const getActiveMenu = (currentSection: string | null) => {
+    if (!currentSection) return null;
+    if (currentSection.startsWith("my-orders")) return "my-orders";
+    return currentSection;
+  };
 
   useEffect(() => {
     cancelEdit();
@@ -140,38 +147,38 @@ export default function MyAccountClient() {
   const menuItems = [
     {
       id: "my-orders",
-      label: "My Orders",
+      label: "Đơn hàng của tôi",
       icon: <Package className="h-6 w-6" />,
     },
     {
       id: "my-details",
-      label: "My Details",
+      label: "Thông tin cá nhân",
       icon: <UserIcon className="h-6 w-6" />,
     },
     {
       id: "address-book",
-      label: "Address Book",
+      label: "Địa chỉ",
       icon: <MapPin className="h-6 w-6" />,
     },
     {
       id: "logoutAll",
-      label: "Log out all devices",
+      label: "Đăng xuất tất cả thiết bị",
       icon: <LogOut className="h-6 w-6" />,
       render: () => (
         <ConfirmDialog
           trigger={
             <button className="w-full flex items-center gap-3 px-4 py-4 text-left text-lg text-gray-600 hover:text-black cursor-pointer">
               <LogOut className="h-6 w-6" />
-              Log out all devices
+              Đăng xuất tất cả thiết bị
             </button>
           }
-          title="Log out all devices?"
-          description="You will be logged out of all devices logged in with this account."
-          confirmText="Logout"
-          cancelText="Cancel"
+          title="Đăng xuất tất cả thiết bị?"
+          description="Bạn sẽ bị đăng xuất khỏi tất cả các thiết bị đã đăng nhập với tài khoản này."
+          confirmText="Đăng xuất"
+          cancelText="Hủy bỏ"
           onConfirm={async () => {
             await logoutAll();
-            toast.success("Logged out of all devices!", {
+            toast.success("Đã đăng xuất khỏi tất cả thiết bị!", {
               duration: 2000,
               position: "top-center",
             });
@@ -196,7 +203,17 @@ export default function MyAccountClient() {
   };
 
   useEffect(() => {
+    // Set active based on section parameter
+    if (section) {
+      setActive(getActiveMenu(section));
+    }
+  }, [section]);
+
+  useEffect(() => {
     const handleScroll = () => {
+      // Only update active from scroll if no section parameter
+      if (section) return;
+      
       let current: string | null = null;
       for (const key of Object.keys(sectionsRef) as Array<
         keyof typeof sectionsRef
@@ -216,7 +233,7 @@ export default function MyAccountClient() {
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [section]);
 
   const openEdit = () => {
     if (!user) return;
@@ -328,12 +345,12 @@ export default function MyAccountClient() {
       setIsEditing(false);
       localStorage.removeItem("accountFormMode");
 
-      toast.success("Profile updated!", {
+      toast.success("Thông tin được cập nhật thành công!", {
         duration: 2000,
         position: "top-center",
       });
     } catch (err) {
-      console.error("Failed to update user:", err);
+      console.error("Không Thể Cập Nhật Người Dùng:", err);
     }
   };
 
@@ -349,17 +366,17 @@ export default function MyAccountClient() {
     const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
 
     if (!(passMin8 && hasNumber && hasUppercase && hasLowercase && hasSpecial)) {
-      setNewPasswordError("Passwords must be at least 8 characters long and include numbers, uppercase letters, lowercase letters, and symbols.");
+      setNewPasswordError("Mật khẩu phải dài ít nhất 8 ký tự và bao gồm chữ số, chữ in hoa, chữ thường và ký tự đặc biệt.");
       return;
     }
     if (newPassword !== confirmPassword) {
-      setPasswordError("Passwords do not match");
+      setPasswordError("Mật khẩu không khớp");
       return;
     }
 
     try {
       await updatePassword({ currentPassword, newPassword });
-      toast.success("Password reset successfully!", {
+      toast.success("Mật khẩu được đặt lại thành công!", {
         duration: 2000,
         position: "top-center",
       });
@@ -386,14 +403,14 @@ export default function MyAccountClient() {
     <div className="max-w-full mx-auto px-6 lg:px-30 py-10 bg-gray-100">
       {/* Header */}
       <div className="flex justify-between items-center px-4 mb-6">
-        <h1 className="text-3xl font-bold">My Account</h1>
+        <h1 className="text-3xl font-bold">Tài Khoản của tôi</h1>
         <div className="text-right text-gray-700 text-lg">
-          <p>Need help? Ask our experts</p>
+          <p>Cần giúp đỡ? Hỏi các chuyên gia của chúng tôi</p>
           <div>
             <span className="text-gray-400 text-sm underline">1900 12 34 56</span>{" "}
             |{" "}
             <Link href="#" className="text-gray-400 text-sm">
-              Chat Online
+              Trò chuyện trực tiếp
             </Link>
           </div>
         </div>
@@ -410,17 +427,17 @@ export default function MyAccountClient() {
             <div className="w-32 h-32 rounded-full overflow-hidden border-3 border-blue-600">
               <Image
                 src="/avatar_user.png"
-                alt="User"
+                alt="Người dùng"
                 width={150}
                 height={150}
                 className="object-cover bg-gray-300"
               />
             </div>
             <h2 className="mt-5 font-semibold text-3xl text-gray-600">
-              Hi{" "}
+              Xin chào{" "}
               {user?.firstName && user.firstName.trim() !== ""
                 ? user.firstName
-                : "You"}
+                : "Bạn"}
             </h2>
           </div>
 
@@ -512,7 +529,7 @@ export default function MyAccountClient() {
                 cancelEditAddress();
               }}
             />
-          ) : section === "my-orders" ? (
+          ) : section === "my-orders" || section === "my-orders/reviews" ? (
             <OrdersSection ref={sectionsRef.orders} />
           ) : section === "my-details" ? (
             <DetailsSection

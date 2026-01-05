@@ -49,7 +49,7 @@ export default function SignupDialog({
 
   const handleSignup = async () => {
     if (!isValidEmail(email.trim()) && email.trim() !== "") {
-      setEmailError("Please enter a valid email address.");
+      setEmailError("Vui lòng nhập một địa chỉ email hợp lệ.");
       setForceValidate(true);
       return;
     }
@@ -83,10 +83,10 @@ export default function SignupDialog({
       onSwitchToVerify?.(email.trim());
     } catch (err: any) {
       if (err.response?.data.detail.includes("Email đã được sử dụng")) {
-        setEmailError("Email already exists!");
+        setEmailError("Email đã tồn tại!");
         setRegisterError("");
       } else {
-        setRegisterError("Register failed, please try again!");
+        setRegisterError("Đăng ký thất bại, vui lòng thử lại!");
       }
     } finally {
       setLoading(false);
@@ -101,10 +101,10 @@ export default function SignupDialog({
       >
         <DialogHeader className="space-y-2">
           <DialogTitle className="mt-2 text-center text-2xl font-bold">
-            Sign up.
+            Đăng ký.
           </DialogTitle>
           <p className="text-center text-sm leading-5">
-            Sign up to enjoy faster checkout and easy order tracking.
+            Đăng ký để thanh toán nhanh hơn và dễ dàng theo dõi đơn hàng.
           </p>
         </DialogHeader>
 
@@ -112,7 +112,7 @@ export default function SignupDialog({
           {/* Email */}
           <FloatingInput
             id="signup-email"
-            label="Email Address"
+            label="Địa chỉ Email"
             type="email"
             required
             value={email}
@@ -128,7 +128,7 @@ export default function SignupDialog({
           {/* Password */}
           <FloatingInput
             id="signup-password"
-            label="Password"
+            label="Mật khẩu"
             type={showPwd ? "text" : "password"}
             required
             value={password}
@@ -140,7 +140,7 @@ export default function SignupDialog({
                 className="drop-shadow-none bg-white
                   w-9 h-9 flex items-center justify-center
                   rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition"
-                aria-label={showPwd ? "Hide password" : "Show password"}
+                aria-label={showPwd ? "Ẩn Mật Khẩu" : "Hiển Thị Mật Khẩu"}
               >
                 {showPwd ? (
                   <EyeOff className="!h-5 !w-5" />
@@ -199,7 +199,7 @@ export default function SignupDialog({
           {/* Confirm Password */}
           <FloatingInput
             id="signup-confirm"
-            label="Confirm Password"
+            label="Xác nhận Mật khẩu"
             type={showConfirmPwd ? "text" : "password"}
             required
             value={confirmPwd}
@@ -211,7 +211,7 @@ export default function SignupDialog({
                 className="drop-shadow-none bg-white
                   w-9 h-9 flex items-center justify-center
                   rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition"
-                aria-label={showConfirmPwd ? "Hide password" : "Show password"}
+                aria-label={showConfirmPwd ? "Ẩn Mật Khẩu" : "Hiển Thị Mật Khẩu"}
               >
                 {showConfirmPwd ? (
                   <EyeOff className="!h-5 !w-5" />
@@ -224,7 +224,7 @@ export default function SignupDialog({
           {/* Error confirm password */}
           {forceValidate && confirmPwd && !matchConfirm && (
             <p className="text-xs text-red-500 mt-1">
-              Confirm password does not match
+              Mật khẩu xác nhận không khớp
             </p>
           )}
           {registerError && (
@@ -239,12 +239,12 @@ export default function SignupDialog({
             {loading ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             ) : (
-              <span className="font-semibold text-lg">Sign Up</span>
+              <span className="font-semibold text-lg">Đăng ký</span>
             )}
           </Button>
 
           <p className="text-center text-sm text-gray-500 mt-2">
-            Already a member?{" "}
+            Đã là thành viên?{" "}
             <Button
               type="button"
               onClick={() => {
@@ -253,7 +253,7 @@ export default function SignupDialog({
               }}
               className="underline text-blue-500 pl-0 drop-shadow-none"
             >
-              Login
+              Đăng nhập
             </Button>
           </p>
         </form>

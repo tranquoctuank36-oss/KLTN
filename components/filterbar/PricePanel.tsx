@@ -157,7 +157,7 @@ export default function PricePanel({
           onClick={() => onOpenChange(false)}
           className="text-xs bg-gray-100 font-medium text-slate-500 underline hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 rounded hover:bg-gray-100"
         >
-          Close
+          Đóng
         </Button>
       </div>
     </div>

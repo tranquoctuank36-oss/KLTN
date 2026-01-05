@@ -1,7 +1,7 @@
 import api from "./api";
 import { Product } from "@/types/product";
 
-export type AggBucket = { key: string; count: number };
+export type AggBucket = { key: string; count: number; label?: string };
 
 export interface ElasticAggregation {
   productTypes: AggBucket[];
@@ -52,6 +52,8 @@ export type ElasticSearchFilters = {
   minPrice?: string;
   maxPrice?: string;
   colors?: string[];
+  sortField?: string;
+  sortOrder?: string;
 };
 
 type SearchQuery = ElasticSearchFilters & { page: number; limit: number };
@@ -129,9 +131,16 @@ function transformFacetsToAggregations(facets: any[]): ElasticAggregation {
         agg[aggKey] = options.map((opt: any) => ({
           key: opt.value || opt.label,
           count: opt.count || 0,
+          label: opt.label,
           ...(opt.hexCode && { hexCode: opt.hexCode }),
         }));
       }
+    } else if (type === "range" && id === "price") {
+      // Handle price range facet
+      agg.price = {
+        min: facet.min ?? null,
+        max: facet.max ?? null,
+      };
     }
   });
 
@@ -141,8 +150,26 @@ function transformFacetsToAggregations(facets: any[]): ElasticAggregation {
 export async function searchProductsElastic(
   q: SearchQuery
 ): Promise<ProductSearchResponse> {
+  // Map sort values from UI to API format
+  let sortField = q.sortField;
+  let sortOrder = q.sortOrder;
+  
+  // Handle UI sort values (popular, newest, price-asc, price-desc)
+  if (!sortField && !sortOrder) {
+    // Default or no explicit sort
+    sortField = undefined;
+    sortOrder = undefined;
+  }
+  
+  // Build query with mapped sort
+  const queryWithSort = {
+    ...q,
+    sortField,
+    sortOrder,
+  };
+  
   // Always request facets for aggregations
-  const params = buildParams(q);
+  const params = buildParams(queryWithSort);
   const url = `/elastic-search/products?${params}&facets=true`;
   const res = await api.get(url);
   
@@ -187,6 +214,18 @@ export async function getSimilarProducts(productId: string, size: number = 20): 
     return Array.isArray(res.data?.data) ? res.data.data : [];
   } catch (error) {
     console.error('Error fetching similar products:', error);
+    return [];
+  }
+}
+
+export async function autocompleteSearch(q: string, size: number = 5): Promise<Product[]> {
+  try {
+    const url = `/elastic-search/autocomplete?q=${encodeURIComponent(q)}&size=${size}`;
+    const res = await api.get(url);
+    const products = Array.isArray(res.data?.data) ? res.data.data : [];
+    return products;
+  } catch (error) {
+    console.error('Error fetching autocomplete:', error);
     return [];
   }
 }

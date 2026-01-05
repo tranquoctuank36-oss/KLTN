@@ -77,15 +77,15 @@ function IncludingItem({ icon: Icon, label }: Item) {
 
 export default function IncludingStrip() {
   const items: Item[] = [
-    { icon: SparklesSvg,   label: "Scratch-resistant coating" },
-    { icon: BadgeCheckSvg, label: "365-day warranty" },
-    { icon: BriefcaseSvg,  label: "Case & cleaning cloth" },
+    { icon: SparklesSvg,   label: "Lớp phủ chống trầy" },
+    { icon: BadgeCheckSvg, label: "Bảo hành 365 ngày" },
+    { icon: BriefcaseSvg,  label: "Hộp và khăn lau" },
   ];
 
   return (
     <div className="rounded-full bg-blue-50/60 py-4 flex justify-center items-center">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-        <span className="font-bold text-blue-700 text-lg">Including:</span>
+        <span className="font-bold text-blue-700 text-lg">Bao gồm:</span>
 
         <IncludingItem {...items[0]} />
         <Divider />

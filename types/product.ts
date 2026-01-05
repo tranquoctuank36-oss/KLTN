@@ -1,5 +1,5 @@
 import { Brand } from "./brand";
-import { Categories } from "./categories";
+import { Category } from "./categories";
 import { ProductImages } from "./productImage";
 import { ProductVariants } from "./productVariants";
 import { Tags } from "./tags";
@@ -36,7 +36,7 @@ export type Product = {
   };
 
   brand: Brand;
-  categories?: Categories[];
+  categories?: Category[];
   tags: Tags[];
 
   isFeatured?: boolean;

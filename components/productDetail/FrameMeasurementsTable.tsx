@@ -9,7 +9,7 @@ type Props = {
 export default function FrameMeasurementsTable({ product }: Props) {
   const items = [
     {
-      label: "Lens Width",
+      label: "Chiều rộng kính",
       value: product.frameDetail?.lensWidth,
       svg: (
         <svg
@@ -32,7 +32,7 @@ export default function FrameMeasurementsTable({ product }: Props) {
       ),
     },
     {
-      label: "Lens Height",
+      label: "Chiều cao kính",
       value: product.frameDetail?.lensHeight,
       svg: (
         <svg
@@ -55,7 +55,7 @@ export default function FrameMeasurementsTable({ product }: Props) {
       ),
     },
     {
-      label: "Bridge Width",
+      label: "Chiều rộng cầu",
       value: product.frameDetail?.bridgeWidth,
       svg: (
         <svg
@@ -78,7 +78,7 @@ export default function FrameMeasurementsTable({ product }: Props) {
       ),
     },
     {
-      label: "Temple Length",
+      label: "Chiều dài tay gọng",
       value: product.frameDetail?.templeLength,
       svg: (
         <svg
@@ -107,7 +107,7 @@ export default function FrameMeasurementsTable({ product }: Props) {
   return (
     <div className="mt-15">
       <div className="flex items-center justify-between mb-3">
-        <p className="font-semibold text-gray-700 text-lg">Frame Measurements:</p>
+        <p className="font-semibold text-gray-700 text-lg">Kích thước Gọng:</p>
         {/* <a
           href="#"
           className="text-blue-600 text-sm font-medium hover:underline"
@@ -125,8 +125,8 @@ export default function FrameMeasurementsTable({ product }: Props) {
                 idx !== items.length - 1 ? "lg:border-r" : ""
               } border-gray-200`}
             >
-              <div className="bg-gray-100 text-gray-700 font-semibold px-5 py-2 border-b border-gray-200">
-                {it.label}:
+              <div className="bg-gray-100 text-center text-gray-700 font-semibold px-5 py-2 border-b border-gray-200">
+                {it.label}
               </div>
               <div className="flex flex-col items-center justify-center py-2 text-center">
                 {it.svg}

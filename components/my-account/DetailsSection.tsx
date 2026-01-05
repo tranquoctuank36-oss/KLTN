@@ -39,29 +39,28 @@ const DetailsSection = forwardRef<HTMLDivElement, Props>(
       >
         <div className="flex items-center gap-3 mb-4">
           <UserIcon className="h-6 w-6 text-gray-600" />
-          <h3 className="text-2xl font-semibold">My Details</h3>
+          <h3 className="text-2xl font-semibold">Thông tin của tôi</h3>
         </div>
 
         <p className="text-gray-700 mb-4 font-normal">
-          Feel free to edit any of your details below so your account is totally
-          up to date.
+          Có thể chỉnh sửa bất kỳ thông tin nào dưới đây để cập nhật tài khoản của bạn.
         </p>
 
         <div className="grid grid-cols-2 gap-y-4 gap-x-8">
           <div>
-            <p className="text-gray-500 text-sm">First Name:</p>
+            <p className="text-gray-500 text-sm">Tên:</p>
             <p className="text-gray-800 text-base">{user?.firstName || "—"}</p>
           </div>
           <div>
-            <p className="text-gray-500 text-sm">Gender:</p>
+            <p className="text-gray-500 text-sm">Giới tính:</p>
             <p className="text-gray-800 text-base">{user?.gender || "—"}</p>
           </div>
           <div>
-            <p className="text-gray-500 text-sm">Last Name:</p>
+            <p className="text-gray-500 text-sm">Họ:</p>
             <p className="text-gray-800 text-base">{user?.lastName || "—"}</p>
           </div>
           <div>
-            <p className="text-gray-500 text-sm">Date of Birth:</p>
+            <p className="text-gray-500 text-sm">Ngày sinh:</p>
             <p className="text-gray-800 text-base">
               {user?.dateOfBirth
                 ? new Date(user.dateOfBirth).toLocaleDateString()
@@ -69,7 +68,7 @@ const DetailsSection = forwardRef<HTMLDivElement, Props>(
             </p>
           </div>
           <div className="col-span-2">
-            <p className="text-gray-500 text-sm">Email Address:</p>
+            <p className="text-gray-500 text-sm">Email:</p>
             <p className="text-gray-800 text-base">{user?.email || "—"}</p>
           </div>
         </div>
@@ -85,7 +84,7 @@ const DetailsSection = forwardRef<HTMLDivElement, Props>(
               }, 600);
             }}
           >
-            Edit Information
+            Chỉnh sửa thông tin
           </Button>
           <Button
             className="text-blue-800 font-normal hover:underline drop-shadow-none p-0 text-base"
@@ -97,7 +96,7 @@ const DetailsSection = forwardRef<HTMLDivElement, Props>(
               }, 600);
             }}
           >
-            Change Password
+            Thay đổi mật khẩu
           </Button>
         </div>
       </div>

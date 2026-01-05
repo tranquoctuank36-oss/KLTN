@@ -25,7 +25,7 @@ export default function ConfirmDialog({
   title = "Xác nhận hành động",
   description = "Bạn có chắc chắn muốn tiếp tục không?",
   confirmText = "Xác nhận",
-  cancelText = "Hủy",
+  cancelText = "Hủy bỏ",
   onConfirm,
 }: ConfirmDialogProps) {
   const [open, setOpen] = useState(false);

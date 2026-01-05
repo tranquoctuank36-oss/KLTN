@@ -45,7 +45,7 @@ export default function ChangePasswordForm({
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold">Change Password</h3>
+        <h3 className="text-xl font-bold">Thay đổi mật khẩu</h3>
         <Button
           type="button"
           onClick={cancelChangePassword}
@@ -58,8 +58,7 @@ export default function ChangePasswordForm({
       <hr className="my-4 border-t-2" />
 
       <p className="text-gray-600 mb-6 font-normal">
-        Strong password include minimum of 8 characters. You can use any
-        combination of uppercase, lowercase, symbols, and numbers.
+        Mật khẩu mạnh bao gồm tối thiểu 8 ký tự. Bạn có thể sử dụng bất kỳ kết hợp nào của chữ hoa, chữ thường, ký hiệu và số.
       </p>
 
       <form
@@ -72,7 +71,7 @@ export default function ChangePasswordForm({
           <div className="space-y-4 w-full max-w-[400px]">
             <FloatingInput
               id="current"
-              label="Current Password"
+              label="Mật khẩu hiện tại"
               type={showCurrentPwd ? "text" : "password"}
               value={currentPassword}
               onChange={setCurrentPassword}
@@ -85,7 +84,7 @@ export default function ChangePasswordForm({
                 w-9 h-9 flex items-center justify-center
                 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition"
                   aria-label={
-                    showCurrentPwd ? "Hide password" : "Show password"
+                    showCurrentPwd ? "Ẩn mật khẩu" : "Xem mật khẩu"
                   }
                 >
                   {showCurrentPwd ? (
@@ -104,7 +103,7 @@ export default function ChangePasswordForm({
 
             <FloatingInput
               id="new"
-              label="New Password"
+              label="Mật khẩu mới"
               type={showNewPwd ? "text" : "password"}
               value={newPassword}
               onChange={setNewPassword}
@@ -116,7 +115,7 @@ export default function ChangePasswordForm({
                   className="drop-shadow-none bg-white
                 w-9 h-9 flex items-center justify-center
                 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition"
-                  aria-label={showNewPwd ? "Hide password" : "Show password"}
+                  aria-label={showNewPwd ? "Ẩn mật khẩu" : "Xem mật khẩu"}
                 >
                   {showNewPwd ? (
                     <EyeOff className="!h-5 !w-5" />
@@ -131,7 +130,7 @@ export default function ChangePasswordForm({
             )}
             <FloatingInput
               id="confirm"
-              label="Confirm Password"
+              label="Xác nhận mật khẩu"
               type={showConfirmPwd ? "text" : "password"}
               value={confirmPassword}
               onChange={setConfirmPassword}
@@ -144,7 +143,7 @@ export default function ChangePasswordForm({
                 w-9 h-9 flex items-center justify-center
                 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition"
                   aria-label={
-                    showConfirmPwd ? "Hide password" : "Show password"
+                    showConfirmPwd ? "Ẩn mật khẩu" : "Xem mật khẩu"
                   }
                 >
                   {showConfirmPwd ? (
@@ -167,13 +166,13 @@ export default function ChangePasswordForm({
             onClick={cancelChangePassword}
             className="h-12 w-25 bg-white border border-2 border-gray-400 hover:border-gray-800 text-lg font-bold text-gray-400 hover:text-gray-800 rounded-full"
           >
-            Cancel
+            Hủy
           </Button>
           <Button
             type="submit"
             className="h-12 w-25 bg-blue-600 text-white text-lg font-bold hover:bg-blue-800 rounded-full"
           >
-            Save
+            Lưu
           </Button>
         </div>
       </form>

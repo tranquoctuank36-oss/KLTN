@@ -24,7 +24,7 @@ export default function NeedCard({ tile }: { tile: NeedSection }) {
               fill
               sizes="(min-width:1280px) 25vw, (min-width:768px) 50vw, 100vw"
               className="object-cover transition-transform duration-500 group-hover:scale-[1.08]"
-              priority={tile.title === "Progressive lenses"}
+              priority={tile.title === "Tròng Lục Tiến Tiến"}  
             />
 
             {/* Overlay */}

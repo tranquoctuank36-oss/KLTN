@@ -55,13 +55,13 @@ export default function CheckEmail({
 
     try {
       await resendVerification(email);
-      toast.success("Email sent successfully! Please check your inbox.", {
+      toast.success("Email đã được gửi lại thành công! Vui lòng kiểm tra hộp thư đến.", {
         duration: 2000,
         position: "top-center",
       });
     } catch (err) {
       console.error(err);
-      setError("Failed to resend verification email. Please try again.");
+      setError("Không Thể Gửi Lại Email Xác Minh. Vui Lòng Thử Lại.");
     } finally {
       setLoading(false);
     }
@@ -72,15 +72,15 @@ export default function CheckEmail({
       <DialogContent className="sm:max-w-xl rounded-xl px-8">
         <DialogHeader>
           <DialogTitle className="mt-2 text-center text-2xl font-bold">
-            Check Your Email
+            Kiểm tra Email của Bạn
           </DialogTitle>
           <p className="text-center text-sm mt-2">
-            We’ve sent a confirmation email to
+            Chúng tôi đã gửi email xác nhận đến
             <br />
             <span className="font-medium text-lg">{email}</span>
             <br />
-            Please check your inbox and click the link to complete your
-            registration.
+            Vui lòng kiểm tra hộp thư đến và nhấp vào liên kết để hoàn thành
+            đăng ký.
           </p>
         </DialogHeader>
 
@@ -95,7 +95,7 @@ export default function CheckEmail({
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : (
-              <span className="font-semibold text-lg">Resend Email</span>
+              <span className="font-semibold text-lg">Gửi lại Email</span>
             )}
           </Button>
         </div>

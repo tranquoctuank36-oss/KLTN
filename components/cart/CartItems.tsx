@@ -90,7 +90,7 @@ export default function CartItems({
       const inStockKeys = new Set(
         cart
           .filter((item) => {
-            const maxInv = item.selectedVariant.availableQuantity ?? item.selectedVariant.quantityAvailable ?? Infinity;
+            const maxInv = item.selectedVariant.quantityAvailable ?? Infinity;
             const isOutOfStock = item.status === "out_of_stock" || item.status === "unavailable" || maxInv <= 0;
             return !isOutOfStock;
           })
@@ -185,9 +185,9 @@ export default function CartItems({
       {cart.map((item, index) => {
         const key =
           item.cartItemId || `${item.product.slug}__${item.selectedVariant.id}`;
-        const maxInv = item.selectedVariant.availableQuantity ?? item.selectedVariant.quantityAvailable ?? 0;
+        const maxInv = item.selectedVariant.availableQuantity ?? item.selectedVariant.quantityAvailable ?? 99;
         // Check if item is out of stock or unavailable - prioritize item.status from API
-        const isOutOfStock = item.status === "out_of_stock" || item.status === "unknown" || item.status === "unavailable" || maxInv === 0;
+        const isOutOfStock = item.status === "out_of_stock" || item.status === "unavailable";
         
         // Temporary debug for out of stock items
         console.log(`📦 Item: ${item.product.name} | Status: ${item.status} | MaxInv: ${maxInv} | IsOutOfStock: ${isOutOfStock}`);
@@ -463,7 +463,7 @@ export default function CartItems({
 
       <div className="flex justify-end">
         <ConfirmPopover
-          title="Tất cả các mục trong giỏ hàng của bạn"
+          title="Tất cả các sản phẩm trong giỏ hàng của bạn"
           description="Bạn có chắc chắn muốn xóa"
           confirmText="Xóa giỏ hàng"
           onConfirm={handleClearCart}

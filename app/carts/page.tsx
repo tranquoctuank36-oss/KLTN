@@ -166,7 +166,7 @@ export default function CartPage() {
       <h1 className="text-3xl font-bold mb-8">
         <span>Giỏ hàng</span>
         <span className="ml-4 text-gray-500 text-base font-bold">
-          {totalQuantity} {totalQuantity === 1 ? "sản phẩm" : "sản phẩm"} trong giỏ
+          {totalQuantity} {totalQuantity === 1 ? "sản phẩm" : "sản phẩm"}
         </span>
       </h1>
 

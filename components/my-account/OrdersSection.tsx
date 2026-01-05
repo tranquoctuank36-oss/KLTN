@@ -128,19 +128,17 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
       if (selectedStatus !== "Tất cả trạng thái") {
         // Convert display status to API format
         const statusMap: Record<string, string> = {
-          "CHỜ XỬ LÝ": "pending",
-          "CHỜ THANH TOÁN": "awaiting_payment",
+          "CHỜ XÁC NHẬN": "pending",
           "ĐANG XỬ LÝ": "processing",
           "ĐANG GIAO": "shipping",
           "ĐÃ GIAO": "delivered",
           "HOÀN TẤT": "completed",
           "ĐÃ HỦY": "cancelled",
-          "HẾT HẠN": "expired",
           "YÊU CẦU TRẢ HÀNG": "return_requested",
           "ĐANG TRẢ HÀNG": "returning",
           "ĐÃ TRẢ HÀNG": "returned",
         };
-        statusParam = statusMap[selectedStatus];
+        statusParam = statusMap[selectedStatus.toUpperCase()];
       }
       
       const result = await getMyOrders({
@@ -433,14 +431,12 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
             <div className="absolute left-0 mt-2 w-[200px] bg-white border border-gray-200 rounded-md shadow-lg z-20 max-h-[400px] overflow-y-auto">
               {[
                 "Tất cả trạng thái",
-                "Chờ xử lý",
-                "Chờ thanh toán",
+                "Chờ xác nhận",
                 "Đang xử lý",
                 "Đang giao",
                 "Đã giao",
                 "Hoàn tất",
                 "Đã hủy",
-                "Hết hạn",
                 "Yêu cầu trả hàng",
                 "Đang trả hàng",
                 "Đã trả hàng",
@@ -500,7 +496,7 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
                   </p>
 
                   <p className="text-black">
-                    {order.items?.length || 0} mục (
+                    {order.items?.length || 0} sản phẩm (
                     {Number(order.grandTotal || 0).toLocaleString("en-US")}đ)
                   </p>
                 </div>
@@ -519,11 +515,11 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                   <span
                     className={`inline-block px-4 py-2 rounded-full text-sm font-semibold w-fit ${
-                      order.status === "pending" || order.status === "awaiting_payment"
+                      order.status === "pending"
                         ? "bg-yellow-100 text-yellow-800"
                         : order.status === "completed"
                         ? "bg-green-100 text-green-800"
-                        : order.status === "cancelled" || order.status === "expired"
+                        : order.status === "cancelled"
                         ? "bg-red-100 text-red-800"
                         : order.status === "processing"
                         ? "bg-purple-100 text-purple-800"
@@ -536,26 +532,22 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
                         : "bg-gray-100 text-gray-800"
                     }`}
                   >
-                    {order.status === "pending" && "Đơn chờ xử lý"}
-                    {order.status === "awaiting_payment" && "Đơn chờ thanh toán"}
+                    {order.status === "pending" && "Chờ xác nhận"}
                     {order.status === "processing" && "Đang xử lý"}
                     {order.status === "shipping" && "Đang giao"}
                     {order.status === "delivered" && "Đã giao"}
                     {order.status === "completed" && "Hoàn tất"}
                     {order.status === "cancelled" && "Đã hủy"}
-                    {order.status === "expired" && "Hết hạn"}
                     {order.status === "return_requested" && "Yêu cầu trả hàng"}
                     {order.status === "returning" && "Đang trả hàng"}
                     {order.status === "returned" && "Đã trả hàng"}
                     {![
                       "pending",
-                      "awaiting_payment",
                       "processing",
                       "shipping",
                       "delivered",
                       "completed",
                       "cancelled",
-                      "expired",
                       "return_requested",
                       "returning",
                       "returned",
@@ -576,7 +568,7 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
                     >
                       Xem chi tiết
                     </Button>
-                    {(order.status === "pending" || order.status === "awaiting_payment") && (
+                    {order.status === "pending" && (
                       <Button
                         onClick={() => {
                           setSelectedOrder({

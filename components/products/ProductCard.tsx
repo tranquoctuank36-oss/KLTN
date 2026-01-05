@@ -203,7 +203,6 @@ export default function ProductCard({ product: productProp, slug }: Props) {
             <span className={isOnSale ? "text-red-600 font-semibold" : ""}>
               {finalPrice.toLocaleString("en-US")}đ
             </span>{" "}
-            <span className="text-gray-400">Bao gồm tròng kính</span>
           </div>
 
           {/* Action Buttons */}
@@ -221,7 +220,7 @@ export default function ProductCard({ product: productProp, slug }: Props) {
               }}
             >
               <Copy className="w-4 h-4 mr-2" />
-              <div className="text-base">Gọng kính tương Tự</div>
+              <div className="text-base">Gọng kính tương tự</div>
             </Button>
           </div>
         </div>

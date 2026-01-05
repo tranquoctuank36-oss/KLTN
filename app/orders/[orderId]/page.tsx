@@ -426,23 +426,35 @@ export default function OrderDetailPage() {
                   {order.paymentMethod === "COD"
                     ? order.status === "completed"
                       ? "✓ Thanh Toán Thành Công"
-                      : `Vui Lòng Thanh Toán ${Number(order.grandTotal)?.toLocaleString(
+                      : `Vui lòng thanh toán ${Number(order.grandTotal)?.toLocaleString(
                           "en-US"
                         )}đ khi nhận hàng.`
                     : order.paymentMethod === "VNPAY"
                     ? order.status === "awaiting_payment"
-                      ? "✕ Payment failed"
-                      : "✓ Payment successful"
+                      ? "✕ Thanh toán chưa hoàn tất"
+                      : "✓ Thanh toán thành công"
                     : order.paymentStatus || "--"}
                 </p>
               </div>
             </div>
 
             <div className="border border-gray-200 rounded-lg p-4">
-              <h3 className="font-semibold text-base mb-3">Phương thức vận chuyển</h3>
-              <p className="text-sm text-black">
-                {order.shippingInfo || "Không có thông tin vận chuyển"}
-              </p>
+              <h3 className="font-semibold text-base mb-3">Thông tin vận chuyển</h3>
+              <div className="text-sm text-black space-y-2">
+                {order.trackingCode && (
+                  <div className="mt-2 pt-2">
+                    <p className="font-semibold text-gray-700">Mã vận đơn:</p>
+                    <a
+                      href={`https://tracking.ghn.dev/?order_code=${order.trackingCode}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 font-medium hover:text-blue-800 hover:underline transition cursor-pointer"
+                    >
+                      {order.trackingCode}
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

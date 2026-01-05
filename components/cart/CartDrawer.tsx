@@ -204,7 +204,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
           <div className="border-t border-gray-500 p-6">
             <Link href={Routes.cart()} onClick={onClose}>
               <Button className="w-full h-12 text-base font-semibold bg-blue-600 text-white hover:bg-blue-700">
-                XEM GIỎ HÀNG ({totalQuantity} MỤC)
+                XEM GIỎ HÀNG ({totalQuantity} SẢN PHẨM)
               </Button>
             </Link>
           </div>

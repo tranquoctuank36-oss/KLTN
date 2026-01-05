@@ -275,9 +275,9 @@ export default function ProductDetailPage() {
             isSale={isOnSale}
           />
 
-          <div className="mt-16">
+          {/* <div className="mt-16">
             <IncludingStrip />
-          </div>
+          </div> */}
 
           <div className="mt-15 mb-15">{/* <RecommendedProducts /> */}</div>
 

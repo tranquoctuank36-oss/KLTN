@@ -336,7 +336,7 @@ export default function SalePage() {
                           </span>
                           {isFullyUsed && (
                             <span className="inline-block bg-red-100 text-red-600 text-base font-semibold px-3 py-1 rounded-full">
-                              Hạn mục sử dụng đã đạt
+                              Hạn mức sử dụng đã đạt
                             </span>
                           )}
                         </div>
@@ -344,7 +344,7 @@ export default function SalePage() {
                         <div className="pt-2">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-gray-600 font-medium">
-                              Usage
+                              Sử dụng:
                             </span>
                             <span
                               className={`font-semibold ${

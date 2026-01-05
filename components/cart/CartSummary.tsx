@@ -64,7 +64,7 @@ export default function CartSummary({
   return (
     <div className="rounded-lg p-6 h-fit bg-white">
       <div className="flex justify-between items-center text-lg font-bold mb-2">
-        <span>Tổng cộng:</span>
+        <span>Tổng:</span>
         <span>{grandTotal.toLocaleString("en-US")}đ</span>
       </div>
 

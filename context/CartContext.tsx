@@ -53,13 +53,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
       apiCart.items.map(async (item: CartItemResponse) => {
         let productSlug = "";
         let productId = item.productId || "";
+        let actualQuantityAvailable = 99; // Default fallback
         
-        // Nếu có productId, fetch product details để lấy slug
-        if (productId) {
+        // Nếu có productId, fetch product details để lấy slug và quantityAvailable
+        if (productId && item.productVariantId) {
           try {
             const product = await getProductById(productId);
             if (product) {
               productSlug = product.slug;
+              
+              // Find the matching variant to get actual quantityAvailable
+              const matchingVariant = product.variants?.find(
+                (v) => v.id === item.productVariantId
+              );
+              
+              if (matchingVariant) {
+                actualQuantityAvailable = matchingVariant.quantityAvailable || 99;
+              }
             }
           } catch (error) {
             console.error(`Error fetching product ${productId}:`, error);
@@ -99,7 +109,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             finalPrice: item.finalPrice,
             originalPrice: item.originalPrice,
             stock: 0,
-            quantityAvailable: item.quantity || 0,
+            quantityAvailable: actualQuantityAvailable,
             stockStatus: (item.status === "in_stock" ? "in_stock" : item.status === "out_of_stock" ? "out_of_stock" : item.status === "low_stock" ? "low_stock" : "unknown") as "in_stock" | "out_of_stock" | "low_stock" | "unknown",
             colors: [],
             images: item.thumbnailImage ? [{

@@ -63,10 +63,9 @@ export default function Mainbar() {
 
       {/* Menu */}
       <div className="flex flex-1 justify-start items-center gap-4 text-gray-600 font-normal text-lg ml-10">
-        {/* Hiển thị categories động từ API */}
+        {/* Hiển thị root category (Sản phẩm) */}
         {categories.map((category) => {
           const hasChildren = category.children && category.children.length > 0;
-          // Đảm bảo URL luôn bắt đầu với /
           const categoryUrl = category.relativeUrl?.startsWith('/') 
             ? category.relativeUrl 
             : `/${category.relativeUrl || ''}`; 
@@ -93,7 +92,6 @@ export default function Mainbar() {
                 >
                   <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-base font-normal">
                     {category.children?.map((childCategory) => {
-                      // Level 1: Map sang productTypes filter
                       const childFilterUrl = `/products?productTypes=${encodeURIComponent(childCategory.slug)}`;
                       
                       return (
@@ -104,12 +102,9 @@ export default function Mainbar() {
                           >
                             {childCategory.name}
                           </Link>
-                          {/* Hiển thị sub-children nếu có */}
                           {childCategory.children && childCategory.children.length > 0 && (
                             <div className="pl-4 space-y-1">
                               {childCategory.children?.map((subChild) => {
-                                // Level 2: Extract gender từ slug (VD: "kinh-mat-nam" -> "nam")
-                                // Lấy phần cuối cùng sau dấu gạch nối cuối
                                 const genderSlug = subChild.slug.split('-').pop() || subChild.slug;
                                 const subChildFilterUrl = `/products?productTypes=${encodeURIComponent(childCategory.slug)}&genders=${encodeURIComponent(genderSlug)}`;
                                 
@@ -134,7 +129,6 @@ export default function Mainbar() {
             );
           }
 
-          // Category không có children
           return (
             <Link 
               key={category.id} 
@@ -144,6 +138,65 @@ export default function Mainbar() {
             </Link>
           );
         })}
+
+        {/* Hiển thị các categories cấp 1 (Gọng kính, Kính mát) */}
+        {categories.flatMap(category => category.children || []).map((level1Category) => {
+          const hasChildren = level1Category.children && level1Category.children.length > 0;
+          const level1Url = `/products?productTypes=${encodeURIComponent(level1Category.slug)}`;
+          
+          if (hasChildren) {
+            return (
+              <div key={level1Category.id} className="relative group flex hover:font-medium">
+                <Link
+                  href={level1Url}
+                  className="px-2 group-hover:text-gray-800 transition relative hover:cursor-pointer"
+                >
+                  {level1Category.name}
+                  <span className="absolute left-0 -bottom-5 w-full h-[2px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform cursor-pointer"></span>
+                </Link>
+
+                {/* Dropdown panel for level 2 children */}
+                <div
+                  className="absolute left-0 top-full mt-6 
+                    min-w-[300px] bg-white p-6 shadow-xl rounded-md
+                    opacity-0 group-hover:opacity-100 invisible group-hover:visible 
+                    transition-all duration-300 ease-out 
+                    before:content-[''] before:absolute before:-top-6 before:left-0 before:w-full before:h-6 before:bg-transparent
+                    overflow-visible z-50"
+                >
+                  <div className="space-y-2 text-base font-normal">
+                    {level1Category.children?.map((level2Category) => {
+                      const genderSlug = level2Category.slug.split('-').pop() || level2Category.slug;
+                      const level2Url = `/products?productTypes=${encodeURIComponent(level1Category.slug)}&genders=${encodeURIComponent(genderSlug)}`;
+                      
+                      return (
+                        <Link
+                          key={level2Category.id}
+                          href={level2Url}
+                          className="block text-gray-700 hover:text-gray-900 hover:underline underline-offset-4"
+                        >
+                          {level2Category.name}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <Link 
+              key={level1Category.id} 
+              href={level1Url}
+              className="px-2 hover:text-gray-800 hover:font-medium transition"
+            >
+              {level1Category.name}
+            </Link>
+          );
+        })}
+
+
 
         {/* Brands dropdown */}
         <div className="relative group flex hover:font-medium">

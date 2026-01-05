@@ -13,9 +13,9 @@ export default function HomePage() {
       <BannerSlider />
       <BrandListButton/>
       {/* <BrandSection /> */}
-      <NeedSection />
+      {/* <NeedSection /> */}
       <RecentlyViewedSection />
-      <BenefitsSection />
+      {/* <BenefitsSection /> */}
       <ProductGrid />
     </main>
   );

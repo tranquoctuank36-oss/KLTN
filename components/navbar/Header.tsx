@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, Suspense } from "react";
 import Mainbar from "./Mainbar";
 import Topbar from "./TopNavbar";
 
@@ -26,7 +26,9 @@ export default function Header() {
         className="fixed top-0 left-0 right-0 z-50 border-b-2 border-gray-200 drop-shadow-md bg-white"
       >
         <Topbar />
-        <Mainbar />
+        <Suspense fallback={<div className="h-[72px]" />}>
+          <Mainbar />
+        </Suspense>
       </header>
       <div style={{ height: "var(--header-h)" }} />
     </>

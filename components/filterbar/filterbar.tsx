@@ -19,6 +19,7 @@ import FrameGroupPanel from "./FrameGroupPanel";
 import FilterChip from "./filterchip";
 import FilterPanel from "./filterpanel";
 import PricePanel from "./PricePanel";
+import SizePanel from "./SizePanel";
 import BrandsPanel from "./BrandsPanel";
 import ColorsPanel from "./ColorsPanel";
 
@@ -59,8 +60,10 @@ const LABELS: Record<FilterGroup["key"], string> = {
 };
 
 const PRODUCT_TYPE_LABELS: Record<string, string> = {
-  eyeglasses: "Gọng kính",
+  frame: "Gọng kính",
   sunglasses: "Kính mát",
+  "gong-kinh": "Gọng kính",
+  "kinh-mat": "Kính mát",
 };
 
 const GENDER_LABELS: Record<string, string> = {
@@ -68,6 +71,9 @@ const GENDER_LABELS: Record<string, string> = {
   female: "Nữ",
   unisex: "Unisex",
   kid: "Trẻ em",
+  "nam": "Nam",
+  "nu": "Nữ",
+  "tre-em": "Trẻ em",
 };
 
 const FRAME_KEYS: Array<FilterGroup["key"]> = [
@@ -126,7 +132,7 @@ function FilterBar({
     }
   }, [initialFilters]);
   const [expandedKey, setExpandedKey] = useState<
-    FilterGroup["key"] | "frame" | "price" | null
+    FilterGroup["key"] | "frame" | "price" | "size" | null
   >(null);
 
   const [selectedPrice, setSelectedPrice] = useState<[number, number] | null>(
@@ -138,12 +144,21 @@ function FilterBar({
     null
   );
   
+  const [selectedSize, setSelectedSize] = useState<[number, number] | null>(
+    null
+  );
+  
+  const [previewSize, setPreviewSize] = useState<[number, number] | null>(
+    null
+  );
+  
   const [searchQuery, setSearchQuery] = useState<string>(initialFilters?.search || "");
 
   const reopenFrameRef = useRef(false);
   
   // Lưu giá trị bounds ban đầu để reset khi clear
   const initialBoundsRef = useRef<{ min: number; max: number } | null>(null);
+  const initialSizeBoundsRef = useRef<{ min: number; max: number } | null>(null);
 
   const GROUPS_NO_FRAME: FilterGroup[] = useMemo(() => {
     if (!aggregations) {
@@ -159,7 +174,18 @@ function FilterBar({
 
       // Add options from aggregations
       data.forEach((x: any) => {
-        const id = String(x.key ?? x.value ?? x.label);
+        let id = String(x.key ?? x.value ?? x.label);
+        
+        // Normalize slug format to API format
+        if (key === "productTypes") {
+          if (id === "gong-kinh") id = "frame";
+          else if (id === "kinh-mat") id = "sunglasses";
+        } else if (key === "genders") {
+          if (id === "nam") id = "male";
+          else if (id === "nu") id = "female";
+          else if (id === "tre-em") id = "kid";
+        }
+        
         const baseLabel = String(x.label ?? x.key);
         // Translate productTypes and genders
         let label = baseLabel;
@@ -309,14 +335,45 @@ function FilterBar({
     return result;
   }, [aggregations?.price, priceBounds, selectedPrice]);
 
+  const sizeBounds = useMemo(() => {
+    // Nếu đã có initial size bounds thì luôn trả về giá trị đó
+    if (initialSizeBoundsRef.current) {
+      return initialSizeBoundsRef.current;
+    }
+    
+    const apiMin = Number(aggregations?.size?.min ?? NaN);
+    const apiMax = Number(aggregations?.size?.max ?? NaN);
+    
+    const min = Number.isFinite(apiMin) ? apiMin : 100;
+    const max = Number.isFinite(apiMax) ? apiMax : 150;
+    
+    const result = { min: Math.min(min, max), max: Math.max(min, max) };
+    
+    // Lưu bounds ban đầu CHỈ KHI có dữ liệu thực từ API (không phải default)
+    if (!selectedSize) {
+      const hasRealData = Number.isFinite(apiMin);
+    // Reset initial bounds refs để lấy giá trị mới từ API
+    initialBoundsRef.current = null;
+    initialSizeBoundsRef.current = null;
+      if (hasRealData) {
+        initialSizeBoundsRef.current = result;
+      }
+    }
+    
+    return result;
+  }, [aggregations, selectedSize]);
+
   const clearAll = useCallback(() => {
     setSelected({});
     setSelectedPrice(null);
     setPreviewPrice(null);
+    setSelectedSize(null);
+    setPreviewSize(null);
     setExpandedKey(null); // Đóng panel khi clear all
   }, []);
 
   const disabledPrice = bounds.min === bounds.max;
+  const disabledSize = sizeBounds.min === sizeBounds.max;
 
   const apiFilters = useMemo(() => {
     const toArr = (key: string) => Array.from(selected[key] ?? []);
@@ -336,12 +393,17 @@ function FilterBar({
       (base as any).maxPrice = String(selectedPrice[1]);
     }
     
+    if (selectedSize) {
+      (base as any).minFrameWidth = String(selectedSize[0]);
+      (base as any).maxFrameWidth = String(selectedSize[1]);
+    }
+    
     if (searchQuery) {
       (base as any).search = searchQuery;
     }
 
     return base;
-  }, [selected, selectedPrice, searchQuery]);
+  }, [selected, selectedPrice, selectedSize, searchQuery]);
 
   const lastEmittedRef = useRef<string>("");
   useEffect(() => {
@@ -439,6 +501,20 @@ function FilterBar({
                 }}
               />
 
+              {/* 5) Size chip */}
+              <FilterChip
+                key="size"
+                label="Kích thước"
+                active={!!selectedSize}
+                expanded={expandedKey === "size"}
+                onClick={() => {
+                  if (!loading && !disabledSize) {
+                    setExpandedKey((prev) => (prev === "size" ? null : "size"));
+                    setPreviewSize(null);
+                  }
+                }}
+              />
+
               {/* Sort dropdown - inline with chips */}
               <select
                 value={sort || "newest"}
@@ -494,6 +570,28 @@ function FilterBar({
                   setPreviewPrice(null); // Reset preview sau khi commit
                 }}
               />
+            ) : expandedKey === "size" ? (
+              <SizePanel
+                open={true}
+                onOpenChange={(v) => {
+                  if (!v) {
+                    setExpandedKey(null);
+                    setPreviewSize(null);
+                  }
+                }}
+                min={sizeBounds.min}
+                max={sizeBounds.max}
+                value={selectedSize ?? undefined}
+                disabled={disabledSize}
+                format={(n) => `${Number(n).toFixed(0)}mm`}
+                onPreviewChange={(v) => {
+                  setPreviewSize([v[0], v[1]]);
+                }}
+                onChange={(v) => {
+                  setSelectedSize([v[0], v[1]]);
+                  setPreviewSize(null);
+                }}
+              />
             ) : expandedKey === "brands" ? (
               <BrandsPanel
                 selected={selected.brands ?? new Set()}
@@ -541,7 +639,7 @@ function FilterBar({
 
       {/* Dải tag đang chọn */}
       {(Object.entries(selected).some(([, set]) => set.size > 0) ||
-        selectedPrice) && (
+        selectedPrice || selectedSize) && (
         <div className="flex flex-wrap gap-2 p-3 pb-0">
           {Object.entries(selected).map(([groupKey, set]) =>
             Array.from(set).map((optionId) => {
@@ -640,6 +738,27 @@ function FilterBar({
                   // Reset về giá ban đầu, không đóng panel
                   setSelectedPrice(null);
                   setPreviewPrice(null);
+                }}
+              >
+                <X className="!w-3 !h-3" />
+              </Button>
+            </span>
+          )}
+
+          {/* Size chip */}
+          {(selectedSize || previewSize) && (
+            <span className="px-2 mt-1 mb-1 bg-gray-200 text-gray-700 rounded-full text-xs flex items-center gap-2 cursor-default">
+              <span className="leading-none font-medium">
+                {Number((previewSize || selectedSize)![0]).toFixed(0)}mm -{" "}
+                {Number((previewSize || selectedSize)![1]).toFixed(0)}mm
+              </span>
+              <Button
+                type="button"
+                className="bg-gray-200 text-gray-700 !w-4 !h-4 rounded-full flex items-center justify-center !p-0 hover:bg-black/80 hover:text-white drop-shadow-none"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedSize(null);
+                  setPreviewSize(null);
                 }}
               >
                 <X className="!w-3 !h-3" />

@@ -2,53 +2,39 @@
 
 import { useEffect, useState, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import RecentlyViewedCard from "./recently-viewed-card";
+import RecentlyViewedCard from "../recently-viewed-section/recently-viewed-card";
 import { Product } from "@/types/product";
-import { getRecentlyViewed } from "@/lib/recentlyViewed";
-import { getProductBySlug } from "@/services/productService";
+import { getHotProducts, getProductBySlug } from "@/services/productService";
 
-export default function RecentlyViewedSection() {
+export default function HotProductsSection() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const loadRecentlyViewed = async () => {
+    const loadHotProducts = async () => {
       try {
         setLoading(true);
-        
-        // Get product IDs from localStorage
-        const recentlyViewed = getRecentlyViewed();
-        
-        if (recentlyViewed.length === 0) {
-          setProducts([]);
-          return;
-        }
-
-        // Fetch product details for each slug
-        const productPromises = recentlyViewed
-          .slice(0, 8) // Limit to 8 most recent products
-          .map((item) =>
-            getProductBySlug(item.slug).catch(() => null)
-          );
-
-        const fetchedProducts = await Promise.all(productPromises);
-        
-        // Filter out null values (failed requests)
-        const validProducts = fetchedProducts.filter(
-          (product): product is Product => product !== null
+        const result = await getHotProducts(8);
+        const fullProductPromises = result.map((p) =>
+          getProductBySlug(p.slug).catch(() => p) // Fallback to elastic result if fetch fails
         );
 
+        const fullProducts = await Promise.all(fullProductPromises);
+        const validProducts = fullProducts.filter(
+          (product): product is Product => product !== null
+        );
+        
         setProducts(validProducts);
       } catch (error) {
-        console.error("Failed to load recently viewed products:", error);
+        console.error("Failed to load hot products:", error);
         setProducts([]);
       } finally {
         setLoading(false);
       }
     };
 
-    loadRecentlyViewed();
+    loadHotProducts();
   }, []);
 
   const scroll = (direction: "left" | "right") => {
@@ -65,9 +51,9 @@ export default function RecentlyViewedSection() {
   if (loading) {
     return (
       <section className="max-w-full px-20 lg:px-30 py-10 bg-white">
-        {/* <div className="mb-8 text-center justify-center">
-          <div className="h-9 bg-gray-200 rounded w-80 animate-pulse text-center justify-center"></div>
-        </div> */}
+        <div className="mb-8 text-center justify-center">
+          <div className="h-9 bg-gray-200 rounded w-80 animate-pulse mx-auto"></div>
+        </div>
         <div className="flex gap-6 overflow-hidden text-center justify-center">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="flex-none w-72">
@@ -93,7 +79,7 @@ export default function RecentlyViewedSection() {
     <section className="max-w-[1440px] px-20 lg:px-30 mx-auto py-16 bg-white">
       <div className="mb-8 text-center justify-center flex">
         <h2 className="text-3xl text-gray-900">
-          Sản phẩm đã xem gần đây
+          Sản phẩm HOT
         </h2>
       </div>
 

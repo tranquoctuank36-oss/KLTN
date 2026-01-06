@@ -69,11 +69,21 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
   const [activeTab, setActiveTab] = useState<"orders" | "returns" | "reviews">("orders");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsCurrentPage, setReviewsCurrentPage] = useState(1);
+  const [reviewsTotalPages, setReviewsTotalPages] = useState(0);
   const [productSlugs, setProductSlugs] = useState<{ [key: string]: string }>({});
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<{ url: string; alt: string } | null>(null);
   const [returns, setReturns] = useState<ReturnRequest[]>([]);
   const [returnsLoading, setReturnsLoading] = useState(false);
+  const [returnsCurrentPage, setReturnsCurrentPage] = useState(1);
+  const [returnsTotalPages, setReturnsTotalPages] = useState(0);
+  const [returnsSearchTerm, setReturnsSearchTerm] = useState("");
+  const [returnsSearchInput, setReturnsSearchInput] = useState("");
+  const [returnsSelectedStatus, setReturnsSelectedStatus] = useState("Tất cả trạng thái");
+  const [returnsDropdownOpen, setReturnsDropdownOpen] = useState(false);
+  const returnsDropdownRef = useRef<HTMLDivElement>(null);
+  const returnsSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync activeTab with URL params on mount and when URL changes
   useEffect(() => {
@@ -92,41 +102,87 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
   const fetchReturns = useCallback(async () => {
     try {
       setReturnsLoading(true);
-      const result = await getMyReturns();
       
-      // Sort returns by updatedAt or createdAt (newest first)
-      const sortedReturns = (result || []).sort((a: ReturnRequest, b: ReturnRequest) => {
-        const dateA = new Date(a.updatedAt || a.createdAt).getTime();
-        const dateB = new Date(b.updatedAt || b.createdAt).getTime();
-        return dateB - dateA;
+      let statusParam: string | undefined = undefined;
+      if (returnsSelectedStatus !== "Tất cả trạng thái") {
+        const statusMap: Record<string, string> = {
+          "YÊU CẦU": "requested",
+          "ĐÃ DUYỆT": "approved",
+          "CHỜ HÀNG": "waiting_item",
+          "ĐÃ NHẬN": "received_at_warehouse",
+          "ĐANG HOÀN TIỀN": "refund_initiated",
+          "HOÀN THÀNH": "refund_completed",
+          "TỪ CHỐI": "rejected",
+          "ĐÃ HỦY": "canceled",
+        };
+        statusParam = statusMap[returnsSelectedStatus.toUpperCase()];
+      }
+      
+      const result = await getMyReturns({
+        search: returnsSearchTerm || undefined,
+        page: returnsCurrentPage,
+        limit: 10,
+        status: statusParam,
       });
       
-      setReturns(sortedReturns);
+      setReturns(result.data || []);
+      setReturnsTotalPages(result.meta.totalPages);
     } catch (err) {
       console.error("❌ Failed to fetch returns:", err);
       setReturns([]);
+      setReturnsTotalPages(0);
     } finally {
       setReturnsLoading(false);
     }
+  }, [returnsSearchTerm, returnsCurrentPage, returnsSelectedStatus]);
+
+  useEffect(() => {
+    if (activeTab === "returns") {
+      fetchReturns();
+    }
+  }, [activeTab, fetchReturns]);
+
+  // Debounce returns search
+  useEffect(() => {
+    if (returnsSearchTimeoutRef.current) {
+      clearTimeout(returnsSearchTimeoutRef.current);
+    }
+    returnsSearchTimeoutRef.current = setTimeout(() => {
+      setReturnsSearchTerm(returnsSearchInput);
+      setReturnsCurrentPage(1);
+    }, 500);
+    return () => {
+      if (returnsSearchTimeoutRef.current) {
+        clearTimeout(returnsSearchTimeoutRef.current);
+      }
+    };
+  }, [returnsSearchInput]);
+
+  // Click outside for returns dropdown
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (returnsDropdownRef.current && !returnsDropdownRef.current.contains(e.target as Node)) {
+        setReturnsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const fetchReviews = useCallback(async () => {
     try {
       setReviewsLoading(true);
-      const result = await getMyReviews();
-      
-      // Sort reviews by updatedAt or createdAt (newest first)
-      const sortedReviews = (result.data || []).sort((a: Review, b: Review) => {
-        const dateA = new Date(a.updatedAt || a.createdAt).getTime();
-        const dateB = new Date(b.updatedAt || b.createdAt).getTime();
-        return dateB - dateA; // Descending order (newest first)
+      const result = await getMyReviews({
+        page: reviewsCurrentPage,
+        limit: 10,
       });
       
-      setReviews(sortedReviews);
+      setReviews(result.data || []);
+      setReviewsTotalPages(result.meta?.totalPages || 0);
     
       const slugs: { [key: string]: string } = {};
       await Promise.all(
-        sortedReviews.map(async (review: Review) => {
+        (result.data || []).map(async (review: Review) => {
           if (review.orderItem?.productId) {
             try {
               const product = await getProductById(review.orderItem.productId);
@@ -143,10 +199,18 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
     } catch (err) {
       console.error("❌ Failed to fetch reviews:", err);
       setReviews([]);
+      setReviewsTotalPages(0);
     } finally {
       setReviewsLoading(false);
     }
-  }, []);
+  }, [reviewsCurrentPage]);
+
+  // Fetch reviews when page changes
+  useEffect(() => {
+    if (activeTab === "reviews") {
+      fetchReviews();
+    }
+  }, [activeTab, fetchReviews]);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -172,7 +236,7 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
       const result = await getMyOrders({
         search: searchTerm || undefined,
         page: currentPage,
-        limit: itemsPerPage,
+        limit: 10,
         status: statusParam,
       });
       
@@ -399,7 +463,7 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-6 mb-5 text-lg relative pb-5 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-gray-300">
+      <div className="flex gap-6 mb-5 text-lg relative pb-2">
         <button
           onClick={() => {
             setActiveTab("orders");
@@ -650,6 +714,66 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
 
       {/* Returns tab content */}
       {activeTab === "returns" && (
+        <>
+          {/* Bộ lọc cho returns */}
+          <div className="flex flex-wrap items-center gap-3 mb-6">
+            <div className="flex items-center border border-gray-300 hover:border-gray-800 rounded-md px-3 py-3 flex-1 h-[50px]">
+              <Search className="h-5 w-5 text-gray-500 mr-2" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo mã trả hàng"
+                className="outline-none flex-1 text-gray-700 placeholder-gray-400 text-base"
+                value={returnsSearchInput}
+                onChange={(e) => setReturnsSearchInput(e.target.value)}
+              />
+            </div>
+
+            {/* Dropdown trạng thái cho returns */}
+            <div className="relative" ref={returnsDropdownRef}>
+              <button
+                onClick={() => setReturnsDropdownOpen(!returnsDropdownOpen)}
+                className="flex items-center justify-between gap-2 border border-gray-300 hover:border-gray-800 rounded-md px-3 py-3 text-lg w-[200px] h-[50px] cursor-pointer"
+              >
+                <span className="truncate text-base">{returnsSelectedStatus}</span>
+                {returnsDropdownOpen ? (
+                  <ChevronUp className="h-4 w-4 text-gray-600" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-gray-600" />
+                )}
+              </button>
+
+              {returnsDropdownOpen && (
+                <div className="absolute left-0 mt-2 w-[200px] bg-white border border-gray-200 rounded-md shadow-lg z-20 max-h-[400px] overflow-y-auto">
+                  {[
+                    "Tất cả trạng thái",
+                    "Yêu cầu",
+                    "Đã duyệt",
+                    "Chờ hàng",
+                    "Đã nhận",
+                    "Đang hoàn tiền",
+                    "Hoàn thành",
+                    "Từ chối",
+                    "Đã hủy",
+                  ].map((status) => (
+                    <div
+                      key={status}
+                      onClick={() => {
+                        setReturnsSelectedStatus(status);
+                        setReturnsCurrentPage(1);
+                        setReturnsDropdownOpen(false);
+                      }}
+                      className={`px-4 py-2 cursor-pointer hover:bg-gray-100 ${
+                        returnsSelectedStatus === status ? "bg-gray-200 font-medium" : ""
+                      }`}
+                    >
+                      {status}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
         <div className="relative min-h-[200px]">
           {returnsLoading && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
@@ -698,18 +822,37 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
                           ? "bg-blue-100 text-blue-800"
                           : returnRequest.status === "rejected"
                           ? "bg-red-100 text-red-800"
-                          : returnRequest.status === "completed"
+                          : returnRequest.status === "refund_completed"
                           ? "bg-green-100 text-green-800"
+                          : returnRequest.status === "waiting_item"
+                          ? "bg-orange-100 text-orange-800"
+                          : returnRequest.status === "received_at_warehouse"
+                          ? "bg-teal-100 text-teal-800"
+                          : returnRequest.status === "refund_initiated"
+                          ? "bg-purple-100 text-purple-800"
+                          : returnRequest.status === "canceled"
+                          ? "bg-gray-100 text-gray-800"
                           : "bg-gray-100 text-gray-800"
                       }`}
                     >
-                      {returnRequest.status === "requested" && "Chờ xử lý"}
+                      {returnRequest.status === "requested" && "Yêu cầu"}
                       {returnRequest.status === "approved" && "Đã duyệt"}
+                      {returnRequest.status === "waiting_item" && "Chờ hàng"}
+                      {returnRequest.status === "received_at_warehouse" && "Đã nhận"}
+                      {returnRequest.status === "refund_initiated" && "Đang hoàn tiền"}
+                      {returnRequest.status === "refund_completed" && "Hoàn thành"}
                       {returnRequest.status === "rejected" && "Từ chối"}
-                      {returnRequest.status === "completed" && "Hoàn thành"}
-                      {!["requested", "approved", "rejected", "completed"].includes(
-                        returnRequest.status
-                      ) && returnRequest.status}
+                      {returnRequest.status === "canceled" && "Đã hủy"}
+                      {![
+                        "requested",
+                        "approved",
+                        "waiting_item",
+                        "received_at_warehouse",
+                        "refund_initiated",
+                        "refund_completed",
+                        "rejected",
+                        "canceled",
+                      ].includes(returnRequest.status) && returnRequest.status}
                     </span>
                   </div>
 
@@ -812,10 +955,180 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
             </div>
           )}
         </div>
+        
+        {/* Pagination for returns */}
+        {returnsTotalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <button
+              onClick={() => {
+                setReturnsCurrentPage(1);
+                setTimeout(() => {
+                  if (ref && typeof ref !== "function" && ref.current) {
+                    ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+                }, 100);
+              }}
+              disabled={returnsCurrentPage === 1}
+              className={`w-7 h-7 rounded-full flex items-center justify-center border border-blue-400 hover:border-blue-800 ${
+                returnsCurrentPage === 1 ? "text-blue-300 cursor-not-allowed" : "text-blue-600 hover:text-blue-800 cursor-pointer"
+              }`}
+              title="Trang Đầu"
+            >
+              <ChevronsLeft className="!h-4 !w-4" />
+            </button>
+
+            <button
+              onClick={() => {
+                const newPage = Math.max(returnsCurrentPage - 1, 1);
+                setReturnsCurrentPage(newPage);
+                setTimeout(() => {
+                  if (ref && typeof ref !== "function" && ref.current) {
+                    ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+                }, 100);
+              }}
+              disabled={returnsCurrentPage === 1}
+              className={`w-6 h-6 rounded-full flex items-center justify-center border border-blue-400 hover:border-blue-800 ${
+                returnsCurrentPage === 1 ? "text-blue-300 cursor-not-allowed" : "text-blue-600 hover:text-blue-800 cursor-pointer"
+              }`}
+              title="Trang Trước"
+            >
+              <ChevronLeft className="!h-4 !w-4" />
+            </button>
+
+            {(() => {
+              const pages = [];
+              const maxVisible = 4;
+
+              if (returnsTotalPages <= maxVisible) {
+                for (let i = 1; i <= returnsTotalPages; i++) {
+                  pages.push(
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setReturnsCurrentPage(i);
+                        setTimeout(() => {
+                          if (ref && typeof ref !== "function" && ref.current) {
+                            ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+                          }
+                        }, 100);
+                      }}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition ${
+                        returnsCurrentPage === i ? "bg-blue-600 text-white font-semibold" : "text-gray-600 hover:bg-blue-100 cursor-pointer"
+                      }`}
+                    >
+                      {i}
+                    </button>
+                  );
+                }
+              } else {
+                pages.push(
+                  <button
+                    key={1}
+                    onClick={() => {
+                      setReturnsCurrentPage(1);
+                      setTimeout(() => {
+                        if (ref && typeof ref !== "function" && ref.current) {
+                          ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }
+                      }, 100);
+                    }}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition ${
+                      returnsCurrentPage === 1 ? "bg-blue-600 text-white font-semibold" : "text-gray-600 hover:bg-blue-100 cursor-pointer"
+                    }`}
+                  >
+                    1
+                  </button>
+                );
+
+                if (returnsCurrentPage > 2) {
+                  pages.push(<span key="ellipsis-start" className="text-gray-400 px-1">...</span>);
+                }
+
+                if (returnsCurrentPage > 1 && returnsCurrentPage < returnsTotalPages) {
+                  pages.push(
+                    <button
+                      key={returnsCurrentPage}
+                      className="w-9 h-9 rounded-full flex items-center justify-center bg-blue-600 text-white font-semibold transition"
+                    >
+                      {returnsCurrentPage}
+                    </button>
+                  );
+                }
+
+                if (returnsCurrentPage < returnsTotalPages - 1) {
+                  pages.push(<span key="ellipsis-end" className="text-gray-400 px-1">...</span>);
+                }
+
+                if (returnsTotalPages > 1) {
+                  pages.push(
+                    <button
+                      key={returnsTotalPages}
+                      onClick={() => {
+                        setReturnsCurrentPage(returnsTotalPages);
+                        setTimeout(() => {
+                          if (ref && typeof ref !== "function" && ref.current) {
+                            ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+                          }
+                        }, 100);
+                      }}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition ${
+                        returnsCurrentPage === returnsTotalPages ? "bg-blue-600 text-white font-semibold" : "text-gray-600 hover:bg-blue-100 cursor-pointer"
+                      }`}
+                    >
+                      {returnsTotalPages}
+                    </button>
+                  );
+                }
+              }
+
+              return pages;
+            })()}
+
+            <button
+              onClick={() => {
+                const newPage = Math.min(returnsCurrentPage + 1, returnsTotalPages);
+                setReturnsCurrentPage(newPage);
+                setTimeout(() => {
+                  if (ref && typeof ref !== "function" && ref.current) {
+                    ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+                }, 100);
+              }}
+              disabled={returnsCurrentPage === returnsTotalPages}
+              className={`w-6 h-6 rounded-full flex items-center justify-center border border-blue-400 hover:border-blue-800 ${
+                returnsCurrentPage === returnsTotalPages ? "text-blue-300 cursor-not-allowed" : "text-blue-600 hover:text-blue-800 cursor-pointer"
+              }`}
+              title="Trang Tiếp Theo"
+            >
+              <ChevronRight className="!h-4 !w-4" />
+            </button>
+
+            <button
+              onClick={() => {
+                setReturnsCurrentPage(returnsTotalPages);
+                setTimeout(() => {
+                  if (ref && typeof ref !== "function" && ref.current) {
+                    ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+                }, 100);
+              }}
+              disabled={returnsCurrentPage === returnsTotalPages}
+              className={`w-7 h-7 rounded-full flex items-center justify-center border border-blue-400 hover:border-blue-800 ${
+                returnsCurrentPage === returnsTotalPages ? "text-blue-300 cursor-not-allowed" : "text-blue-600 hover:text-blue-800 cursor-pointer"
+              }`}
+              title="Trang Cuối"
+            >
+              <ChevronsRight className="!h-4 !w-4" />
+            </button>
+          </div>
+        )}
+        </>
       )}
 
       {/* Reviews tab content */}
       {activeTab === "reviews" && (
+        <>
         <div className="relative min-h-[200px]">
           {reviewsLoading && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
@@ -958,6 +1271,175 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
             </div>
           )}
         </div>
+        
+        {/* Pagination for reviews */}
+        {reviewsTotalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <button
+              onClick={() => {
+                setReviewsCurrentPage(1);
+                setTimeout(() => {
+                  if (ref && typeof ref !== "function" && ref.current) {
+                    ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+                }, 100);
+              }}
+              disabled={reviewsCurrentPage === 1}
+              className={`w-7 h-7 rounded-full flex items-center justify-center border border-blue-400 hover:border-blue-800 ${
+                reviewsCurrentPage === 1 ? "text-blue-300 cursor-not-allowed" : "text-blue-600 hover:text-blue-800 cursor-pointer"
+              }`}
+              title="Trang Đầu"
+            >
+              <ChevronsLeft className="!h-4 !w-4" />
+            </button>
+
+            <button
+              onClick={() => {
+                const newPage = Math.max(reviewsCurrentPage - 1, 1);
+                setReviewsCurrentPage(newPage);
+                setTimeout(() => {
+                  if (ref && typeof ref !== "function" && ref.current) {
+                    ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+                }, 100);
+              }}
+              disabled={reviewsCurrentPage === 1}
+              className={`w-6 h-6 rounded-full flex items-center justify-center border border-blue-400 hover:border-blue-800 ${
+                reviewsCurrentPage === 1 ? "text-blue-300 cursor-not-allowed" : "text-blue-600 hover:text-blue-800 cursor-pointer"
+              }`}
+              title="Trang Trước"
+            >
+              <ChevronLeft className="!h-4 !w-4" />
+            </button>
+
+            {(() => {
+              const pages = [];
+              const maxVisible = 4;
+
+              if (reviewsTotalPages <= maxVisible) {
+                for (let i = 1; i <= reviewsTotalPages; i++) {
+                  pages.push(
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setReviewsCurrentPage(i);
+                        setTimeout(() => {
+                          if (ref && typeof ref !== "function" && ref.current) {
+                            ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+                          }
+                        }, 100);
+                      }}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition ${
+                        reviewsCurrentPage === i ? "bg-blue-600 text-white font-semibold" : "text-gray-600 hover:bg-blue-100 cursor-pointer"
+                      }`}
+                    >
+                      {i}
+                    </button>
+                  );
+                }
+              } else {
+                pages.push(
+                  <button
+                    key={1}
+                    onClick={() => {
+                      setReviewsCurrentPage(1);
+                      setTimeout(() => {
+                        if (ref && typeof ref !== "function" && ref.current) {
+                          ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }
+                      }, 100);
+                    }}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition ${
+                      reviewsCurrentPage === 1 ? "bg-blue-600 text-white font-semibold" : "text-gray-600 hover:bg-blue-100 cursor-pointer"
+                    }`}
+                  >
+                    1
+                  </button>
+                );
+
+                if (reviewsCurrentPage > 2) {
+                  pages.push(<span key="ellipsis-start" className="text-gray-400 px-1">...</span>);
+                }
+
+                if (reviewsCurrentPage > 1 && reviewsCurrentPage < reviewsTotalPages) {
+                  pages.push(
+                    <button
+                      key={reviewsCurrentPage}
+                      className="w-9 h-9 rounded-full flex items-center justify-center bg-blue-600 text-white font-semibold transition"
+                    >
+                      {reviewsCurrentPage}
+                    </button>
+                  );
+                }
+
+                if (reviewsCurrentPage < reviewsTotalPages - 1) {
+                  pages.push(<span key="ellipsis-end" className="text-gray-400 px-1">...</span>);
+                }
+
+                if (reviewsTotalPages > 1) {
+                  pages.push(
+                    <button
+                      key={reviewsTotalPages}
+                      onClick={() => {
+                        setReviewsCurrentPage(reviewsTotalPages);
+                        setTimeout(() => {
+                          if (ref && typeof ref !== "function" && ref.current) {
+                            ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+                          }
+                        }, 100);
+                      }}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition ${
+                        reviewsCurrentPage === reviewsTotalPages ? "bg-blue-600 text-white font-semibold" : "text-gray-600 hover:bg-blue-100 cursor-pointer"
+                      }`}
+                    >
+                      {reviewsTotalPages}
+                    </button>
+                  );
+                }
+              }
+
+              return pages;
+            })()}
+
+            <button
+              onClick={() => {
+                const newPage = Math.min(reviewsCurrentPage + 1, reviewsTotalPages);
+                setReviewsCurrentPage(newPage);
+                setTimeout(() => {
+                  if (ref && typeof ref !== "function" && ref.current) {
+                    ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+                }, 100);
+              }}
+              disabled={reviewsCurrentPage === reviewsTotalPages}
+              className={`w-6 h-6 rounded-full flex items-center justify-center border border-blue-400 hover:border-blue-800 ${
+                reviewsCurrentPage === reviewsTotalPages ? "text-blue-300 cursor-not-allowed" : "text-blue-600 hover:text-blue-800 cursor-pointer"
+              }`}
+              title="Trang Tiếp Theo"
+            >
+              <ChevronRight className="!h-4 !w-4" />
+            </button>
+
+            <button
+              onClick={() => {
+                setReviewsCurrentPage(reviewsTotalPages);
+                setTimeout(() => {
+                  if (ref && typeof ref !== "function" && ref.current) {
+                    ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+                }, 100);
+              }}
+              disabled={reviewsCurrentPage === reviewsTotalPages}
+              className={`w-7 h-7 rounded-full flex items-center justify-center border border-blue-400 hover:border-blue-800 ${
+                reviewsCurrentPage === reviewsTotalPages ? "text-blue-300 cursor-not-allowed" : "text-blue-600 hover:text-blue-800 cursor-pointer"
+              }`}
+              title="Trang Cuối"
+            >
+              <ChevronsRight className="!h-4 !w-4" />
+            </button>
+          </div>
+        )}
+        </>
       )}
 
       <CancelOrderDialog

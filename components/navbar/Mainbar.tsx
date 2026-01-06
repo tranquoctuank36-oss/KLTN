@@ -7,6 +7,7 @@ import LoginMenu from "./LoginMenu";
 import { useCart } from "@/context/CartContext";
 import { Routes } from "@/lib/routes";
 import { useEffect, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Brand } from "@/types/brand";
 import { Category } from "@/types/categories";
 import { getBrands } from "@/services/brandsService";
@@ -15,6 +16,8 @@ import GlobalSearch from "../search/GlobalSearch";
 
 export default function Mainbar() {
   const { totalQuantity } = useCart();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [randomBrands, setRandomBrands] = useState<Brand[]>([]);
@@ -69,15 +72,21 @@ export default function Mainbar() {
             ? category.relativeUrl 
             : `/${category.relativeUrl || ''}`; 
           
+          const isActive = pathname === categoryUrl || pathname?.startsWith('/products');
+          
           if (hasChildren) {
             return (
-              <div key={category.id} className="relative group flex hover:font-medium">
+              <div key={category.id} className="relative group flex">
                 <Link
                   href={categoryUrl || "/"}
-                  className="px-2 group-hover:text-gray-800 transition relative hover:cursor-pointer"
+                  className={`px-2 transition relative hover:cursor-pointer ${
+                    isActive ? 'text-gray-800 font-medium' : 'group-hover:text-gray-800 group-hover:font-medium'
+                  }`}
                 >
                   {category.name}
-                  <span className="absolute left-0 -bottom-5 w-full h-[2px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform cursor-pointer"></span>
+                  <span className={`absolute left-0 -bottom-5 w-full h-[2px] bg-black transition-transform cursor-pointer ${
+                    isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
+                  }`}></span>
                 </Link>
 
                 {/* Dropdown panel for children */}
@@ -140,71 +149,41 @@ export default function Mainbar() {
 
         {/* Hiển thị các categories cấp 1 (Gọng kính, Kính mát) */}
         {categories.flatMap(category => category.children || []).map((level1Category) => {
-          const hasChildren = level1Category.children && level1Category.children.length > 0;
           const level1Url = `/products?productTypes=${encodeURIComponent(level1Category.slug)}`;
+          const productTypesParam = searchParams.get('productTypes');
+          const isActive = pathname === '/products' && productTypesParam === level1Category.slug;
           
-          if (hasChildren) {
-            return (
-              <div key={level1Category.id} className="relative group flex hover:font-medium">
-                <Link
-                  href={level1Url}
-                  className="px-2 group-hover:text-gray-800 transition relative hover:cursor-pointer"
-                >
-                  {level1Category.name}
-                  <span className="absolute left-0 -bottom-5 w-full h-[2px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform cursor-pointer"></span>
-                </Link>
-
-                {/* Dropdown panel for level 2 children */}
-                <div
-                  className="absolute left-0 top-full mt-6 
-                    min-w-[300px] bg-white p-6 shadow-xl rounded-md
-                    opacity-0 group-hover:opacity-100 invisible group-hover:visible 
-                    transition-all duration-300 ease-out 
-                    before:content-[''] before:absolute before:-top-6 before:left-0 before:w-full before:h-6 before:bg-transparent
-                    overflow-visible z-50"
-                >
-                  <div className="space-y-2 text-base font-normal">
-                    {level1Category.children?.map((level2Category) => {
-                      const genderSlug = level2Category.slug.split('-').pop() || level2Category.slug;
-                      const level2Url = `/products?productTypes=${encodeURIComponent(level1Category.slug)}&genders=${encodeURIComponent(genderSlug)}`;
-                      
-                      return (
-                        <Link
-                          key={level2Category.id}
-                          href={level2Url}
-                          className="block text-gray-700 hover:text-gray-900 hover:underline underline-offset-4"
-                        >
-                          {level2Category.name}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            );
-          }
-
           return (
-            <Link 
-              key={level1Category.id} 
-              href={level1Url}
-              className="px-2 hover:text-gray-800 hover:font-medium transition"
-            >
-              {level1Category.name}
-            </Link>
+            <div key={level1Category.id} className="relative group flex">
+              <Link 
+                href={level1Url}
+                className={`px-2 transition relative ${
+                  isActive ? 'text-gray-800 font-medium' : 'group-hover:text-gray-800 group-hover:font-medium'
+                }`}
+              >
+                {level1Category.name}
+                <span className={`absolute left-0 -bottom-5 w-full h-[2px] bg-black transition-transform ${
+                  isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
+                }`}></span>
+              </Link>
+            </div>
           );
         })}
 
 
 
         {/* Brands dropdown */}
-        <div className="relative group flex hover:font-medium">
+        <div className="relative group flex">
           <Link
             href={Routes.brands()}
-            className="px-2 group-hover:text-gray-800 transition relative hover:cursor-pointer"
+            className={`px-2 transition relative hover:cursor-pointer ${
+              pathname?.startsWith('/brands') ? 'text-gray-800 font-medium' : 'group-hover:text-gray-800 group-hover:font-medium'
+            }`}
           >
-            Thương Hiệu
-            <span className="absolute left-0 -bottom-5 w-full h-[2px] bg-black scale-x-0 group-hover:scale-x-100 transition-transform"></span>
+            Thương hiệu
+            <span className={`absolute left-0 -bottom-5 w-full h-[2px] bg-black transition-transform ${
+              pathname?.startsWith('/brands') ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
+            }`}></span>
           </Link>
 
           {/* Dropdown panel */}
@@ -230,20 +209,26 @@ export default function Mainbar() {
                 href={Routes.brands()}
                 className="font-medium hover:underline underline-offset-4 text-gray-800"
               >
-                Tất cả Thương Hiệu
+                Tất cả Thương hiệu
               </Link>
             </div>
           </div>
         </div>
         
         {/* Sale link with hover effect */}
-        <div className="relative group flex hover:font-medium">
+        <div className="relative group flex">
           <Link
             href={Routes.sale()}
-            className="px-2 text-red-500 group-hover:text-red-600 transition relative hover:cursor-pointer"
+            className={`px-2 transition relative hover:cursor-pointer ${
+              pathname?.startsWith('/sale') 
+                ? 'text-red-600 font-medium' 
+                : 'text-red-500 group-hover:text-red-600 group-hover:font-medium'
+            }`}
           >
-            Khuyến Mãi
-            <span className="absolute left-0 -bottom-5 w-full h-[2px] bg-red-600 scale-x-0 group-hover:scale-x-100 transition-transform"></span>
+            Khuyến mãi
+            <span className={`absolute left-0 -bottom-5 w-full h-[2px] bg-red-600 transition-transform ${
+              pathname?.startsWith('/sale') ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
+            }`}></span>
           </Link>
         </div>
       </div>

@@ -20,6 +20,8 @@ import toast from "react-hot-toast";
 import { getReviewsByProduct } from "@/services/reviewService";
 import { Review } from "@/types/review";
 import Image from "next/image";
+import BrandProductsSection from "@/components/brand-products-section/BrandProductsSection";
+import RelatedProductsSection from "@/components/related-products-section/RelatedProductsSection";
 // import RecommendedProducts from "@/components/RecommendedProducts";
 
 export default function ProductDetailPage() {
@@ -37,8 +39,11 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState<number | string>(1);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
-  const [lightboxImage, setLightboxImage] = useState<{ url: string; alt: string } | null>(null);
-  
+  const [lightboxImage, setLightboxImage] = useState<{
+    url: string;
+    alt: string;
+  } | null>(null);
+
   // Reviews filter & pagination
   const [selectedRating, setSelectedRating] = useState<number>(0);
   const [hasImage, setHasImage] = useState<boolean>(false);
@@ -51,18 +56,23 @@ export default function ProductDetailPage() {
   const frameRef = useRef<HTMLDivElement | null>(null);
   const reviewsRef = useRef<HTMLDivElement | null>(null);
 
+  // Scroll to top whenever slug changes (including back navigation)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [slug]);
+
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
     getProductBySlug(slug)
       .then((res) => {
         setProduct(res);
-        
+
         // Save to recently viewed
         if (res?.id && res?.slug) {
           addToRecentlyViewed(res.id, res.slug);
         }
-        
+
         if (res?.variants?.length) {
           if (variantIdFromUrl) {
             const variantFromUrl = res.variants.find(
@@ -89,19 +99,21 @@ export default function ProductDetailPage() {
   // Fetch reviews when product is loaded
   useEffect(() => {
     if (!product?.id) return;
-    
+
     const fetchReviews = async () => {
       try {
         setReviewsLoading(true);
         const result = await getReviewsByProduct(product.id);
-        
+
         // Sort reviews by createdAt (newest first)
-        const sortedReviews = (result.data || []).sort((a: Review, b: Review) => {
-          const dateA = new Date(a.createdAt).getTime();
-          const dateB = new Date(b.createdAt).getTime();
-          return dateB - dateA;
-        });
-        
+        const sortedReviews = (result.data || []).sort(
+          (a: Review, b: Review) => {
+            const dateA = new Date(a.createdAt).getTime();
+            const dateB = new Date(b.createdAt).getTime();
+            return dateB - dateA;
+          }
+        );
+
         setReviews(sortedReviews);
       } catch (err) {
         console.error("Failed to fetch reviews:", err);
@@ -110,7 +122,7 @@ export default function ProductDetailPage() {
         setReviewsLoading(false);
       }
     };
-    
+
     fetchReviews();
   }, [product?.id]);
 
@@ -127,7 +139,10 @@ export default function ProductDetailPage() {
       return true;
     })
     .sort((a, b) => {
-      const [sortBy, sortOrder] = sortOption.split("-") as [string, "ASC" | "DESC"];
+      const [sortBy, sortOrder] = sortOption.split("-") as [
+        string,
+        "ASC" | "DESC"
+      ];
       let comparison = 0;
       if (sortBy === "createdAt") {
         const dateA = new Date(a.createdAt).getTime();
@@ -142,7 +157,10 @@ export default function ProductDetailPage() {
   // Pagination
   const totalPages = Math.ceil(filteredAndSortedReviews.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedReviews = filteredAndSortedReviews.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedReviews = filteredAndSortedReviews.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
 
   // Show loading skeleton while fetching
   if (loading) {
@@ -279,8 +297,6 @@ export default function ProductDetailPage() {
             <IncludingStrip />
           </div> */}
 
-          <div className="mt-15 mb-15">{/* <RecommendedProducts /> */}</div>
-
           <ProductTabs product={product} />
 
           <div ref={frameRef}>
@@ -304,93 +320,97 @@ export default function ProductDetailPage() {
             {/* Filters & Sorting */}
             {showFilters && (
               <div className="mb-8 p-4 bg-gray-50 rounded-lg space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Sort Option */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Sắp xếp
-                  </label>
-                  <select
-                    value={sortOption}
-                    onChange={(e) => {
-                      setSortOption(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="createdAt-DESC">Ngày tạo giảm dần</option>
-                    <option value="createdAt-ASC">Ngày tạo tăng dần</option>
-                    <option value="rating-DESC">Xếp hạng giảm dần</option>
-                    <option value="rating-ASC">Xếp hạng tăng dần</option>
-                  </select>
-                </div>
-
-                {/* Rating Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Lọc theo đánh giá
-                  </label>
-                  <select
-                    value={selectedRating}
-                    onChange={(e) => {
-                      setSelectedRating(Number(e.target.value));
-                      setCurrentPage(1);
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value={0}>Tất cả</option>
-                    <option value={5}>5 sao</option>
-                    <option value={4}>4 sao</option>
-                    <option value={3}>3 sao</option>
-                    <option value={2}>2 sao</option>
-                    <option value={1}>1 sao</option>
-                  </select>
-                </div>
-
-                {/* Has Image Filter */}
-                <div className="flex items-center justify-start md:justify-center">
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={hasImage}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Sort Option */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Sắp xếp
+                    </label>
+                    <select
+                      value={sortOption}
                       onChange={(e) => {
-                        setHasImage(e.target.checked);
+                        setSortOption(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                    />
-                    <span className="ml-2 text-sm font-medium text-gray-700">
-                      Chỉ có hình ảnh
-                    </span>
-                  </label>
-                </div>
-              </div>
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="createdAt-DESC">Ngày tạo giảm dần</option>
+                      <option value="createdAt-ASC">Ngày tạo tăng dần</option>
+                      <option value="rating-DESC">Xếp hạng giảm dần</option>
+                      <option value="rating-ASC">Xếp hạng tăng dần</option>
+                    </select>
+                  </div>
 
-              {/* Result count */}
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
-                  Tìm thấy <b>{filteredAndSortedReviews.length}</b> đánh giá
-                  {filteredAndSortedReviews.length > 0 && ` (Trang ${currentPage} / ${totalPages})`}
+                  {/* Rating Filter */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Lọc theo đánh giá
+                    </label>
+                    <select
+                      value={selectedRating}
+                      onChange={(e) => {
+                        setSelectedRating(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value={0}>Tất cả</option>
+                      <option value={5}>5 sao</option>
+                      <option value={4}>4 sao</option>
+                      <option value={3}>3 sao</option>
+                      <option value={2}>2 sao</option>
+                      <option value={1}>1 sao</option>
+                    </select>
+                  </div>
+
+                  {/* Has Image Filter */}
+                  <div className="flex items-center justify-start md:justify-center">
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={hasImage}
+                        onChange={(e) => {
+                          setHasImage(e.target.checked);
+                          setCurrentPage(1);
+                        }}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm font-medium text-gray-700">
+                        Chỉ có hình ảnh
+                      </span>
+                    </label>
+                  </div>
                 </div>
-                <button
-                  onClick={() => {
-                    setSortOption("createdAt-DESC");
-                    setSelectedRating(0);
-                    setHasImage(false);
-                    setCurrentPage(1);
-                  }}
-                  className="px-2 py-1 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
-                >
-                  Đặt lại
-                </button>
+
+                {/* Result count */}
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Tìm thấy <b>{filteredAndSortedReviews.length}</b> đánh giá
+                    {filteredAndSortedReviews.length > 0 &&
+                      ` (Trang ${currentPage} / ${totalPages})`}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSortOption("createdAt-DESC");
+                      setSelectedRating(0);
+                      setHasImage(false);
+                      setCurrentPage(1);
+                    }}
+                    className="px-2 py-1 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                  >
+                    Đặt lại
+                  </button>
+                </div>
               </div>
-            </div>
             )}
-            
+
             {reviewsLoading ? (
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="border border-gray-200 rounded-lg p-6 animate-pulse">
+                  <div
+                    key={i}
+                    className="border border-gray-200 rounded-lg p-6 animate-pulse"
+                  >
                     <div className="flex items-start gap-3 mb-4">
                       <div className="w-10 h-10 rounded-full bg-gray-200"></div>
                       <div className="flex-1">
@@ -410,7 +430,10 @@ export default function ProductDetailPage() {
               <>
                 <div className="space-y-4">
                   {paginatedReviews.map((review) => (
-                    <div key={review.id} className="border border-gray-200 rounded-lg p-6 bg-white">
+                    <div
+                      key={review.id}
+                      className="border border-gray-200 rounded-lg p-6 bg-white"
+                    >
                       {/* Header: Avatar + Name + Rating */}
                       <div className="flex items-start gap-3 mb-4">
                         <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0 text-white font-semibold">
@@ -418,7 +441,9 @@ export default function ProductDetailPage() {
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <p className="font-semibold text-base">{review.nameDisplay}</p>
+                            <p className="font-semibold text-base">
+                              {review.nameDisplay}
+                            </p>
                             <div className="flex items-center gap-1">
                               {Array.from({ length: 5 }).map((_, i) => (
                                 <Star
@@ -433,13 +458,16 @@ export default function ProductDetailPage() {
                             </div>
                           </div>
                           <p className="text-xs text-gray-500 mt-1">
-                            {new Date(review.createdAt).toLocaleString("vi-VN", {
-                              year: "numeric",
-                              month: "2-digit",
-                              day: "2-digit",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {new Date(review.createdAt).toLocaleString(
+                              "vi-VN",
+                              {
+                                year: "numeric",
+                                month: "2-digit",
+                                day: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
                           </p>
                         </div>
                       </div>
@@ -477,29 +505,35 @@ export default function ProductDetailPage() {
                 {totalPages > 1 && (
                   <div className="mt-8 flex items-center justify-center gap-2">
                     <button
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      onClick={() =>
+                        setCurrentPage(Math.max(1, currentPage - 1))
+                      }
                       disabled={currentPage === 1}
                       className="px-4 py-2 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                     >
                       Trước
                     </button>
 
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-10 h-10 rounded-md ${
-                          currentPage === page
-                            ? "bg-blue-600 text-white"
-                            : "border border-gray-300 hover:bg-gray-50"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (page) => (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-10 h-10 rounded-md ${
+                            currentPage === page
+                              ? "bg-blue-600 text-white"
+                              : "border border-gray-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      )
+                    )}
 
                     <button
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      onClick={() =>
+                        setCurrentPage(Math.min(totalPages, currentPage + 1))
+                      }
                       disabled={currentPage === totalPages}
                       className="px-4 py-2 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                     >
@@ -510,7 +544,7 @@ export default function ProductDetailPage() {
               </>
             )}
           </div>
-          
+
           {/* Lightbox Modal */}
           {lightboxImage && (
             <div
@@ -555,7 +589,9 @@ export default function ProductDetailPage() {
                 }`}
               />
             ))}
-            <span className="ml-1 font-medium">{Math.round(product?.averageRating || 0)}</span>
+            <span className="ml-1 font-medium">
+              {Math.round(product?.averageRating || 0)}
+            </span>
             <span className="text-gray-400">·</span>
             <button
               onClick={() => {
@@ -627,7 +663,7 @@ export default function ProductDetailPage() {
           </div>
 
           <span className="text-xs text-gray-800 block pb-2">
-            Trạng thái kho: {" "}
+            Trạng thái kho:{" "}
             <b
               className={`${
                 selectedVariant.stockStatus === "out_of_stock"
@@ -731,7 +767,9 @@ export default function ProductDetailPage() {
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
-                  <span className="font-semibold text-lg">Thêm vào Giỏ hàng</span>
+                  <span className="font-semibold text-lg">
+                    Thêm vào Giỏ hàng
+                  </span>
                 )}
               </Button>
             </div>
@@ -794,6 +832,20 @@ export default function ProductDetailPage() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* <div className="mt-15 mb-15">
+        <BrandProductsSection
+          brandName={product?.brand?.name}
+          excludeProductId={product?.id}
+        />
+      </div> */}
+
+      <div className="mt-15 mb-15">
+        <RelatedProductsSection
+          currentProduct={product}
+          excludeProductId={product?.id}
+        />
       </div>
     </div>
   );

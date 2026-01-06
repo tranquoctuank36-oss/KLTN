@@ -39,7 +39,7 @@ const DetailsSection = forwardRef<HTMLDivElement, Props>(
       >
         <div className="flex items-center gap-3 mb-4">
           <UserIcon className="h-6 w-6 text-gray-600" />
-          <h3 className="text-2xl font-semibold">Thông tin của tôi</h3>
+          <h3 className="text-2xl font-semibold">Thông tin cá nhân</h3>
         </div>
 
         <p className="text-gray-700 mb-4 font-normal">

@@ -78,7 +78,11 @@ export default function ColorSelector({ variants, selected, onSelect }: Props) {
             )}
 
             <Button
-              onClick={() => onSelect(variant)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onSelect(variant);
+              }}
               onMouseEnter={() => setHovering(i)}
               onMouseLeave={() => setHovering(null)}
               className="flex items-center justify-center rounded-full !w-7 !h-7 !p-0"

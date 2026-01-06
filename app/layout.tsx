@@ -5,6 +5,7 @@ import BackToTop from "@/components/back-to-top";
 import GuaranteeSection from "@/components/guarantee-section";
 import { CartProvider, useCart } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { ChatProvider } from "@/context/ChatContext";
 import { Toaster } from "react-hot-toast";
 import ChatFab from "@/components/chat";
 import CartDrawerWrapper from "@/components/cart/CartDrawerWrapper";
@@ -26,16 +27,18 @@ export default function RootLayout({
       <body>
         <AuthProvider> 
           <CartProvider>
-            <div className="mx-auto w-full">
-              <Header />
-              {children}
-              <Toaster position="top-center" />
-              <BackToTop />
-              <ChatFab/>
-              <GuaranteeSection />
-              <Footer />
-              <CartDrawerWrapper /> 
-            </div>
+            <ChatProvider>
+              <div className="mx-auto w-full">
+                <Header />
+                {children}
+                <Toaster position="top-center" />
+                <BackToTop />
+                <ChatFab/>
+                <GuaranteeSection />
+                <Footer />
+                <CartDrawerWrapper /> 
+              </div>
+            </ChatProvider>
           </CartProvider>
         </AuthProvider>
       </body>

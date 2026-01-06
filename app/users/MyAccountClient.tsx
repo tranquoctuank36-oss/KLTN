@@ -17,6 +17,7 @@ import { UserAddress } from "@/types/userAddress";
 
 import { Routes } from "@/lib/routes";
 import { useAuth } from "@/context/AuthContext";
+import { useChat } from "@/context/ChatContext";
 import ConfirmDialog from "@/components/dialog/ConfirmDialog";
 import EditInfoForm from "@/components/my-account/EditInfoForm";
 import ChangePasswordForm from "@/components/my-account/ChangePasswordForm";
@@ -32,6 +33,7 @@ export default function MyAccountClient() {
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const { logoutAll, updateUser, refetchUser, user: authUser } = useAuth();
+  const { openChat } = useChat();
 
   const [isEditing, setIsEditing] = useState(false);
   const [draftFirstName, setDraftFirstName] = useState("");
@@ -409,9 +411,15 @@ export default function MyAccountClient() {
           <div>
             <span className="text-gray-400 text-sm underline">1900 12 34 56</span>{" "}
             |{" "}
-            <Link href="#" className="text-gray-400 text-sm">
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                openChat();
+              }}
+              className="text-gray-400 text-sm hover:text-gray-600 transition-colors cursor-pointer"
+            >
               Trò chuyện trực tiếp
-            </Link>
+            </button>
           </div>
         </div>
       </div>
@@ -529,7 +537,7 @@ export default function MyAccountClient() {
                 cancelEditAddress();
               }}
             />
-          ) : section === "my-orders" || section === "my-orders/reviews" ? (
+          ) : section === "my-orders" || section === "my-orders/reviews" || section === "my-orders/returns" ? (
             <OrdersSection ref={sectionsRef.orders} />
           ) : section === "my-details" ? (
             <DetailsSection

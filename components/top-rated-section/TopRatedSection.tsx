@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import RecentlyViewedCard from "../recently-viewed-section/recently-viewed-card";
 import { Product } from "@/types/product";
-import { searchProductsElastic } from "@/services/productService";
+import { getTopRatedProducts, getProductBySlug } from "@/services/productService";
 
 export default function TopRatedSection() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -15,16 +15,19 @@ export default function TopRatedSection() {
     const loadTopRatedProducts = async () => {
       try {
         setLoading(true);
+        const result = await getTopRatedProducts(8);
         
-        // Fetch top rated products sorted by rating and reviews
-        const result = await searchProductsElastic({
-          page: 1,
-          limit: 8,
-          sortField: "averageRating",
-          sortOrder: "desc",
-        });
+        // Fetch full product details to ensure all variants are included
+        const fullProductPromises = result.map((p) =>
+          getProductBySlug(p.slug).catch(() => p) // Fallback to elastic result if fetch fails
+        );
 
-        setProducts(result.data || []);
+        const fullProducts = await Promise.all(fullProductPromises);
+        const validProducts = fullProducts.filter(
+          (product): product is Product => product !== null
+        );
+        
+        setProducts(validProducts);
       } catch (error) {
         console.error("Failed to load top rated products:", error);
         setProducts([]);

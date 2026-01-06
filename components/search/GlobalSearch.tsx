@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { autocompleteSearch } from "@/services/productService";
 import type { Product } from "@/types/product";
@@ -105,12 +105,27 @@ export default function GlobalSearch({ className = "", limit = 6 }: Props) {
         onFocus={() => q.trim() && setOpen(true)}
         onKeyDown={onKey}
         placeholder="Tôi đang tìm kiếm ..."
-        className="w-full sm:w-64 rounded-full border px-4 py-2 pl-10 text-sm bg-gray-200 outline-none"
+        className="w-full sm:w-64 rounded-full border px-4 py-2 pl-10 pr-10 text-sm bg-gray-200 outline-none"
       />
       <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-600" />
+      
+      {q && (
+        <button
+          type="button"
+          onClick={() => {
+            setQ("");
+            setResults([]);
+            setOpen(false);
+          }}
+          className="absolute right-3 top-2.5 h-4 w-4 text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
+          aria-label="Clear search"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
 
       {open && (
-        <div className="absolute z-50 mt-2 w-full sm:w-96 rounded-lg border bg-white shadow-lg">
+        <div className="absolute z-50 mt-2 w-full sm:w-96 rounded-lg border bg-white shadow-lg overflow-hidden">
           {/* Header */}
           <div className="px-3 py-2 text-xs text-gray-500 border-b">
             {loading ? "Đang tìm kiếm..." : results.length ? "Kết quả hàng đầu" : "Không có kết quả"}
@@ -123,8 +138,8 @@ export default function GlobalSearch({ className = "", limit = 6 }: Props) {
                 key={(p as any).id ?? `${(p as any).slug}-${i}`}
                 onMouseEnter={() => setActive(i)}
                 onClick={() => goToProduct(p)}
-                className={`cursor-pointer px-3 py-2 text-sm flex items-center justify-between hover:bg-gray-50 ${
-                  i === active ? "bg-gray-50" : ""
+                className={`cursor-pointer px-3 py-2.5 text-sm flex items-center justify-between transition-colors ${
+                  i === active ? "bg-blue-50" : "hover:bg-gray-100"
                 }`}
               >
                 <span className="line-clamp-1 mr-2">{(p as any).name ?? (p as any).title}</span>
@@ -140,8 +155,9 @@ export default function GlobalSearch({ className = "", limit = 6 }: Props) {
           {/* Footer – đi tới trang listing với từ khoá */}
           {!!q.trim() && (
             <button
-              className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 border-t cursor-pointer"
+              className="w-full text-left px-3 py-2.5 text-sm text-blue-600 font-medium hover:bg-blue-50 border-t cursor-pointer transition-colors rounded-b-lg"
               onClick={() => goToListing(q)}
+              onMouseEnter={() => setActive(-1)}
             >
               Xem tất cả kết quả cho "{q}"
             </button>

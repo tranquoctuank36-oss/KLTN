@@ -13,12 +13,7 @@ export interface ElasticAggregation {
   tags: AggBucket[];
   colors: AggBucket[];
   price: { min: number | null; max: number | null };
-  size: {
-    lensWidth: { min: number | null; max: number | null };
-    bridgeWidth: { min: number | null; max: number | null };
-    templeLength: { min: number | null; max: number | null };
-    lensHeight: { min: number | null; max: number | null };
-  };
+  size?: { min: number | null; max: number | null }; // For frame width filter
 }
 
 export interface ProductSearchResponse {
@@ -100,12 +95,7 @@ function transformFacetsToAggregations(facets: any[]): ElasticAggregation {
     tags: [],
     colors: [],
     price: { min: null, max: null },
-    size: {
-      lensWidth: { min: null, max: null },
-      bridgeWidth: { min: null, max: null },
-      templeLength: { min: null, max: null },
-      lensHeight: { min: null, max: null },
-    },
+    size: { min: null, max: null },
   };
 
   facets.forEach((facet: any) => {
@@ -141,6 +131,17 @@ function transformFacetsToAggregations(facets: any[]): ElasticAggregation {
         min: facet.min ?? null,
         max: facet.max ?? null,
       };
+    } else if (type === "range" && id === "size") {
+      // Handle size range facet - use label to determine which dimension
+      const label = (facet.label || "").toLowerCase();
+      if (label.includes("chiều rộng khung kính") || label.includes("frame width")) {
+        // This is the total frame width (lensWidth + bridgeWidth)
+        // Store it as a combined field for the filter
+        (agg as any).size = {
+          min: facet.min ?? null,
+          max: facet.max ?? null,
+        };
+      }
     }
   });
 
@@ -218,6 +219,48 @@ export async function getSimilarProducts(productId: string, size: number = 20): 
   }
 }
 
+export async function getHotProducts(limit: number = 8): Promise<Product[]> {
+  try {
+    const res = await api.get(`/elastic-search/products/hot`, {
+      params: { limit }
+    });
+    const products = res.data?.data || [];
+    
+    return Array.isArray(products) ? products : [];
+  } catch (error) {
+    console.error('Error fetching hot products:', error);
+    return [];
+  }
+}
+
+export async function getBestSellerProducts(limit: number = 8): Promise<Product[]> {
+  try {
+    const res = await api.get(`/elastic-search/products/best-sellers`, {
+      params: { limit }
+    });
+    const products = res.data?.data || [];
+    
+    return Array.isArray(products) ? products : [];
+  } catch (error) {
+    console.error('Error fetching best seller products:', error);
+    return [];
+  }
+}
+
+export async function getTopRatedProducts(limit: number = 8): Promise<Product[]> {
+  try {
+    const res = await api.get(`/elastic-search/products/top-rated`, {
+      params: { limit }
+    });
+    const products = res.data?.data || [];
+    
+    return Array.isArray(products) ? products : [];
+  } catch (error) {
+    console.error('Error fetching top rated products:', error);
+    return [];
+  }
+}
+
 export async function autocompleteSearch(q: string, size: number = 5): Promise<Product[]> {
   try {
     const url = `/elastic-search/autocomplete?q=${encodeURIComponent(q)}&size=${size}`;
@@ -230,43 +273,3 @@ export async function autocompleteSearch(q: string, size: number = 5): Promise<P
   }
 }
 
-// export async function getProductsByBrandSlug(
-//   brandSlug: string,
-//   page = 1,
-//   limit = 12
-// ): Promise<ProductResponse> {
-//   const brand = await getBrandBySlug(brandSlug);
-//   if (!brand?.id) throw new Error("Brand not found");
-//   return getProducts(page, limit, { brandId: String(brand.id) });
-// }
-
-// export async function getProductsByCategory(
-//   categoryId: string,
-//   page = 1,
-//   limit = 12
-// ): Promise<ProductResponse> {
-//   return getProducts(page, limit, { categoryId });
-// }
-
-// /**
-//  * Search products
-//  */
-// export async function searchProducts(
-//   search: string,
-//   page = 1,
-//   limit = 12
-// ): Promise<ProductResponse> {
-//   return getProducts(page, limit, { search });
-// }
-
-// /**
-//  * Get products with price range
-//  */
-// export async function getProductsByPriceRange(
-//   minPrice: number,
-//   maxPrice: number,
-//   page = 1,
-//   limit = 12
-// ): Promise<ProductResponse> {
-//   return getProducts(page, limit, { minPrice, maxPrice });
-// }

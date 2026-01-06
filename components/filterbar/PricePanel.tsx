@@ -228,13 +228,13 @@ export default function PricePanel({
 
       {/* Close button outside animated content (fixed, not animated) */}
       <div className="flex items-center justify-end px-6">
-        <Button
+        <button
           type="button"
           onClick={() => onOpenChange(false)}
-          className="text-xs bg-gray-100 font-medium text-slate-500 underline hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 rounded hover:bg-gray-100"
+          className="text-xs bg-gray-100 cursor-pointer font-medium text-slate-500 underline hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 rounded hover:bg-gray-100"
         >
           Đóng
-        </Button>
+        </button>
       </div>
     </div>
   );

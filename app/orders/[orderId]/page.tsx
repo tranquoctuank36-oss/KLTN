@@ -18,7 +18,6 @@ import OrderStatusTimeline from "@/components/OrderStatusTimeline";
 import CreateReviewForm from "@/components/CreateReviewForm";
 import { getMyReviews } from "@/services/reviewService";
 import CreateReturnForm from "@/components/CreateReturnForm";
-import TopRatedSection from "@/components/top-rated-section/TopRatedSection";
 
 type OrderItemProps = {
   item: any;
@@ -617,9 +616,6 @@ export default function OrderDetailPage() {
             </div>
           )}
         </div>
-
-        {/* Top Rated Products Section */}
-        {/* <TopRatedSection /> */}
 
         <CancelOrderDialog
           open={cancelDialogOpen}

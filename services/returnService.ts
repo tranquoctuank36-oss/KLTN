@@ -1,6 +1,28 @@
 import api from "./api";
 import { CreateReturnRequestPayload, ReturnRequest } from "@/types/return";
 
+interface GetReturnsParams {
+  search?: string;
+  page?: number;
+  limit?: number;
+  status?: string;
+}
+
+interface GetReturnsResponse {
+  success: boolean;
+  message: string;
+  data: ReturnRequest[];
+  meta: {
+    requestId: string;
+    timestamp: string;
+    itemCount: number;
+    currentPage: number;
+    itemsPerPage: number;
+    totalItems: number;
+    totalPages: number;
+  };
+}
+
 export const createReturnRequest = async (
   orderId: string,
   payload: CreateReturnRequestPayload
@@ -14,10 +36,10 @@ export const createReturnRequest = async (
   }
 };
 
-export const getMyReturns = async (): Promise<ReturnRequest[]> => {
+export const getMyReturns = async (params?: GetReturnsParams): Promise<GetReturnsResponse> => {
   try {
-    const res = await api.get("/returns/me");
-    return res.data?.data || [];
+    const res = await api.get("/orders/returns/me", { params });
+    return res.data;
   } catch (err: any) {
     console.error("Error fetching returns:", err);
     throw err;

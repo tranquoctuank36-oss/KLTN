@@ -8,9 +8,9 @@ import type { ElasticSearchFilters } from "@/services/productService";
 
 // Map slug sang API value
 const SLUG_TO_PRODUCT_TYPE: Record<string, string> = {
-  "gong-kinh": "eyeglasses",
+  "gong-kinh": "frame",
   "kinh-mat": "sunglasses",
-  "eyeglasses": "eyeglasses",
+  "frame": "frame",
   "sunglasses": "sunglasses",
 };
 
@@ -71,7 +71,7 @@ function ProductsPageInner() {
   // Tạo title động dựa trên filter
   const pageTitle = useMemo(() => {
     const typeMap: Record<string, string> = {
-      eyeglasses: "Gọng kính",
+      frame: "Gọng kính",
       sunglasses: "Kính mát",
     };
 
@@ -121,7 +121,7 @@ function ProductsPageInner() {
           <h1 className="text-5xl md:text-6xl font-bold mb-4 text-left text-white">
             Bộ Sưu Tập Kính
           </h1>
-          <p className="text-xl md:text-2xl text-left max-w-2xl text-gray-800">
+          <p className="text-xl md:text-2xl text-left max-w-2xl text-gray-800 font-semibold">
             Khám phá nhiều mẫu kính thời trang
             <br />
             từ các thương hiệu nổi tiếng

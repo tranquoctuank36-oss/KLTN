@@ -46,7 +46,7 @@ export default function FilterSection({
   // Không auto gọi onFiltersChange khi mount; chỉ gọi khi user thao tác trên FilterBar.
 
   return (
-    <section className="mx-auto max-w-[1440px] py-5">
+    <section className=" mx-auto">
       <h1 className="flex items-baseline gap-2 text-3xl font-bold tracking-tight">
         {title || "Cửa Hàng Kính Mắt Cao Cấp"}{" "}
         <span className="relative -translate-y-0.5 text-black/70 text-xl font-medium">

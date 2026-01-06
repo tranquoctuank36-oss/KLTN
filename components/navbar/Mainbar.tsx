@@ -23,7 +23,6 @@ export default function Mainbar() {
     // Lấy danh sách categories
     getCategoriesTree(2)
       .then((data) => {
-        console.log("Categories data từ API:", data);
         setCategories(data);
       })
       .catch((err) => {
@@ -48,7 +47,7 @@ export default function Mainbar() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-[1440px] px-6 lg:px-20 py-2 flex flex-wrap items-center relative">
+    <div className="mx-auto max-w-full px-20 lg:px-30 py-2 flex flex-wrap items-center relative">
       {/* Logo */}
       <div className="flex-shrink-0">
         <a href={Routes.home()} className="block">

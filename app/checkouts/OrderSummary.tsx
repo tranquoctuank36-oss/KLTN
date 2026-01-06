@@ -111,7 +111,7 @@ export default function OrderSummary({
       return "Giao hàng không có sẵn cho địa chỉ này";
     }
     if (!isFormValid) {
-      return "Vui lòng hoàn tất thông tin vận chuyển";
+      return "Vui lòng hoàn thành thông tin vận chuyển";
     }
     if (checkoutCart.length === 0) {
       return "Giỏ hàng của bạn đang trống";

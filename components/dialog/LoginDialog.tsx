@@ -201,7 +201,7 @@ export default function LoginDialog({
                   }}
                   className="text-sm text-gray-600 underline hover:text-black/80 cursor-pointer"
                 >
-                  Forgot password?
+                  Quên mật khẩu?
                 </button>
               </div>
             )}

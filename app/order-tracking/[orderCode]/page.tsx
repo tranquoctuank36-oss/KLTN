@@ -59,10 +59,10 @@ function OrderItem({ item }: { item: any }) {
             {item.productName}
           </Link>
           <p className="text-sm text-gray-600 mt-1">
-            <span className="font-semibold">Color:</span> {item.colors}
+            <span className="font-semibold">Màu sắc:</span> {item.colors}
           </p>
           <p className="text-sm text-gray-600 mt-2">
-            <span className="font-semibold">Quantity:</span> {item.quantity}
+            <span className="font-semibold">Số lượng:</span> {item.quantity}
           </p>
         </div>
       </div>
@@ -212,7 +212,7 @@ export default function OrderTrackingDetailPage() {
           {/* Order Header */}
           <div className="mb-6">
             <h2 className="text-xl font-bold mb-2">
-              Order code:{" "}
+              Mã đơn hàng:{" "}
               <span className="font-bold text-blue-600 uppercase ml-3">
                 {order.orderCode}
               </span>
@@ -231,7 +231,7 @@ export default function OrderTrackingDetailPage() {
                     : "bg-blue-600 text-white hover:bg-blue-800 text-white hover:text-white"
                 }`}
               >
-                BUY AGAIN
+                Mua lại
               </Button>
               {selectedOrder && (
                 <AddToCartOrderDialog
@@ -259,14 +259,14 @@ export default function OrderTrackingDetailPage() {
                   onClick={() => setCancelDialogOpen(true)}
                   className="bg-red-600 rounded-full text-white px-3 py-5 hover:bg-red-800 transition font-semibold w-[140px]"
                 >
-                  CANCEL ORDER
+                  Hủy đơn
                 </Button>
               ) : order.status === "CANCELLED" ? (
                 <Button
                   disabled
                   className="bg-red-300 text-red-800 rounded-full px-3 py-5 font-semibold w-[140px]"
                 >
-                  CANCELLED
+                  Đã hủy
                 </Button>
               ) : null}
             </div>
@@ -277,7 +277,7 @@ export default function OrderTrackingDetailPage() {
             {/* Shipping Info */}
             <div className="border border-gray-200 rounded-lg p-4">
               <h3 className="font-semibold text-base mb-3">
-                Shipping Information
+                Thông tin vận chuyển
               </h3>
               <div className="text-sm black space-y-1">
                 <p className="font-medium">{order.recipientName || "--"}</p>
@@ -295,7 +295,7 @@ export default function OrderTrackingDetailPage() {
               <div className="text-sm text-gray-700">
                 <p className="mb-3 text-black">
                   {order.paymentMethod === "COD"
-                    ? "Cash on Delivery (COD)"
+                    ? "Thanh toán khi nhận hàng (COD)"
                     : order.paymentMethod === "VNPAY"
                     ? "VNPay"
                     : order.paymentMethod}
@@ -315,14 +315,14 @@ export default function OrderTrackingDetailPage() {
                 >
                   {order.paymentMethod === "COD"
                     ? order.status === "COMPLETED"
-                      ? "✓ Payment successful"
-                      : `Please pay ${Number(order.grandTotal)?.toLocaleString(
+                      ? "✓ Thanh toán thành công"
+                      : `Vui lòng thanh toán ${Number(order.grandTotal)?.toLocaleString(
                           "en-US"
-                        )}đ upon delivery.`
+                        )}đ khi nhận hàng.`
                     : order.paymentMethod === "VNPAY"
                     ? order.status === "PAID"
-                      ? "✓ Payment successful"
-                      : "✕ Payment failed"
+                      ? "✓ Thanh toán thành công"
+                      : "✕ Thanh toán thất bại"
                     : order.paymentStatus || "--"}
                 </p>
               </div>

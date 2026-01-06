@@ -133,9 +133,17 @@ function FilterBar({
     null
   );
   
+  // Giá trị preview khi đang kéo slider (chưa commit)
+  const [previewPrice, setPreviewPrice] = useState<[number, number] | null>(
+    null
+  );
+  
   const [searchQuery, setSearchQuery] = useState<string>(initialFilters?.search || "");
 
   const reopenFrameRef = useRef(false);
+  
+  // Lưu giá trị bounds ban đầu để reset khi clear
+  const initialBoundsRef = useRef<{ min: number; max: number } | null>(null);
 
   const GROUPS_NO_FRAME: FilterGroup[] = useMemo(() => {
     if (!aggregations) {
@@ -263,6 +271,11 @@ function FilterBar({
   );
 
   const bounds = useMemo(() => {
+    // Nếu đã có initial bounds thì luôn trả về giá trị đó
+    if (initialBoundsRef.current) {
+      return initialBoundsRef.current;
+    }
+
     const apiMin = Number(aggregations?.price?.min ?? NaN);
     const apiMax = Number(aggregations?.price?.max ?? NaN);
     const propMin = Number(priceBounds?.min ?? NaN);
@@ -282,12 +295,25 @@ function FilterBar({
       : DEFAULT_PRICE_BOUNDS.max;
 
     // đảm bảo min<=max
-    return { min: Math.min(min, max), max: Math.max(min, max) };
-  }, [aggregations?.price, priceBounds]);
+    const result = { min: Math.min(min, max), max: Math.max(min, max) };
+    
+    // Lưu bounds ban đầu CHỈ KHI có dữ liệu thực từ API (không phải default)
+    if (!selectedPrice) {
+      // Chỉ lưu nếu có data thực từ API hoặc props, không lưu giá trị default
+      const hasRealData = Number.isFinite(apiMin) || Number.isFinite(propMin);
+      if (hasRealData) {
+        initialBoundsRef.current = result;
+      }
+    }
+    
+    return result;
+  }, [aggregations?.price, priceBounds, selectedPrice]);
 
   const clearAll = useCallback(() => {
     setSelected({});
     setSelectedPrice(null);
+    setPreviewPrice(null);
+    setExpandedKey(null); // Đóng panel khi clear all
   }, []);
 
   const disabledPrice = bounds.min === bounds.max;
@@ -404,10 +430,13 @@ function FilterBar({
                 label="Giá tiền"
                 active={!!selectedPrice}
                 expanded={expandedKey === "price"}
-                onClick={() =>
-                  !loading &&
-                  setExpandedKey((prev) => (prev === "price" ? null : "price"))
-                }
+                onClick={() => {
+                  if (!loading) {
+                    setExpandedKey((prev) => (prev === "price" ? null : "price"));
+                    // Reset preview khi mở panel để đảm bảo bắt đầu sạch
+                    setPreviewPrice(null);
+                  }
+                }}
               />
 
               {/* Sort dropdown - inline with chips */}
@@ -445,15 +474,24 @@ function FilterBar({
               <PricePanel
                 open={true}
                 onOpenChange={(v) => {
-                  if (!v) setExpandedKey(null);
+                  if (!v) {
+                    setExpandedKey(null);
+                    setPreviewPrice(null); // Reset preview khi đóng
+                  }
                 }}
                 min={bounds.min}
                 max={bounds.max}
                 value={selectedPrice ?? undefined}
                 disabled={disabledPrice}
                 format={(n) => currencyFormatter(n)}
+                onPreviewChange={(v) => {
+                  // Cập nhật preview khi đang kéo slider
+                  setPreviewPrice([v[0], v[1]]);
+                }}
                 onChange={(v) => {
+                  // Commit giá trị khi thả chuột
                   setSelectedPrice([v[0], v[1]]);
+                  setPreviewPrice(null); // Reset preview sau khi commit
                 }}
               />
             ) : expandedKey === "brands" ? (
@@ -588,18 +626,20 @@ function FilterBar({
           )}
 
           {/* Price chip */}
-          {selectedPrice && (
+          {(selectedPrice || previewPrice) && (
             <span className="px-2 mt-1 mb-1 bg-gray-200 text-gray-700 rounded-full text-xs flex items-center gap-2 cursor-default">
               <span className="leading-none font-medium">
-                {currencyFormatter(selectedPrice[0])} -{" "}
-                {currencyFormatter(selectedPrice[1])}
+                {currencyFormatter((previewPrice || selectedPrice)![0])} -{" "}
+                {currencyFormatter((previewPrice || selectedPrice)![1])}
               </span>
               <Button
                 type="button"
                 className="bg-gray-200 text-gray-700 !w-4 !h-4 rounded-full flex items-center justify-center !p-0 hover:bg-black/80 hover:text-white drop-shadow-none"
                 onClick={(e) => {
                   e.stopPropagation();
+                  // Reset về giá ban đầu, không đóng panel
                   setSelectedPrice(null);
+                  setPreviewPrice(null);
                 }}
               >
                 <X className="!w-3 !h-3" />
@@ -613,7 +653,7 @@ function FilterBar({
             disabled={loading}
             className="text-xs text-slate-500 hover:text-gray-800 hover:underline ml-2 drop-shadow-none !p-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Clear All
+            Xóa tất cả
           </Button>
         </div>
       )}

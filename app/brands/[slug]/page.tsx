@@ -53,22 +53,22 @@ export default function BrandDetailPage() {
     <main className="min-h-screen">
       {/* Banner */}
       <section className="relative w-full h-[400px] bg-gray-100">
-        {brand.bannerImagePublicUrl ? (
+        {brand.bannerImage?.publicUrl ? (
           <Image
-            src={brand.bannerImagePublicUrl}
-            alt={brand.name}
+            src={brand.bannerImage.publicUrl}
+            alt={brand.bannerImage.altText || brand.name}
             fill
             className="object-cover"
             priority
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <h1 className="text-6xl font-bold text-gray-300">{brand.name}</h1>
+            <h1 className="text-6xl font-bold text-gray-500">{brand.name}</h1>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-8 lg:p-12 text-white">
-          <div className="max-w-[1440px] mx-auto">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+        {/* <div className="absolute bottom-0 left-0 right-0 p-8 lg:p-12 text-white">
+          <div className="max-w-full px-20 lg:px-30">
             <h1 className="text-4xl lg:text-6xl font-bold mb-3">
               {brand.name}
             </h1>
@@ -78,10 +78,10 @@ export default function BrandDetailPage() {
               </p>
             )}
           </div>
-        </div>
+        </div> */}
       </section>
 
-      <ProductGrid brandSlug={slug} title={`${brand.name} - Kính`} />
+      <ProductGrid brandSlug={slug} title={`Kính mắt - ${brand.name}`} />
     </main>
   );
 }

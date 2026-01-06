@@ -23,7 +23,7 @@ export default function BrandSection() {
   }, []);
 
   return (
-    <section className="mx-auto max-w-[1440px] px-6 lg:px-20 py-10">
+    <section className="max-w-full px-20 lg:px-30 py-10 mx-auto">
       <h2 className="font-sans font-light text-center text-3xl md:text-4xl mb-10">
         Khám phá các thương hiệu
       </h2>

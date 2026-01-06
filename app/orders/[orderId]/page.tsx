@@ -18,6 +18,7 @@ import OrderStatusTimeline from "@/components/OrderStatusTimeline";
 import CreateReviewForm from "@/components/CreateReviewForm";
 import { getMyReviews } from "@/services/reviewService";
 import CreateReturnForm from "@/components/CreateReturnForm";
+import TopRatedSection from "@/components/top-rated-section/TopRatedSection";
 
 type OrderItemProps = {
   item: any;
@@ -361,11 +362,11 @@ export default function OrderDetailPage() {
                   onClick={() => setCancelDialogOpen(true)}
                   className="bg-red-600 rounded-full text-white px-3 py-5 hover:bg-red-700 transition font-semibold w-[140px]"
                 >
-                  CANCEL ORDER
+                  Hủy đơn
                 </Button>
               ) : null}
 
-              {order.status === "delivered" || order.status === "completed" ? (
+              {order.status === "delivered" ? (
                 <Button
                   onClick={() => {
                     setShowReturnForm(true);
@@ -599,6 +600,7 @@ export default function OrderDetailPage() {
                   colors: "",
                 }}
                 orderId={order.id}
+                paymentMethod={order.paymentMethod}
                 onSuccess={() => {
                   setShowReturnForm(false);
                   setTimeout(() => {
@@ -615,6 +617,9 @@ export default function OrderDetailPage() {
             </div>
           )}
         </div>
+
+        {/* Top Rated Products Section */}
+        {/* <TopRatedSection /> */}
 
         <CancelOrderDialog
           open={cancelDialogOpen}

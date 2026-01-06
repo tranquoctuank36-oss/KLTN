@@ -34,7 +34,7 @@ export default function BrandsPage() {
   ).sort();
 
   return (
-    <div className="max-w-[1440px] mx-auto px-6 lg:px-20">
+    <div className="max-w-full px-20 lg:px-30">
       {/* Banner */}
       <div className="relative w-full h-90 bg-gray-100">
         <Image

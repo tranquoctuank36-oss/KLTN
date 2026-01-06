@@ -31,6 +31,8 @@ import { ProductVariants } from "@/types/productVariants";
 import { getMyReviews } from "@/services/reviewService";
 import { Review } from "@/types/review";
 import CreateReviewForm from "@/components/CreateReviewForm";
+import { getMyReturns } from "@/services/returnService";
+import { ReturnRequest } from "@/types/return";
 
 const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
   const router = useRouter();
@@ -70,6 +72,8 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
   const [productSlugs, setProductSlugs] = useState<{ [key: string]: string }>({});
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<{ url: string; alt: string } | null>(null);
+  const [returns, setReturns] = useState<ReturnRequest[]>([]);
+  const [returnsLoading, setReturnsLoading] = useState(false);
 
   // Sync activeTab with URL params on mount and when URL changes
   useEffect(() => {
@@ -77,10 +81,34 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
     if (section === "my-orders/reviews") {
       setActiveTab("reviews");
       fetchReviews();
+    } else if (section === "my-orders/returns") {
+      setActiveTab("returns");
+      fetchReturns();
     } else if (section === "my-orders") {
       setActiveTab("orders");
     }
   }, [searchParams]);
+
+  const fetchReturns = useCallback(async () => {
+    try {
+      setReturnsLoading(true);
+      const result = await getMyReturns();
+      
+      // Sort returns by updatedAt or createdAt (newest first)
+      const sortedReturns = (result || []).sort((a: ReturnRequest, b: ReturnRequest) => {
+        const dateA = new Date(a.updatedAt || a.createdAt).getTime();
+        const dateB = new Date(b.updatedAt || b.createdAt).getTime();
+        return dateB - dateA;
+      });
+      
+      setReturns(sortedReturns);
+    } catch (err) {
+      console.error("❌ Failed to fetch returns:", err);
+      setReturns([]);
+    } finally {
+      setReturnsLoading(false);
+    }
+  }, []);
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -132,7 +160,7 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
           "ĐANG XỬ LÝ": "processing",
           "ĐANG GIAO": "shipping",
           "ĐÃ GIAO": "delivered",
-          "HOÀN TẤT": "completed",
+          "HOÀN THÀNH": "completed",
           "ĐÃ HỦY": "cancelled",
           "YÊU CẦU TRẢ HÀNG": "return_requested",
           "ĐANG TRẢ HÀNG": "returning",
@@ -314,10 +342,16 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
             />
             <p className="font-normal mb-5">Xem Gọng kính</p>
             <div className="flex justify-center gap-3">
-              <Button className="w-24 h-10 border rounded-full hover:bg-gray-700 hover:text-white border-gray-500 text-gray-900 text-base">
+              <Button
+                onClick={() => router.push("/products?productTypes=gong-kinh&genders=nam")}
+                className="w-24 h-10 border rounded-full hover:bg-gray-700 hover:text-white border-gray-500 text-gray-900 text-base"
+              >
                 Nam
               </Button>
-              <Button className="w-24 h-10 border rounded-full hover:bg-gray-700 hover:text-white border-gray-500 text-gray-900 text-base">
+              <Button
+                onClick={() => router.push("/products?productTypes=gong-kinh&genders=nu")}
+                className="w-24 h-10 border rounded-full hover:bg-gray-700 hover:text-white border-gray-500 text-gray-900 text-base"
+              >
                 Nữ
               </Button>
             </div>
@@ -333,10 +367,16 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
             />
             <p className="mb-5">Xem Kính mát</p>
             <div className="flex justify-center gap-3">
-              <Button className="w-24 h-10 border rounded-full hover:bg-gray-700 hover:text-white border-gray-500 text-gray-900 text-base">
+              <Button
+                onClick={() => router.push("/products?productTypes=kinh-mat&genders=nam")}
+                className="w-24 h-10 border rounded-full hover:bg-gray-700 hover:text-white border-gray-500 text-gray-900 text-base"
+              >
                 Nam
               </Button>
-              <Button className="w-24 h-10 border rounded-full hover:bg-gray-700 hover:text-white border-gray-500 text-gray-900 text-base">
+              <Button
+                onClick={() => router.push("/products?productTypes=kinh-mat&genders=nu")}
+                className="w-24 h-10 border rounded-full hover:bg-gray-700 hover:text-white border-gray-500 text-gray-900 text-base"
+              >
                 Nữ
               </Button>
             </div>
@@ -374,7 +414,11 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
           Tất cả đơn hàng 
         </button>
         <button
-          onClick={() => setActiveTab("returns")}
+          onClick={() => {
+            setActiveTab("returns");
+            router.push("/users?section=my-orders/returns");
+            fetchReturns();
+          }}
           className={`pb-2 cursor-pointer transition ${
             activeTab === "returns"
               ? "font-semibold border-b-2 border-black"
@@ -395,7 +439,7 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
               : "text-gray-500 hover:text-black"
           }`}
         >
-          Đánh giá
+          Đã đánh giá
         </button>
       </div>
 
@@ -435,7 +479,7 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
                 "Đang xử lý",
                 "Đang giao",
                 "Đã giao",
-                "Hoàn tất",
+                "Hoàn thành",
                 "Đã hủy",
                 "Yêu cầu trả hàng",
                 "Đang trả hàng",
@@ -536,7 +580,7 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
                     {order.status === "processing" && "Đang xử lý"}
                     {order.status === "shipping" && "Đang giao"}
                     {order.status === "delivered" && "Đã giao"}
-                    {order.status === "completed" && "Hoàn tất"}
+                    {order.status === "completed" && "Hoàn thành"}
                     {order.status === "cancelled" && "Đã hủy"}
                     {order.status === "return_requested" && "Yêu cầu trả hàng"}
                     {order.status === "returning" && "Đang trả hàng"}
@@ -579,7 +623,7 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
                         }}
                         className="bg-red-600 rounded-full text-white px-3 py-5 hover:bg-red-700 transition font-semibold w-[140px]"
                       >
-                        Hủy đơn hàng
+                        Hủy đơn
                       </Button>
                     )}
                     {/* {(order.status === "cancelled" ||
@@ -602,6 +646,172 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
           </>
         )}
       </div>
+      )}
+
+      {/* Returns tab content */}
+      {activeTab === "returns" && (
+        <div className="relative min-h-[200px]">
+          {returnsLoading && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            </div>
+          )}
+          
+          {returns.length === 0 && !returnsLoading ? (
+            <div className="text-center py-10 text-gray-500">
+              <p className="text-lg">Bạn chưa có yêu cầu trả hàng nào.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {returns.map((returnRequest) => (
+                <div
+                  key={returnRequest.id}
+                  className="border border-gray-300 rounded-md p-6 bg-white"
+                >
+                  {/* Header */}
+                  <div className="flex justify-between items-start mb-4 pb-4 border-b">
+                    <div>
+                      <h3 className="font-bold text-lg mb-2">
+                        <span className="text-gray-800">Mã trả hàng: </span>
+                        <span className="text-orange-600 uppercase">
+                          {returnRequest.returnCode}
+                        </span>
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-semibold">Mã đơn hàng: </span>
+                        <Link
+                          href={Routes.orderDetail(returnRequest.orderId)}
+                          className="text-blue-600 hover:underline"
+                        >
+                          {returnRequest.orderCode}
+                        </Link>
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Ngày tạo: {new Date(returnRequest.createdAt).toLocaleString("vi-VN")}
+                      </p>
+                    </div>
+                    <span
+                      className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${
+                        returnRequest.status === "requested"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : returnRequest.status === "approved"
+                          ? "bg-blue-100 text-blue-800"
+                          : returnRequest.status === "rejected"
+                          ? "bg-red-100 text-red-800"
+                          : returnRequest.status === "completed"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {returnRequest.status === "requested" && "Chờ xử lý"}
+                      {returnRequest.status === "approved" && "Đã duyệt"}
+                      {returnRequest.status === "rejected" && "Từ chối"}
+                      {returnRequest.status === "completed" && "Hoàn thành"}
+                      {!["requested", "approved", "rejected", "completed"].includes(
+                        returnRequest.status
+                      ) && returnRequest.status}
+                    </span>
+                  </div>
+
+                  {/* Reason */}
+                  <div className="mb-4">
+                    <p className="font-semibold text-gray-800 mb-1">Lý do trả hàng:</p>
+                    <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">
+                      {returnRequest.reason}
+                    </p>
+                  </div>
+
+                  {/* Customer Note */}
+                  {returnRequest.customerNote && (
+                    <div className="mb-4">
+                      <p className="font-semibold text-gray-800 mb-1">Ghi chú:</p>
+                      <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">
+                        {returnRequest.customerNote}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Bank Info - Only show if exists */}
+                  {returnRequest.bankAccountName && (
+                    <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <p className="font-semibold text-blue-900 mb-2">
+                        Thông tin tài khoản hoàn tiền:
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <p>
+                          <span className="text-gray-600">Chủ tài khoản:</span>{" "}
+                          <span className="font-medium">{returnRequest.bankAccountName}</span>
+                        </p>
+                        <p>
+                          <span className="text-gray-600">Số tài khoản:</span>{" "}
+                          <span className="font-medium">{returnRequest.bankAccountNumber}</span>
+                        </p>
+                        <p>
+                          <span className="text-gray-600">Ngân hàng:</span>{" "}
+                          <span className="font-medium">{returnRequest.bankName}</span>
+                        </p>
+                        {returnRequest.bankBranch && (
+                          <p>
+                            <span className="text-gray-600">Chi nhánh:</span>{" "}
+                            <span className="font-medium">{returnRequest.bankBranch}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Refund Amount */}
+                  {returnRequest.calculatedRefundAmount && (
+                    <div className="mb-4">
+                      <p className="font-semibold text-gray-800">
+                        Số tiền hoàn:{" "}
+                        <span className="text-green-600 text-lg">
+                          {Number(returnRequest.calculatedRefundAmount).toLocaleString("en-US")}đ
+                        </span>
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Images */}
+                  {returnRequest.images && returnRequest.images.length > 0 && (
+                    <div className="mb-4">
+                      <p className="font-semibold text-gray-800 mb-2">Hình ảnh đính kèm:</p>
+                      <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+                        {returnRequest.images.map((image) => (
+                          <div
+                            key={image.id}
+                            className="relative aspect-square rounded-lg overflow-hidden border cursor-pointer hover:opacity-80 transition"
+                            onClick={() =>
+                              setLightboxImage({
+                                url: image.publicUrl,
+                                alt: image.altText || "Ảnh trả hàng",
+                              })
+                            }
+                          >
+                            <Image
+                              src={image.publicUrl}
+                              alt={image.altText || "Ảnh trả hàng"}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rejected Reason */}
+                  {returnRequest.status === "rejected" && returnRequest.rejectedReason && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <p className="font-semibold text-red-900 mb-1">Lý do từ chối:</p>
+                      <p className="text-sm text-red-800">{returnRequest.rejectedReason}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Reviews tab content */}

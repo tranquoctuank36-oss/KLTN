@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CheckCheck, DollarSign, ReceiptText, Truck, X } from "lucide-react";
+import { CheckCheck, DollarSign, ReceiptText, Truck, X, PackageX, CheckCircle2 } from "lucide-react";
 
 // Backend status types
 type OrderStatus =
@@ -17,7 +17,7 @@ type OrderStatus =
   | "returning"
   | "returned";
 
-type StepKey = "PLACED" | "CONFIRMED" | "SHIPPING" | "DELIVERED" | "CANCELLED";
+type StepKey = "PLACED" | "CONFIRMED" | "SHIPPING" | "DELIVERED" | "CANCELLED" | "RETURNED" | "COMPLETED";
 type Timestamps = Partial<Record<StepKey, string>>;
 
 interface Props {
@@ -47,8 +47,14 @@ function mapStatusToStep(status: string): StepKey | null {
   if (statusLower === "shipping") {
     return "SHIPPING";
   }
-  if (statusLower === "delivered" || statusLower === "completed") {
+  if (statusLower === "delivered") {
     return "DELIVERED";
+  }
+  if (statusLower === "completed") {
+    return "COMPLETED";
+  }
+  if (statusLower === "returned") {
+    return "RETURNED";
   }
   
   return null;
@@ -60,8 +66,11 @@ export default function OrderStatusTimeline({
   className = "",
 }: Props) {
   const cancelled = status.toLowerCase() === "cancelled";
+  const returned = status.toLowerCase() === "returned";
+  const completed = status.toLowerCase() === "completed";
+  const delivered = status.toLowerCase() === "delivered" || completed;
   const currentStep = mapStatusToStep(status);
-  const currentIndex = cancelled || !currentStep
+  const currentIndex = cancelled || returned || !currentStep
     ? -1
     : STEPS.findIndex((s) => s.key === currentStep);
 
@@ -72,6 +81,9 @@ export default function OrderStatusTimeline({
         <TimelineHorizontal
           steps={STEPS}
           cancelled={cancelled}
+          returned={returned}
+          completed={completed}
+          delivered={delivered}
           currentIndex={currentIndex}
           timestamps={timestamps}
         />
@@ -131,21 +143,39 @@ export default function OrderStatusTimeline({
 function TimelineHorizontal({
   steps,
   cancelled,
+  returned,
+  completed,
+  delivered,
   currentIndex,
   timestamps,
 }: {
   steps: typeof STEPS;
   cancelled: boolean;
+  returned: boolean;
+  completed: boolean;
+  delivered: boolean;
   currentIndex: number;
   timestamps?: Timestamps;
 }) {
   const DOT = 32;
   
   // Nếu cancelled, chỉ hiển thị 2 bước: PLACED và CANCELLED
+  // Nếu returned, hiển thị đầy đủ các bước + RETURNED
+  // Nếu completed, hiển thị đầy đủ các bước + COMPLETED
   const displaySteps = cancelled 
     ? [
         { key: "PLACED" as StepKey, label: "Đã đặt hàng", Icon: ReceiptText },
         { key: "CANCELLED" as StepKey, label: "Đã hủy", Icon: X },
+      ]
+    : returned
+    ? [
+        ...steps,
+        { key: "RETURNED" as StepKey, label: "Đã trả hàng", Icon: PackageX },
+      ]
+    : completed
+    ? [
+        ...steps,
+        { key: "COMPLETED" as StepKey, label: "Hoàn thành", Icon: CheckCircle2 },
       ]
     : steps;
   
@@ -154,7 +184,13 @@ function TimelineHorizontal({
   // tỉ lệ để baseline bám đúng tâm icon đầu/cuối
   const leftPct = (1 / (2 * N)) * 100;
   const trackPct = ((N - 1) / N) * 100;
-  const ratio = cancelled ? 1 : Math.max(0, currentIndex) / (steps.length - 1);
+  const ratio = cancelled 
+    ? 1 
+    : returned 
+    ? 1
+    : completed
+    ? 1 
+    : Math.max(0, currentIndex) / (steps.length - 1);
 
   return (
     <div className="relative">
@@ -165,7 +201,7 @@ function TimelineHorizontal({
         />
         <div
           className={`absolute top-1/2 -translate-y-1/2 h-1 rounded transition-[width] duration-500 ${
-            cancelled ? "bg-black" : "bg-blue-500"
+            cancelled ? "bg-red-500" : returned ? "bg-orange-500" : delivered ? "bg-green-500" : "bg-blue-500"
           }`}
           style={{
             left: `${leftPct}%`,
@@ -180,9 +216,12 @@ function TimelineHorizontal({
         style={{ gridTemplateColumns: `repeat(${N}, minmax(0, 1fr))` }}
       >
         {displaySteps.map((s, idx) => {
-          const done = cancelled ? true : idx <= currentIndex;
-          const active = cancelled ? idx === 1 : idx === currentIndex;
+          const done = cancelled ? true : returned ? true : completed ? true : idx <= currentIndex;
+          const active = cancelled ? idx === 1 : returned ? idx === displaySteps.length - 1 : completed ? idx === displaySteps.length - 1 : idx === currentIndex;
           const isCancelledStep = s.key === "CANCELLED";
+          const isReturnedStep = s.key === "RETURNED";
+          const isDeliveredStep = s.key === "DELIVERED";
+          const isCompletedStep = s.key === "COMPLETED";
 
           return (
             <div key={s.key} className="flex flex-col items-center">
@@ -192,6 +231,12 @@ function TimelineHorizontal({
                     "flex items-center justify-center w-8 h-8 rounded-full border transition-colors",
                     done && isCancelledStep
                       ? "bg-red-500 text-white border-red-500"
+                      : done && isReturnedStep
+                      ? "bg-orange-500 text-white border-orange-500"
+                      : done && isCompletedStep
+                      ? "bg-green-500 text-white border-green-500"
+                      : done && isDeliveredStep && delivered && !completed
+                      ? "bg-green-500 text-white border-green-500"
                       : done
                       ? "bg-blue-500 text-white border-blue-500"
                       : "bg-white text-gray-400 border-gray-300",
@@ -206,7 +251,17 @@ function TimelineHorizontal({
               <div className="w-full max-w-[14rem] mx-auto mt-2 text-center">
                 <div
                   className={`text-sm font-medium ${
-                    done && isCancelledStep ? "text-red-600" : done ? "text-black" : "text-gray-500"
+                    done && isCancelledStep 
+                      ? "text-red-600" 
+                      : done && isReturnedStep
+                      ? "text-orange-600"
+                      : done && isCompletedStep
+                      ? "text-green-600"
+                      : done && isDeliveredStep && delivered && !completed
+                      ? "text-green-600"
+                      : done 
+                      ? "text-black" 
+                      : "text-gray-500"
                   }`}
                 >
                   {s.label}

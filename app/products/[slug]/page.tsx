@@ -5,7 +5,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { getProductBySlug } from "@/services/productService";
 import { Product } from "@/types/product";
 import { Button } from "@/components/ui/button";
-import { Star, Check, ChevronRight, Heart, Filter } from "lucide-react";
+import { Star, Check, ChevronRight, Heart, Filter, X } from "lucide-react";
 import IncludingStrip from "@/components/productDetail/IncludingStrip";
 import ProductTabs from "@/components/productDetail/ProductInfo";
 import FrameMeasurementsTable from "@/components/productDetail/FrameMeasurementsTable";
@@ -147,7 +147,7 @@ export default function ProductDetailPage() {
   // Show loading skeleton while fetching
   if (loading) {
     return (
-      <div className="mx-auto max-w-[1440px] px-6 lg:px-20 py-6">
+      <div className="mx-auto max-w-full px-20 lg:px-30 py-10">
         <div className="mt-4 grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* LEFT SKELETON */}
           <div className="lg:col-span-8 space-y-8 animate-pulse">
@@ -263,7 +263,7 @@ export default function ProductDetailPage() {
   );
 
   return (
-    <div className="mx-auto max-w-[1440px] px-6 lg:px-20 py-6">
+    <div className="mx-auto max-w-full px-20 lg:px-30 py-10">
       <div className="mt-4 grid grid-cols-1 lg:grid-cols-12 gap-12">
         {/* LEFT */}
         <div className="lg:col-span-8">
@@ -404,7 +404,7 @@ export default function ProductDetailPage() {
               </div>
             ) : filteredAndSortedReviews.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-500 text-lg">Không tìm thấy đánh giá nào</p>
+                <p className="text-gray-500 text-lg">Không có đánh giá nào</p>
               </div>
             ) : (
               <>
@@ -522,7 +522,7 @@ export default function ProductDetailPage() {
                 onClick={() => setLightboxImage(null)}
                 title="Đóng"
               >
-                <span className="text-gray-800 text-2xl font-bold">×</span>
+                <X className="w-6 h-6 text-gray-800" />
               </button>
               <div className="w-full h-full flex items-center justify-center p-8">
                 <img

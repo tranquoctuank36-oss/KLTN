@@ -4,6 +4,10 @@ export type Brand = {
   slug: string;
   websiteUrl: string;
   description: string;
-  bannerImagePublicUrl?: string;
-  bannerImageAltText?: string;
+  bannerImage?: {
+    id: string;
+    publicUrl: string;
+    altText: string;
+    sortOrder: number;
+  };
 };

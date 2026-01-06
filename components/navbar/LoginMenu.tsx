@@ -70,7 +70,7 @@ export default function LoginMenu() {
           side="bottom"
           align="center"
           sideOffset={16}
-          className="relative w-60 p-4 border border-gray-200 bg-white rounded-md drop-shadow-[0_0_15px_rgba(209,213,219,0.4)]"
+          className="relative w-65 p-4 border border-gray-200 bg-white rounded-md drop-shadow-[0_0_15px_rgba(209,213,219,0.4)]"
         >
           {/* caret */}
           <div className="absolute -top-[12px] left-1/2 -translate-x-1/2 pointer-events-none">
@@ -87,7 +87,7 @@ export default function LoginMenu() {
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-2xl text-gray-500">Chào mừng quay lại</h2>
+            <h2 className="text-2xl text-gray-500 text-center">Chào mừng quay lại</h2>
             <hr className="border-gray-300 mt-2 mb-4" />
 
             <div className="space-y-3 flex flex-col items-center">

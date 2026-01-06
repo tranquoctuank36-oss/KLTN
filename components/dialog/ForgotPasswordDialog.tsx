@@ -122,7 +122,7 @@ export default function ForgotPasswordDialog({
             {loading ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             ) : (
-              <span className="font-semibold text-lg">Gửi Liên Kết Cho Tôi</span>
+              <span className="font-semibold text-lg">Gửi liên kết cho tôi</span>
             )}
           </Button>
 

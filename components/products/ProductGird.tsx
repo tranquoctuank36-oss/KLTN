@@ -155,7 +155,7 @@ export default function ProductGrid({ brandSlug, title, initialFilters }: Props)
   if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
 
   return (
-    <div className="max-w-[1440px] mx-auto px-6 lg:px-20 py-10">
+    <div className="max-w-full px-20 lg:px-30 py-10">
       <div ref={topRef} className="scroll-mt-[var(--header-h)]" />
 
       {/* FilterSection LUÔN mounted */}
@@ -193,7 +193,7 @@ export default function ProductGrid({ brandSlug, title, initialFilters }: Props)
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="mt-20 flex items-center justify-center gap-2">
+        <div className="mt-10 flex items-center justify-center gap-2">
           <button
             onClick={() => setCurrentPage(0)}
             disabled={currentPage === 0}

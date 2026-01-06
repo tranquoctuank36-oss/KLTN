@@ -46,7 +46,7 @@ export default function Topbar() {
 
   return (
     <div className="bg-gray-950 text-xs text-gray-300">
-      <div className="mx-auto max-w-[1440px] px-6 lg:px-20 py-3 flex flex-wrap justify-between items-center">
+      <div className="max-w-full px-20 lg:px-30 py-3 flex flex-wrap justify-between items-center">
         {/* Top Left */}
         <div className="flex flex-wrap items-center ">
           <Button

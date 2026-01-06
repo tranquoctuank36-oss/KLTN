@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, X } from "lucide-react";
 import Image from "next/image";
-import { createReturnRequest } from "@/services/orderService";
+import { createReturnRequest } from "@/services/returnService";
 import { uploadImage } from "@/services/imageService";
 import toast from "react-hot-toast";
 
@@ -16,6 +16,7 @@ type CreateReturnFormProps = {
     colors?: string;
   };
   orderId: string;
+  paymentMethod: string;
   onSuccess?: () => void;
   onCancel?: () => void;
 };
@@ -23,6 +24,7 @@ type CreateReturnFormProps = {
 export default function CreateReturnForm({
   orderItem,
   orderId,
+  paymentMethod,
   onSuccess,
   onCancel,
 }: CreateReturnFormProps) {
@@ -31,6 +33,15 @@ export default function CreateReturnForm({
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  // Bank info - only for COD orders
+  const [bankAccountName, setBankAccountName] = useState("");
+  const [bankAccountNumber, setBankAccountNumber] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [bankBranch, setBankBranch] = useState("");
+
+  const isCOD = paymentMethod?.toLowerCase() === "cod";
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -60,8 +71,10 @@ export default function CreateReturnForm({
   };
 
   const handleSubmit = async () => {
+    setErrorMessage("");
+    
     if (!reason.trim()) {
-      toast.error("Vui lòng nhập lý do trả hàng");
+      setErrorMessage("Vui lòng nhập lý do trả hàng");
       return;
     }
 
@@ -84,11 +97,26 @@ export default function CreateReturnForm({
       }
 
       // Create return request
-      await createReturnRequest(orderId, {
+      const payload: any = {
         reason: reason.trim(),
         customerNote: customerNote.trim(),
         imageIds,
-      });
+      };
+
+      // Add bank info only for COD orders
+      if (isCOD) {
+        if (!bankAccountName.trim() || !bankAccountNumber.trim() || !bankName.trim()) {
+          setErrorMessage("Vui lòng nhập đầy đủ thông tin tài khoản ngân hàng");
+          setIsSubmitting(false);
+          return;
+        }
+        payload.bankAccountName = bankAccountName.trim();
+        payload.bankAccountNumber = bankAccountNumber.trim();
+        payload.bankName = bankName.trim();
+        payload.bankBranch = bankBranch.trim();
+      }
+
+      await createReturnRequest(orderId, payload);
 
       toast.success("Gửi yêu cầu trả hàng thành công!");
       onSuccess?.();
@@ -98,6 +126,10 @@ export default function CreateReturnForm({
       setCustomerNote("");
       setImageFiles([]);
       setImagePreviews([]);
+      setBankAccountName("");
+      setBankAccountNumber("");
+      setBankName("");
+      setBankBranch("");
     } catch (error: any) {
       console.error("Failed to submit return request:", error);
       const errorMessage =
@@ -170,6 +202,69 @@ export default function CreateReturnForm({
           </div>
         </div>
 
+        {/* Bank Information - Only for COD orders */}
+        {isCOD && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
+            <h3 className="font-semibold text-blue-900 mb-3">
+              Thông tin tài khoản ngân hàng để hoàn tiền
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Tên chủ tài khoản <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={bankAccountName}
+                  onChange={(e) => setBankAccountName(e.target.value)}
+                  placeholder="Nhập tên chủ tài khoản"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  maxLength={100}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Số tài khoản <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={bankAccountNumber}
+                  onChange={(e) => setBankAccountNumber(e.target.value)}
+                  placeholder="Nhập số tài khoản"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  maxLength={50}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Tên ngân hàng <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  placeholder="Ví dụ: Vietcombank, BIDV, Techcombank"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  maxLength={100}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Chi nhánh
+                </label>
+                <input
+                  type="text"
+                  value={bankBranch}
+                  onChange={(e) => setBankBranch(e.target.value)}
+                  placeholder="Nhập chi nhánh (nếu có)"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  maxLength={100}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Image Upload */}
         <div>
           <label className="block text-sm font-semibold mb-2">
@@ -218,6 +313,13 @@ export default function CreateReturnForm({
           )}
         </div>
 
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm font-medium">{errorMessage}</p>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex gap-3 justify-end pt-4 border-t">
           <Button
@@ -230,7 +332,11 @@ export default function CreateReturnForm({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || !reason.trim()}
+            // disabled={
+            //   isSubmitting ||
+            //   !reason.trim() ||
+            //   (isCOD && (!bankAccountName.trim() || !bankAccountNumber.trim() || !bankName.trim()))
+            // }
             className="px-6 bg-blue-600 hover:bg-blue-700 text-white"
           >
             {isSubmitting ? "Đang gửi..." : "Gửi yêu cầu"}

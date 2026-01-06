@@ -12,6 +12,7 @@ type Props = {
   max: number; // từ API
   value?: [number, number];
   onChange?: (v: [number, number]) => void;
+  onPreviewChange?: (v: [number, number]) => void; // Gọi khi đang kéo slider
 
   disabled?: boolean;
   format?: (n: number) => string;
@@ -46,6 +47,7 @@ export default function PricePanel({
   max,
   value,
   onChange,
+  onPreviewChange,
   disabled = false,
   format,
 }: Props) {
@@ -64,12 +66,35 @@ export default function PricePanel({
     return 1;
   }, [boundMin, boundMax]);
 
-  const initialRange: [number, number] = [boundMin, boundMax];
+  // Khoảng cách tối thiểu giữa 2 thumb (10% của range)
+  const minGap = useMemo(() => {
+    const range = boundMax - boundMin;
+    return Math.max(step * 5, Math.round(range * 0.10));
+  }, [boundMin, boundMax, step]);
+
+  const initialRange: [number, number] = useMemo(
+    () => [boundMin, boundMax],
+    [boundMin, boundMax]
+  );
   const [val, setVal] = useState<[number, number]>(value ?? initialRange);
 
   useEffect(() => {
-    setVal(value ?? initialRange);
-  }, [value, boundMin, boundMax]);
+    if (value) {
+      // Clamp giá trị trong bounds mới từ API
+      const clampedMin = Math.max(value[0], boundMin);
+      const clampedMax = Math.min(value[1], boundMax);
+      const clampedValue: [number, number] = [clampedMin, clampedMax];
+      setVal(clampedValue);
+      
+      // Nếu giá trị bị clamp (thay đổi), thông báo cho parent
+      if (clampedMin !== value[0] || clampedMax !== value[1]) {
+        // Dùng setTimeout để tránh update trong render cycle
+        setTimeout(() => onPreviewChange?.(clampedValue), 0);
+      }
+    } else {
+      setVal(initialRange);
+    }
+  }, [value, initialRange, boundMin, boundMax]); // Bỏ onPreviewChange khỏi deps
 
   const f = (n: number) =>
     format ? format(n) : `${Number(n).toLocaleString("en-US")}đ`;
@@ -100,7 +125,7 @@ export default function PricePanel({
               className={`mx-auto w-full max-w-sm ${containerBase} ${containerActive}`}
             >
               <motion.div variants={itemV} className="text-center font-semibold mb-2">
-                Custom price
+                Giá tùy chỉnh
               </motion.div>
 
               {/* slider block (animated entry from left) */}
@@ -113,13 +138,64 @@ export default function PricePanel({
                       step={step}
                       value={val}
                       disabled={disabled}
+                      minStepsBetweenThumbs={1}
                       onValueChange={(v) => {
                         if (disabled) return;
-                        setVal([v[0], v[1]] as [number, number]);
+                        
+                        let minVal = v[0];
+                        let maxVal = v[1];
+                        const prevMin = val[0];
+                        const prevMax = val[1];
+                        
+                        // Kiểm tra khoảng cách
+                        const currentGap = maxVal - minVal;
+                        
+                        // Nếu khoảng cách đã <= minGap
+                        if (currentGap <= minGap) {
+                          // Xác định thumb nào đang cố kéo
+                          const leftMoving = minVal !== prevMin;
+                          const rightMoving = maxVal !== prevMax;
+                          
+                          // Nếu thumb trái cố kéo sang phải (vào gần hơn)
+                          if (leftMoving && minVal > prevMin) {
+                            // DỪNG LẠI - không cho kéo gần hơn
+                            return;
+                          }
+                          
+                          // Nếu thumb phải cố kéo sang trái (vào gần hơn)
+                          if (rightMoving && maxVal < prevMax) {
+                            // DỪNG LẠI - không cho kéo gần hơn
+                            return;
+                          }
+                          
+                          // Chỉ cho phép kéo ra xa (minVal giảm hoặc maxVal tăng)
+                        }
+                        
+                        const newVal = [minVal, maxVal] as [number, number];
+                        setVal(newVal);
+                        onPreviewChange?.(newVal);
                       }}
                       onValueCommit={(v) => {
                         if (disabled) return;
-                        onChange?.([v[0], v[1]] as [number, number]);
+                        
+                        let minVal = v[0];
+                        let maxVal = v[1];
+                        
+                        // Đảm bảo khoảng cách tối thiểu khi commit
+                        const currentGap = maxVal - minVal;
+                        if (currentGap < minGap) {
+                          // Điều chỉnh để đảm bảo minGap
+                          const prevMin = val[0];
+                          const prevMax = val[1];
+                          
+                          if (minVal !== prevMin) {
+                            minVal = Math.max(boundMin, maxVal - minGap);
+                          } else {
+                            maxVal = Math.min(boundMax, minVal + minGap);
+                          }
+                        }
+                        
+                        onChange?.([minVal, maxVal] as [number, number]);
                       }}
                       className="my-4"
                     />

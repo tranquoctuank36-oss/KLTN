@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Copy, Check, Tag, Percent, Clock } from "lucide-react";
+import { Copy, Check, Tag, Percent, Clock, TicketPercent } from "lucide-react";
 import {
   getActiveDiscounts,
   getActiveVouchers,
@@ -66,17 +66,18 @@ export default function SalePage() {
     <div className="min-h-screen bg-gray-50">
       {/* Banner Section */}
       <div className="relative bg-[#9CBAC7] overflow-hidden">
-        <div className="max-w-[1440px] mx-auto px-6 lg:px-20">
+        <div className="max-w-full px-20 lg:px-30 py-10 mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 items-center">
             <div className="space-y-4">
               <h1 className="text-3xl lg:text-4xl text-gray-900 leading-tight pl-15">
-                Find the perfect deal for
+                Tìm ưu đãi hoàn hảo cho
                 <br />
-                your perfect pair.
+                cặp kính hoàn hảo của bạn.
               </h1>
               <p className="text-lg text-gray-700 pl-15">
-                Discover amazing discounts and exclusive vouchers on premium
-                eyewear
+                Khám phá những ưu đãi tuyệt vời và phiếu giảm giá độc quyền 
+                <br />
+                dành cho kính mắt cao cấp.
               </p>
             </div>
             <div className="flex justify-center lg:justify-end">
@@ -94,7 +95,7 @@ export default function SalePage() {
       </div>
 
       {/* Content Section */}
-      <div className="max-w-[1440px] mx-auto px-6 lg:px-20 py-12">
+      <div className="max-w-full px-20 lg:px-30 py-12 mx-auto">
         {/* Tabs Navigation - Only show if at least one has data */}
         {!loading && (discounts.length > 0 || vouchers.length > 0) && (
           <div className="flex items-center gap-4 mb-8 border-b border-gray-200">
@@ -120,7 +121,7 @@ export default function SalePage() {
                     : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
-                <Tag className="w-5 h-5" />
+                <TicketPercent className="w-5 h-5" />
                 Mã giảm giá
               </button>
             )}

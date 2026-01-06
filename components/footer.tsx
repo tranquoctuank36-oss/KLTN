@@ -7,7 +7,7 @@ import { SUPPORT_ITEMS, FOOTER_LINKS } from "@/mocks/footer-mock";
 export default function Footer() {
   return (
     <footer className="bg-[#050524] text-gray-300 text-sm">
-      <div className="max-w-[1440px] mx-auto px-6 lg:px-20 py-10 space-y-10">
+      <div className="max-w-full px-20 lg:px-30 py-10 space-y-10">
         {/* Support Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {SUPPORT_ITEMS.map((item) => (

@@ -48,13 +48,13 @@ export default function ConfirmDialog({
             <Button
               variant="outline"
               onClick={() => setOpen(false)}
-              className="h-10 w-20 bg-white border border-2 border-gray-400 hover:border-gray-800 text-sm font-bold text-gray-400 hover:text-gray-800 hover:bg-white rounded-full"
+              className="h-10 bg-white border border-2 border-gray-400 hover:border-gray-800 text-sm font-bold text-gray-400 hover:text-gray-800 hover:bg-white rounded-full"
             >
               {cancelText}
             </Button>
             <Button
               onClick={handleConfirm}
-              className="h-10 w-20 bg-blue-600 text-white text-sm font-bold hover:bg-blue-800 rounded-full"
+              className="h-10 bg-blue-600 text-white text-sm font-bold hover:bg-blue-800 rounded-full"
             >
               {confirmText}
             </Button>

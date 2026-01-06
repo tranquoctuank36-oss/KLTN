@@ -86,7 +86,7 @@ export default function DiscountDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-[1440px] mx-auto px-6 lg:px-20 py-20">
+        <div className="max-w-full px-20 lg:px-30 py-10 mx-auto">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-gray-200 rounded w-1/3"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -103,7 +103,7 @@ export default function DiscountDetailPage() {
   if (error || !discount) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-[1440px] mx-auto px-6 lg:px-20 py-20">
+        <div className="max-w-full px-20 lg:px-30 py-10 mx-auto">
           <div className="text-center py-16">
             <Tag className="w-16 h-16 mx-auto mb-4 text-gray-400" />
             <p className="text-lg text-gray-600 mb-4">
@@ -135,7 +135,7 @@ export default function DiscountDetailPage() {
       </div>
 
       {/* Products Section */}
-      <div className="max-w-[1440px] mx-auto px-6 lg:px-20 py-20">
+      <div className="max-w-full px-20 lg:px-30 py-10 mx-auto">
         <div ref={topRef} className="scroll-mt-[var(--header-h)]" />
 
         {/* Grid with loading overlay */}
@@ -164,7 +164,7 @@ export default function DiscountDetailPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="mt-20 flex items-center justify-center gap-2">
+          <div className="mt-10 flex items-center justify-center gap-2">
             <button
               onClick={() => setCurrentPage(0)}
               disabled={currentPage === 0}

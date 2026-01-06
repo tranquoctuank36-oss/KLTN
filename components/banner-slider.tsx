@@ -4,22 +4,45 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./ui/button";
-
-const IMAGES = [
-  "/banners/banner_1.png",
-  "/banners/banner_2.png",
-  "/banners/banner_3.png",
-];
+import { bannerService } from "@/services/bannerService";
+import { Banner } from "@/types/banner";
 
 export default function BannerSlider() {
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [index, setIndex] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(true);
 
   const next = () => setIndex((i) => i + 1);
   const prev = () => setIndex((i) => i - 1);
 
+  // Fetch banners from API
   useEffect(() => {
-    if (index === IMAGES.length + 1) {
+    const fetchBanners = async () => {
+      try {
+        setIsLoading(true);
+        const response = await bannerService.getActiveBanners();
+        if (response.success && response.data.length > 0) {
+          // Sort banners by sortOrder
+          const sortedBanners = [...response.data].sort(
+            (a, b) => a.sortOrder - b.sortOrder
+          );
+          setBanners(sortedBanners);
+        }
+      } catch (error) {
+        console.error("Error fetching banners:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBanners();
+  }, []);
+
+  useEffect(() => {
+    if (banners.length === 0) return;
+
+    if (index === banners.length + 1) {
       setTimeout(() => {
         setIsTransitioning(false);
         setIndex(1);
@@ -28,10 +51,10 @@ export default function BannerSlider() {
     if (index === 0) {
       setTimeout(() => {
         setIsTransitioning(false);
-        setIndex(IMAGES.length); 
+        setIndex(banners.length); 
       }, 500);
     }
-  }, [index]);
+  }, [index, banners.length]);
 
   useEffect(() => {
     if (!isTransitioning) {
@@ -40,13 +63,31 @@ export default function BannerSlider() {
   }, [isTransitioning]);
 
   useEffect(() => {
+    if (banners.length === 0) return;
+
     const interval = setInterval(() => {
       next();
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [banners.length]);
 
-  const slides = [IMAGES[IMAGES.length - 1], ...IMAGES, IMAGES[0]];
+  if (isLoading || banners.length === 0) {
+    return (
+      <section className="relative">
+        <div className="px-6 lg:px-50">
+          <div className="relative h-[50vh] md:h-[55vh] overflow-hidden bg-gray-200 animate-pulse flex items-center justify-center">
+            <p className="text-gray-400">Đang tải banners...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const slides = [
+    banners[banners.length - 1],
+    ...banners,
+    banners[0],
+  ];
 
   return (
     <section className="relative">
@@ -54,7 +95,7 @@ export default function BannerSlider() {
         <div className="relative h-[50vh] md:h-[55vh] overflow-hidden">
           {/* track slides */}
           <div
-            className={`flex h-full ${
+            className={`flex w-full h-full overflow-hidden ${
               isTransitioning ? "transition-transform duration-500 ease-in-out" : ""
             }`}
             style={{
@@ -62,17 +103,17 @@ export default function BannerSlider() {
               transform: `translateX(-${index * (100 / slides.length)}%)`,
             }}
           >
-            {slides.map((src, i) => (
+            {slides.map((banner, i) => (
               <div
-                key={i}
+                key={`${banner.id}-${i}`}
                 className="relative h-full"
                 style={{ width: `${100 / slides.length}%` }}
               >
                 <Image
-                  src={src}
-                  alt={`Trang ${i}`}
+                  src={banner.imageUrl}
+                  alt={banner.title || `Banner ${i}`}
                   fill
-                  priority={i === index}              
+                  priority={i === index}
                 />
               </div>
             ))}

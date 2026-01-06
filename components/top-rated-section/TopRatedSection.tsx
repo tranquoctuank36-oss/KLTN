@@ -2,53 +2,38 @@
 
 import { useEffect, useState, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import RecentlyViewedCard from "./recently-viewed-card";
+import RecentlyViewedCard from "../recently-viewed-section/recently-viewed-card";
 import { Product } from "@/types/product";
-import { getRecentlyViewed } from "@/lib/recentlyViewed";
-import { getProductBySlug } from "@/services/productService";
+import { searchProductsElastic } from "@/services/productService";
 
-export default function RecentlyViewedSection() {
+export default function TopRatedSection() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const loadRecentlyViewed = async () => {
+    const loadTopRatedProducts = async () => {
       try {
         setLoading(true);
         
-        // Get product IDs from localStorage
-        const recentlyViewed = getRecentlyViewed();
-        
-        if (recentlyViewed.length === 0) {
-          setProducts([]);
-          return;
-        }
+        // Fetch top rated products sorted by rating and reviews
+        const result = await searchProductsElastic({
+          page: 1,
+          limit: 8,
+          sortField: "averageRating",
+          sortOrder: "desc",
+        });
 
-        // Fetch product details for each slug
-        const productPromises = recentlyViewed
-          .slice(0, 8) // Limit to 8 most recent products
-          .map((item) =>
-            getProductBySlug(item.slug).catch(() => null)
-          );
-
-        const fetchedProducts = await Promise.all(productPromises);
-        
-        // Filter out null values (failed requests)
-        const validProducts = fetchedProducts.filter(
-          (product): product is Product => product !== null
-        );
-
-        setProducts(validProducts);
+        setProducts(result.data || []);
       } catch (error) {
-        console.error("Failed to load recently viewed products:", error);
+        console.error("Failed to load top rated products:", error);
         setProducts([]);
       } finally {
         setLoading(false);
       }
     };
 
-    loadRecentlyViewed();
+    loadTopRatedProducts();
   }, []);
 
   const scroll = (direction: "left" | "right") => {
@@ -64,7 +49,7 @@ export default function RecentlyViewedSection() {
   // Show loading skeleton
   if (loading) {
     return (
-      <section className="max-w-full px-20 lg:px-30 py-10 bg-white">
+      <section className="max-w-full px-20 lg:px-30 py-16 bg-white">
         <div className="mb-8">
           <div className="h-9 bg-gray-200 rounded w-80 animate-pulse"></div>
         </div>
@@ -90,10 +75,10 @@ export default function RecentlyViewedSection() {
   if (products.length === 0) return null;
 
   return (
-    <section className="max-w-[1440px] px-20 lg:px-30 mx-auto py-16 bg-white">
-      <div className="mb-8 text-center justify-center flex">
-        <h2 className="text-3xl text-gray-900">
-          Sản phẩm đã xem gần đây
+    <section className="max-w-full px-20 lg:px-30 py-16 py-16 bg-white">
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold text-gray-900">
+          Sản phẩm được đánh giá cao
         </h2>
       </div>
 

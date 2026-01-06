@@ -156,12 +156,12 @@ export default function SignupDialog({
             <ul className="mt-1 space-y-1 text-sm">
               <li className="flex items-center gap-2">
                 <Circle className="w-2 h-2 fill-gray-500 text-gray-500" />
-                <span className="text-gray-600">At least 8 characters</span>
+                <span className="text-gray-600">Ít nhất 8 ký tự</span>
               </li>
               <li className="flex items-center gap-2">
                 <Circle className="w-2 h-2 fill-gray-500 text-gray-500" />
                 <span className="text-gray-600">
-                  Includes number, uppercase, lowercase and special character
+                  Bao gồm số, chữ hoa, chữ thường và ký tự đặc biệt
                 </span>
               </li>
             </ul>
@@ -174,7 +174,7 @@ export default function SignupDialog({
                   <Circle className="w-2 h-2 fill-red-500 text-red-500" />
                 )}
                 <span className={passMin8 ? "text-green-600" : "text-red-500"}>
-                  At least 8 characters
+                  Ít nhất 8 ký tự
                 </span>
               </li>
               <li className="flex items-center gap-2">
@@ -190,7 +190,7 @@ export default function SignupDialog({
                       : "text-red-500"
                   }
                 >
-                  Includes numbers, uppercase, lowercase and symbols
+                  Bao gồm số, chữ hoa, chữ thường và ký tự đặc biệt
                 </span>
               </li>
             </ul>
@@ -244,7 +244,7 @@ export default function SignupDialog({
           </Button>
 
           <p className="text-center text-sm text-gray-500 mt-2">
-            Đã là thành viên?{" "}
+            Đã có tài khoản?{" "}
             <Button
               type="button"
               onClick={() => {

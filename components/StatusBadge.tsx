@@ -26,7 +26,7 @@ export default function StatusBadge({ status, size = "md" }: StatusBadgeProps) {
       className: "bg-teal-100 text-teal-800"
     },
     COMPLETED: {
-      label: "Hoàn tất",
+      label: "Hoàn thành",
       className: "bg-green-100 text-green-800"
     },
     CANCELLED: {

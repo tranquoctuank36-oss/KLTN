@@ -75,12 +75,12 @@ Xin chào, {user?.firstName?.trim() ? user.firstName : "Bạn"}
             </Link>
           </Button>
 
-          <hr className="border-t border-gray-200" />
+          {/* <hr className="border-t border-gray-200" /> */}
 
-          <Button variant="ghost" className="w-full justify-start gap-2 text-lg font-normal text-gray-500 hover:bg-white hover:font-semibold gap-3">
+          {/* <Button variant="ghost" className="w-full justify-start gap-2 text-lg font-normal text-gray-500 hover:bg-white hover:font-semibold gap-3">
             <Undo2 className="!h-6 !w-6 ml-1" />
             Trả Hàng
-          </Button>
+          </Button> */}
 
           <hr className="border-t border-gray-200" />
 

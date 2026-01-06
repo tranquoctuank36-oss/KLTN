@@ -7,7 +7,7 @@ import { Routes } from "@/lib/routes";
 import { Brand } from "@/types/brand";
 
 export default function BrandCard({ brand }: { brand: Brand }) {
-  const imageSrc = brand.bannerImagePublicUrl || "/brand-placeholder.jpg";
+  const imageSrc = brand.bannerImage?.publicUrl || "/brand-placeholder.jpg";
 
   return (
     <Link

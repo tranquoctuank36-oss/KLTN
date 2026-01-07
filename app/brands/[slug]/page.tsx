@@ -81,7 +81,7 @@ export default function BrandDetailPage() {
         </div> */}
       </section>
 
-      <ProductGrid brandSlug={slug} title={`Kính mắt - ${brand.name}`} />
+      <ProductGrid brandSlug={slug} title={`Kính mắt - ${brand.name}`} hideBrandsSelection={true} />
     </main>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { MessageSquareMore, Send, Loader2, X } from "lucide-react";
 import { ChatMessage } from "@/types/chat";
@@ -89,10 +90,10 @@ export default function ChatFab({ bottom = 24, right = 24 }: ChatFabProps) {
     try {
       console.log("[Chat] Sending message:", userMessage.content);
       
-      // Chỉ giữ 10 tin nhắn gần nhất để gửi lên server (tránh quá dài)
+      // Chỉ giữ 6 tin nhắn gần nhất để gửi lên server (API giới hạn 6 tin nhắn)
       // Và đảm bảo mỗi content không quá 3000 ký tự
       const limitedHistory = messages
-        .slice(-10)
+        .slice(-6)
         .map(msg => ({
           role: msg.role,
           content: String(msg.content || "").substring(0, 3000)
@@ -128,10 +129,16 @@ export default function ChatFab({ bottom = 24, right = 24 }: ChatFabProps) {
         error: error,
       });
       
-      // Thêm thông báo lỗi chi tiết hơn
+      // Lấy error message trực tiếp từ backend
+      const errorContent = 
+        error?.response?.data?.message || 
+        error?.response?.data?.error ||
+        error?.message || 
+        "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.";
+      
       const errorMessage: ChatMessage = {
         role: "assistant",
-        content: error?.response?.data?.message || error?.message || "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.",
+        content: errorContent,
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -243,9 +250,29 @@ export default function ChatFab({ bottom = 24, right = 24 }: ChatFabProps) {
                     wordBreak: "break-word",
                   }}
                 >
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {message.content}
-                  </p>
+                  {message.role === "assistant" ? (
+                    <div className="text-sm leading-relaxed prose prose-sm max-w-none
+                      prose-p:my-2 prose-p:leading-relaxed
+                      prose-headings:font-semibold prose-headings:mt-4 prose-headings:mb-2
+                      prose-h1:text-lg prose-h2:text-base prose-h3:text-sm
+                      prose-ul:my-2 prose-ul:list-disc prose-ul:pl-4
+                      prose-ol:my-2 prose-ol:list-decimal prose-ol:pl-4
+                      prose-li:my-1
+                      prose-strong:font-bold prose-strong:text-gray-900
+                      prose-em:italic
+                      prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono
+                      prose-pre:bg-gray-100 prose-pre:p-3 prose-pre:rounded-lg prose-pre:overflow-x-auto
+                      prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800
+                      prose-blockquote:border-l-4 prose-blockquote:border-gray-300 prose-blockquote:pl-4 prose-blockquote:italic">
+                      <ReactMarkdown>
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                      {message.content}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}

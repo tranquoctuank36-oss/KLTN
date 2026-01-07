@@ -46,6 +46,8 @@ type Props = {
   currency?: string;
   loading?: boolean;
   initialFilters?: Partial<ElasticSearchFilters>;
+  hideProductTypesSelection?: boolean; // Ẩn selection productTypes trong UI nhưng vẫn gửi lên API
+  hideBrandsSelection?: boolean; // Ẩn hoàn toàn chip Thương hiệu trong UI
 };
 
 const LABELS: Record<FilterGroup["key"], string> = {
@@ -98,12 +100,17 @@ function FilterBar({
   sort,
   onSortChange,
   initialFilters,
+  hideProductTypesSelection = false,
+  hideBrandsSelection = false,
 }: Props) {
   // Khởi tạo selected state từ initialFilters
   const [selected, setSelected] = useState<Record<string, Set<string>>>(() => {
     const initial: Record<string, Set<string>> = {};
     if (initialFilters) {
-      if (initialFilters.productTypes) initial.productTypes = new Set(initialFilters.productTypes);
+      // Không add productTypes vào selected nếu hideProductTypesSelection = true
+      if (initialFilters.productTypes && !hideProductTypesSelection) {
+        initial.productTypes = new Set(initialFilters.productTypes);
+      }
       if (initialFilters.genders) initial.genders = new Set(initialFilters.genders);
       if (initialFilters.frameShapes) initial.frameShapes = new Set(initialFilters.frameShapes);
       if (initialFilters.frameTypes) initial.frameTypes = new Set(initialFilters.frameTypes);
@@ -119,7 +126,8 @@ function FilterBar({
   useEffect(() => {
     if (initialFilters) {
       setSelected({
-        productTypes: new Set(initialFilters.productTypes || []),
+        // Không add productTypes vào selected nếu hideProductTypesSelection = true
+        productTypes: hideProductTypesSelection ? new Set() : new Set(initialFilters.productTypes || []),
         genders: new Set(initialFilters.genders || []),
         frameShapes: new Set(initialFilters.frameShapes || []),
         frameTypes: new Set(initialFilters.frameTypes || []),
@@ -130,7 +138,7 @@ function FilterBar({
       });
       setSearchQuery(initialFilters.search || "");
     }
-  }, [initialFilters]);
+  }, [initialFilters, hideProductTypesSelection]);
   const [expandedKey, setExpandedKey] = useState<
     FilterGroup["key"] | "frame" | "price" | "size" | null
   >(null);
@@ -231,10 +239,11 @@ function FilterBar({
       } as FilterGroup;
     };
 
-    return (
-      ["productTypes", "genders", "brands", "tags", "colors"] as const
-    ).map((k) => build(k));
-  }, [aggregations, selected]);
+    // Lọc bỏ brands nếu hideBrandsSelection = true
+    const keys = ["productTypes", "genders", "brands", "tags", "colors"] as const;
+    const filteredKeys = hideBrandsSelection ? keys.filter(k => k !== "brands") : keys;
+    return filteredKeys.map((k) => build(k));
+  }, [aggregations, selected, hideBrandsSelection]);
 
   const FRAME_DATA = useMemo(
     () => ({
@@ -378,7 +387,8 @@ function FilterBar({
   const apiFilters = useMemo(() => {
     const toArr = (key: string) => Array.from(selected[key] ?? []);
     const base: Partial<ElasticSearchFilters> = {
-      productTypes: toArr("productTypes"),
+      // Nếu hideProductTypesSelection = true, lấy từ initialFilters thay vì selected
+      productTypes: hideProductTypesSelection ? (initialFilters?.productTypes || []) : toArr("productTypes"),
       genders: toArr("genders"),
       frameShapes: toArr("frameShapes"),
       frameTypes: toArr("frameTypes"),

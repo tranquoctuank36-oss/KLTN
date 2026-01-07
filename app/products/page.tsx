@@ -34,6 +34,14 @@ function ProductsPageInner() {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, []);
 
+  // Kiểm tra xem productTypes có đến từ menu level 1 không (không có source=dropdown)
+  const hideProductTypesSelection = useMemo(() => {
+    const productTypes = searchParams.get("productTypes");
+    const source = searchParams.get("source");
+    // Ẩn selection productTypes trong UI khi đã chọn từ menu level 1
+    return !!(productTypes && source !== "dropdown");
+  }, [searchParams]);
+
   // Parse filters từ query params
   const initialFilters = useMemo<Partial<ElasticSearchFilters>>(() => {
     const filters: Partial<ElasticSearchFilters> = {};
@@ -131,7 +139,7 @@ function ProductsPageInner() {
 
       {/* Products Grid with Filters */}
       <section>
-        <ProductGrid title={pageTitle} initialFilters={initialFilters} />
+        <ProductGrid title={pageTitle} initialFilters={initialFilters} hideProductTypesSelection={hideProductTypesSelection} />
       </section>
     </div>
   );

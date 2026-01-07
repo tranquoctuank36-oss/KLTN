@@ -14,6 +14,8 @@ type Props = {
   sort?: string;
   onSortChange?: (s: string) => void;
   initialFilters?: Partial<ElasticSearchFilters>;
+  hideProductTypesSelection?: boolean;
+  hideBrandsSelection?: boolean;
 };
 
 const isEqual = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b);
@@ -27,6 +29,8 @@ export default function FilterSection({
   sort,
   onSortChange,
   initialFilters,
+  hideProductTypesSelection = false,
+  hideBrandsSelection = false,
 }: Props) {
   const count = totalItems ?? products.length;
 
@@ -61,6 +65,8 @@ export default function FilterSection({
           sort={sort}
           onSortChange={onSortChange}
           initialFilters={initialFilters}
+          hideProductTypesSelection={hideProductTypesSelection}
+          hideBrandsSelection={hideBrandsSelection}
         />
       </div>
     </section>

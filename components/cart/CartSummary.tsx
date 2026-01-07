@@ -98,7 +98,7 @@ export default function CartSummary({
       </Button>
 
       {cart.length > 0 && (
-        <Link href={Routes.home()}>
+        <Link href={Routes.products()}>
           <Button
             variant="outline"
             className="bg-white text-blue-600 border-2 border-blue-600 hover:border-blue-700 hover:bg-white hover:text-blue-700 w-full h-12 text-lg font-bold mb-5 mt-3"

@@ -6,6 +6,12 @@ interface GetReturnsParams {
   page?: number;
   limit?: number;
   status?: string;
+  statuses?: string[];
+  preset?: 'today' | 'yesterday' | 'this_week' | 'last_week' | 'this_month' | 'last_month' | 'this_year' | 'custom';
+  startDate?: string;
+  endDate?: string;
+  sortField?: 'createdAt' | 'updatedAt' | 'status';
+  sortOrder?: 'ASC' | 'DESC';
 }
 
 interface GetReturnsResponse {
@@ -52,6 +58,15 @@ export const getReturnById = async (returnId: string): Promise<ReturnRequest> =>
     return res.data?.data;
   } catch (err: any) {
     console.error("Error fetching return by id:", err);
+    throw err;
+  }
+};
+
+export const cancelReturnRequest = async (returnId: string): Promise<void> => {
+  try {
+    await api.patch(`/orders/returns/${returnId}/cancel`);
+  } catch (err: any) {
+    console.error("Error canceling return request:", err?.response?.data);
     throw err;
   }
 };

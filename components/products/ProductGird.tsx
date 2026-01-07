@@ -19,12 +19,14 @@ type Props = {
   brandSlug?: string;
   title?: string;
   initialFilters?: Partial<ElasticSearchFilters>;
+  hideProductTypesSelection?: boolean;
+  hideBrandsSelection?: boolean;
 };
 
 // so sánh đơn giản đủ dùng cho object phẳng
 const isEqual = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b);
 
-export default function ProductGrid({ brandSlug, title, initialFilters }: Props) {
+export default function ProductGrid({ brandSlug, title, initialFilters, hideProductTypesSelection = false, hideBrandsSelection = false }: Props) {
   // data
   const [products, setProducts] = useState<Product[]>([]);
   const [aggregations, setAggregations] = useState<ElasticAggregation | undefined>(undefined);
@@ -168,6 +170,8 @@ export default function ProductGrid({ brandSlug, title, initialFilters }: Props)
         onSortChange={handleSortChange}
         onFiltersChange={handleFiltersChange}
         initialFilters={initialFilters}
+        hideProductTypesSelection={hideProductTypesSelection}
+        hideBrandsSelection={hideBrandsSelection}
       />
 
       {/* Grid + overlay spinner */}

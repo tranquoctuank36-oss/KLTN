@@ -22,6 +22,7 @@ import { getMyOrders } from "@/services/orderService";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Routes } from "@/lib/routes";
 import CancelOrderDialog from "../dialog/CancelOrderDialog";
+import ConfirmPopover from "../ConfirmPopover";
 import { cancelOrder } from "@/services/orderService";
 
 import AddToCartOrderDialog from "@/components/dialog/AddToCartOrderDialog";
@@ -31,7 +32,7 @@ import { ProductVariants } from "@/types/productVariants";
 import { getMyReviews } from "@/services/reviewService";
 import { Review } from "@/types/review";
 import CreateReviewForm from "@/components/CreateReviewForm";
-import { getMyReturns } from "@/services/returnService";
+import { getMyReturns, cancelReturnRequest } from "@/services/returnService";
 import { ReturnRequest } from "@/types/return";
 
 const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
@@ -108,10 +109,11 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
         const statusMap: Record<string, string> = {
           "YÊU CẦU": "requested",
           "ĐÃ DUYỆT": "approved",
-          "CHỜ HÀNG": "waiting_item",
+          "CHỜ HÀNG HOÀN": "waiting_item",
           "ĐÃ NHẬN": "received_at_warehouse",
-          "ĐANG HOÀN TIỀN": "refund_initiated",
-          "HOÀN THÀNH": "refund_completed",
+          "QC PASS": "qc_pass",
+          "QC FAIL": "qc_fail",
+          "HOÀN THÀNH": "completed",
           "TỪ CHỐI": "rejected",
           "ĐÃ HỦY": "canceled",
         };
@@ -322,6 +324,16 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
       setSelectedOrder(null);
     } catch (err) {
       console.error("Failed to cancel order:", err);
+    }
+  };
+
+  const handleCancelReturn = async (returnId: string) => {
+    try {
+      await cancelReturnRequest(returnId);
+      // Refetch returns to get updated list
+      await fetchReturns();
+    } catch (err) {
+      console.error("Failed to cancel return request:", err);
     }
   };
 
@@ -748,9 +760,10 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
                     "Tất cả trạng thái",
                     "Yêu cầu",
                     "Đã duyệt",
-                    "Chờ hàng",
+                    "Chờ hàng hoàn",
                     "Đã nhận",
-                    "Đang hoàn tiền",
+                    "QC Pass",
+                    "QC Fail",
                     "Hoàn thành",
                     "Từ chối",
                     "Đã hủy",
@@ -814,46 +827,69 @@ const OrdersSection = forwardRef<HTMLDivElement>((props, ref) => {
                         Ngày tạo: {new Date(returnRequest.createdAt).toLocaleString("vi-VN")}
                       </p>
                     </div>
-                    <span
-                      className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${
-                        returnRequest.status === "requested"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : returnRequest.status === "approved"
-                          ? "bg-blue-100 text-blue-800"
-                          : returnRequest.status === "rejected"
-                          ? "bg-red-100 text-red-800"
-                          : returnRequest.status === "refund_completed"
-                          ? "bg-green-100 text-green-800"
-                          : returnRequest.status === "waiting_item"
-                          ? "bg-orange-100 text-orange-800"
-                          : returnRequest.status === "received_at_warehouse"
-                          ? "bg-teal-100 text-teal-800"
-                          : returnRequest.status === "refund_initiated"
-                          ? "bg-purple-100 text-purple-800"
-                          : returnRequest.status === "canceled"
-                          ? "bg-gray-100 text-gray-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {returnRequest.status === "requested" && "Yêu cầu"}
-                      {returnRequest.status === "approved" && "Đã duyệt"}
-                      {returnRequest.status === "waiting_item" && "Chờ hàng"}
-                      {returnRequest.status === "received_at_warehouse" && "Đã nhận"}
-                      {returnRequest.status === "refund_initiated" && "Đang hoàn tiền"}
-                      {returnRequest.status === "refund_completed" && "Hoàn thành"}
-                      {returnRequest.status === "rejected" && "Từ chối"}
-                      {returnRequest.status === "canceled" && "Đã hủy"}
-                      {![
-                        "requested",
-                        "approved",
-                        "waiting_item",
-                        "received_at_warehouse",
-                        "refund_initiated",
-                        "refund_completed",
-                        "rejected",
-                        "canceled",
-                      ].includes(returnRequest.status) && returnRequest.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${
+                          returnRequest.status === "requested"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : returnRequest.status === "approved"
+                            ? "bg-blue-100 text-blue-800"
+                            : returnRequest.status === "rejected"
+                            ? "bg-red-100 text-red-800"
+                            : returnRequest.status === "completed"
+                            ? "bg-green-100 text-green-800"
+                            : returnRequest.status === "waiting_item"
+                            ? "bg-orange-100 text-orange-800"
+                            : returnRequest.status === "received_at_warehouse"
+                            ? "bg-teal-100 text-teal-800"
+                            : returnRequest.status === "qc_pass"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : returnRequest.status === "qc_fail"
+                            ? "bg-rose-100 text-rose-800"
+                            : returnRequest.status === "canceled"
+                            ? "bg-gray-100 text-gray-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {returnRequest.status === "requested" && "Yêu cầu"}
+                        {returnRequest.status === "approved" && "Đã duyệt"}
+                        {returnRequest.status === "waiting_item" && "Chờ hàng hoàn"}
+                        {returnRequest.status === "received_at_warehouse" && "Đã nhận"}
+                        {returnRequest.status === "qc_pass" && "QC Pass"}
+                        {returnRequest.status === "qc_fail" && "QC Fail"}
+                        {returnRequest.status === "completed" && "Hoàn thành"}
+                        {returnRequest.status === "rejected" && "Từ chối"}
+                        {returnRequest.status === "canceled" && "Đã hủy"}
+                        {![
+                          "requested",
+                          "approved",
+                          "waiting_item",
+                          "received_at_warehouse",
+                          "qc_pass",
+                          "qc_fail",
+                          "completed",
+                          "rejected",
+                          "canceled",
+                        ].includes(returnRequest.status || "") && returnRequest.status}
+                      </span>
+                      {/* Cancel Button - Only show for requested or approved status */}
+                      {(returnRequest.status === "requested" || returnRequest.status === "approved") && (
+                        <ConfirmPopover
+                          title={returnRequest.returnCode}
+                          description="Bạn có chắc chắn muốn hủy yêu cầu trả hàng với mã hàng"
+                          onConfirm={() => handleCancelReturn(returnRequest.id)}
+                          confirmText="Xác nhận"
+                          cancelText="Đóng"
+                        >
+                          <Button
+                            variant="outline"
+                            className="border-red-500 text-red-600 hover:bg-red-50 hover:border-red-700 hover:text-red-700 rounded-full px-4 py-2 text-sm"
+                          >
+                            Hủy yêu cầu
+                          </Button>
+                        </ConfirmPopover>
+                      )}
+                    </div>
                   </div>
 
                   {/* Reason */}

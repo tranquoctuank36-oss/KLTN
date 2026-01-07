@@ -142,7 +142,7 @@ export default function OrderSummary({
                 Bạn chưa có sản phẩm nào trong giỏ hàng
               </p>
               <Link
-                href={Routes.home()}
+                href={Routes.products()}
                 className="mt-3 text-blue-600 font-semibold underline hover:no-underline"
               >
                 Tiếp tục mua sắm

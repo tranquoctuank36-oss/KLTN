@@ -38,13 +38,32 @@ export default function CartItems({
     return allKeys;
   });
   const [isClearing, setIsClearing] = useState(false);
+  
+  // Local state cho số lượng đang editing (optimistic update)
   const [editingQuantities, setEditingQuantities] = useState<
     Map<string, number | string>
   >(new Map());
-  const [loadingItems, setLoadingItems] = useState<Set<string>>(new Set());
+  
+  // Lưu số lượng đã sync thành công lần cuối (để rollback khi lỗi)
+  const lastSyncedQuantities = useRef<Map<string, number>>(new Map());
+  
+  // Track items đang trong quá trình sync với server
+  const [syncingItems, setSyncingItems] = useState<Set<string>>(new Set());
+  
+  // Debounce timers cho từng item
   const debounceTimers = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  
+  // Request IDs để xử lý race condition
+  const requestIds = useRef<Map<string, number>>(new Map());
 
-  // Debounced function to update quantity
+  // Lấy số lượng hiện tại (từ editing state hoặc cart data)
+  const getCurrentQuantity = (key: string, item: CartItem): number => {
+    const editing = editingQuantities.get(key);
+    if (typeof editing === "number") return editing;
+    return item.quantity;
+  };
+
+  // Debounced function to update quantity - xử lý race condition và error
   const debouncedSetItemQuantity = (
     cartItemId: string,
     quantity: number,
@@ -56,22 +75,61 @@ export default function CartItems({
       clearTimeout(existingTimer);
     }
 
-    // Set loading state
-    setLoadingItems((prev) => new Set(prev).add(key));
+    // Set syncing state (subtle indicator)
+    setSyncingItems((prev) => new Set(prev).add(key));
 
-    // Set new timer
+    // Set new timer - đợi 2 giây không có thao tác mới gửi request
     const timer = setTimeout(async () => {
+      // Tạo request ID mới để xử lý race condition
+      const currentRequestId = (requestIds.current.get(key) || 0) + 1;
+      requestIds.current.set(key, currentRequestId);
+
       try {
+        // Gọi API để sync số lượng
         await setItemQuantity(cartItemId, quantity);
+        
+        // Kiểm tra xem có phải request mới nhất không (race condition check)
+        if (requestIds.current.get(key) === currentRequestId) {
+          // Sync thành công - lưu lại quantity đã sync
+          lastSyncedQuantities.current.set(key, quantity);
+          
+          // Xóa editing state để hiển thị data từ server
+          setEditingQuantities((prev) => {
+            const next = new Map(prev);
+            next.delete(key);
+            return next;
+          });
+        }
+      } catch (error) {
+        console.error(`Failed to update quantity for ${cartItemId}:`, error);
+        
+        // Chỉ rollback nếu đây là request mới nhất
+        if (requestIds.current.get(key) === currentRequestId) {
+          // Rollback về số lượng đã sync thành công lần cuối
+          const lastSynced = lastSyncedQuantities.current.get(key);
+          if (lastSynced !== undefined) {
+            setEditingQuantities((prev) => {
+              const next = new Map(prev);
+              next.set(key, lastSynced);
+              return next;
+            });
+          }
+          
+          // TODO: Hiển thị toast/notification lỗi cho user
+          // toast.error("Không thể cập nhật số lượng. Vui lòng thử lại.");
+        }
       } finally {
-        setLoadingItems((prev) => {
-          const next = new Set(prev);
-          next.delete(key);
-          return next;
-        });
-        debounceTimers.current.delete(key);
+        // Chỉ clear syncing state nếu đây là request mới nhất
+        if (requestIds.current.get(key) === currentRequestId) {
+          setSyncingItems((prev) => {
+            const next = new Set(prev);
+            next.delete(key);
+            return next;
+          });
+          debounceTimers.current.delete(key);
+        }
       }
-    }, 500);
+    }, 2000); // Debounce 2 giây
 
     debounceTimers.current.set(key, timer);
   };
@@ -83,6 +141,16 @@ export default function CartItems({
       debounceTimers.current.clear();
     };
   }, []);
+
+  // Khởi tạo lastSyncedQuantities từ cart data ban đầu
+  useEffect(() => {
+    cart.forEach((item) => {
+      const key = item.cartItemId || `${item.product.slug}__${item.selectedVariant.id}`;
+      if (!lastSyncedQuantities.current.has(key)) {
+        lastSyncedQuantities.current.set(key, item.quantity);
+      }
+    });
+  }, [cart]);
 
   useEffect(() => {
     if (cart.length > 0) {
@@ -189,12 +257,10 @@ export default function CartItems({
         // Check if item is out of stock or unavailable - prioritize item.status from API
         const isOutOfStock = item.status === "out_of_stock" || item.status === "unavailable";
         
-        // Temporary debug for out of stock items
-        console.log(`📦 Item: ${item.product.name} | Status: ${item.status} | MaxInv: ${maxInv} | IsOutOfStock: ${isOutOfStock}`);
-        
         const isSelected = selected.has(key);
         const isRemoving = removingItems.has(key) || isClearing;
-        const isLoading = loadingItems.has(key);
+        const isSyncing = syncingItems.has(key);
+        const currentQuantity = getCurrentQuantity(key, item);
         const finalPrice = Number(item.selectedVariant.finalPrice);
         const originalPrice = Number(item.selectedVariant.originalPrice);
         const isOnSale = finalPrice < originalPrice;
@@ -291,30 +357,34 @@ export default function CartItems({
                   )}
                 </p>
 
-                <div className="flex items-center border rounded-md mt-3 w-fit overflow-hidden h-10">
+                <div className="flex items-center border rounded-md mt-3 w-fit overflow-hidden h-10 relative">
                   <Button
                     onClick={() => {
-                      if (item.cartItemId && item.quantity > 1) {
-                        const newQty = item.quantity - 1;
-                        // Update local state immediately
-                        setEditingQuantities((prev) =>
-                          new Map(prev).set(key, newQty)
-                        );
-                        // Debounced API call
-                        debouncedSetItemQuantity(item.cartItemId, newQty, key);
-                      }
+                      if (!item.cartItemId || isOutOfStock) return;
+                      
+                      // Lấy số lượng hiện tại từ editing state hoặc cart
+                      const current = getCurrentQuantity(key, item);
+                      
+                      // Không cho giảm xuống dưới 1
+                      if (current <= 1) return;
+                      
+                      const newQty = current - 1;
+                      
+                      // Update local state immediately (optimistic)
+                      setEditingQuantities((prev) =>
+                        new Map(prev).set(key, newQty)
+                      );
+                      
+                      // Debounced API call
+                      debouncedSetItemQuantity(item.cartItemId, newQty, key);
                     }}
                     disabled={
-                      item.quantity <= 1 || isRemoving || !item.cartItemId || isLoading || isOutOfStock
+                      currentQuantity <= 1 || isRemoving || !item.cartItemId || isOutOfStock
                     }
                     className="w-8 h-full text-xl p-0 hover:bg-white text-gray-400"
                     variant="ghost"
                   >
-                    {isLoading ? (
-                      <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      "-"
-                    )}
+                    -
                   </Button>
                   <input
                     type="text"
@@ -374,8 +444,14 @@ export default function CartItems({
                           finalQty = maxAllowed;
                         }
 
-                        // Update if different from current
-                        if (finalQty !== item.quantity && item.cartItemId) {
+                        // Update nếu khác với số lượng ban đầu trong cart
+                        const originalQty = item.quantity;
+                        if (finalQty !== originalQty && item.cartItemId) {
+                          // Set editing state với giá trị cuối cùng
+                          setEditingQuantities((prev) =>
+                            new Map(prev).set(key, finalQty)
+                          );
+                          // Debounced API call
                           debouncedSetItemQuantity(item.cartItemId, finalQty, key);
                         } else {
                           // Clear editing state if no change
@@ -387,32 +463,36 @@ export default function CartItems({
                         }
                       }
                     }}
-                    disabled={isRemoving || !item.cartItemId || isLoading || isOutOfStock}
+                    disabled={isRemoving || !item.cartItemId || isOutOfStock}
                     className="w-10 flex items-center justify-center text-base font-medium text-center border-0 focus:outline-none focus:ring-0"
                   />
                   <Button
                     onClick={() => {
-                      if (item.cartItemId && item.quantity < maxInv) {
-                        const newQty = item.quantity + 1;
-                        // Update local state immediately
-                        setEditingQuantities((prev) =>
-                          new Map(prev).set(key, newQty)
-                        );
-                        // Debounced API call
-                        debouncedSetItemQuantity(item.cartItemId, newQty, key);
-                      }
+                      if (!item.cartItemId || isOutOfStock) return;
+                      
+                      // Lấy số lượng hiện tại từ editing state hoặc cart
+                      const current = getCurrentQuantity(key, item);
+                      
+                      // Không cho tăng vượt max inventory
+                      if (current >= maxInv) return;
+                      
+                      const newQty = current + 1;
+                      
+                      // Update local state immediately (optimistic)
+                      setEditingQuantities((prev) =>
+                        new Map(prev).set(key, newQty)
+                      );
+                      
+                      // Debounced API call
+                      debouncedSetItemQuantity(item.cartItemId, newQty, key);
                     }}
                     disabled={
-                      item.quantity >= maxInv || isRemoving || !item.cartItemId || isLoading || isOutOfStock
+                      currentQuantity >= maxInv || isRemoving || !item.cartItemId || isOutOfStock
                     }
                     className="w-8 h-full text-xl p-0 hover:bg-white text-gray-400"
                     variant="ghost"
                   >
-                    {isLoading ? (
-                      <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      "+"
-                    )}
+                    +
                   </Button>
                 </div>
               </div>
@@ -425,7 +505,7 @@ export default function CartItems({
                   Number(item.selectedVariant.finalPrice) && (
                   <div className="text-gray-400 line-through">
                     {(
-                      Number(item.selectedVariant.originalPrice) * item.quantity
+                      Number(item.selectedVariant.originalPrice) * currentQuantity
                     ).toLocaleString("en-US")}
                     đ
                   </div>
@@ -433,7 +513,7 @@ export default function CartItems({
 
               <div className="text-gray-800">
                 {(
-                  Number(item.selectedVariant.finalPrice) * item.quantity
+                  Number(item.selectedVariant.finalPrice) * currentQuantity
                 ).toLocaleString("en-US")}
                 đ
               </div>

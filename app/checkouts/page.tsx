@@ -10,6 +10,9 @@ import { Order } from "@/types/order";
 import { PaymentMethodType } from "@/types/payment";
 import CheckoutAuthGuard from "./CheckoutAuthGuard";
 
+// Prevent static generation for this page
+export const dynamic = 'force-dynamic';
+
 export default function CheckoutPage() {
   const { cart } = useCart();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("COD");

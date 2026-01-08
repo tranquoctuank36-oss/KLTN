@@ -5,13 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import LoginDialog from "@/components/dialog/LoginDialog";
 import { Routes } from "@/lib/routes";
+import { Suspense } from "react";
 
-export default function CheckoutAuthGuard({ children }: { children: React.ReactNode }) {
+function CheckoutAuthGuardContent({ children }: { children: React.ReactNode }) {
   const { isLoggedIn } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const needLogin = searchParams.get("needLogin") === "true";
+  const needLogin = searchParams?.get("needLogin") === "true";
 
   console.log("[CheckoutAuthGuard] Rendered - needLogin:", needLogin, "isLoggedIn:", isLoggedIn, "showLoginDialog:", showLoginDialog);
 
@@ -78,5 +79,13 @@ export default function CheckoutAuthGuard({ children }: { children: React.ReactN
       {/* Chỉ render children khi không cần login hoặc đã đăng nhập */}
       {!showLoginDialog && children}
     </>
+  );
+}
+
+export default function CheckoutAuthGuard({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <CheckoutAuthGuardContent>{children}</CheckoutAuthGuardContent>
+    </Suspense>
   );
 }

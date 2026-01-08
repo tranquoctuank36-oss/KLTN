@@ -75,7 +75,7 @@ function SheetContent({
         <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none hover:bg-gray-200 
              cursor-pointer rounded-full transition p-1">
           <XIcon className="size-6 text-gray-600 hover:text-black" />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">Đóng</span>
         </SheetPrimitive.Close>
       </SheetPrimitive.Content>
     </SheetPortal>

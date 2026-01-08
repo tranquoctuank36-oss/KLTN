@@ -102,7 +102,7 @@ export default function EditInfoForm({
           <FloatingInput
             id="email"
             type="email"
-            label="Email"
+            label="Địa chỉ Email"
             value={draftEmail}
             onChange={setDraftEmail}
             disabled

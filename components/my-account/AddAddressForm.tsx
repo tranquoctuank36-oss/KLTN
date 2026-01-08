@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import FloatingInput from "@/components/FloatingInput";
 import {
   getProvinces,
@@ -169,7 +170,7 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
         />
         <FloatingInput
           id="email"
-          label="Email"
+          label="Địa chỉ Email"
           type="email"
           value={email}
           onChange={setEmail}
@@ -287,14 +288,14 @@ export default function AddAddressForm({ onCancel, onSave, existingCount }: Prop
           onClick={onCancel}
           className="h-12 w-25 bg-white border border-2 border-gray-400 hover:border-gray-800 text-lg font-bold text-gray-400 hover:text-gray-800 rounded-full"
         >
-          Cancel
+          Hủy
         </Button>
         <Button
           type="submit"
           disabled={saving}
           className="h-12 w-25 bg-blue-600 text-white text-lg font-bold hover:bg-blue-800 rounded-full"
         >
-          {saving ? "Saving..." : "Save"}
+          {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : "Lưu"}
         </Button>
       </div>
     </form>

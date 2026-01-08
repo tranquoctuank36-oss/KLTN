@@ -16,11 +16,28 @@ export default function HotProductsSection() {
       try {
         setLoading(true);
         const result = await getHotProducts(8);
-        const fullProductPromises = result.map((p) =>
-          getProductBySlug(p.slug).catch(() => p) // Fallback to elastic result if fetch fails
-        );
-
-        const fullProducts = await Promise.all(fullProductPromises);
+        
+        // Fetch products sequentially with delay to avoid overwhelming the server
+        const fullProducts: Product[] = [];
+        for (let i = 0; i < result.length; i++) {
+          try {
+            const product = await getProductBySlug(result[i].slug);
+            if (product) {
+              fullProducts.push(product);
+            } else {
+              fullProducts.push(result[i]);
+            }
+          } catch (err) {
+            console.warn(`Failed to fetch product ${result[i].slug}, using elastic result:`, err);
+            fullProducts.push(result[i]);
+          }
+          
+          // Add small delay between requests to prevent overwhelming server
+          if (i < result.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+          }
+        }
+        
         const validProducts = fullProducts.filter(
           (product): product is Product => product !== null
         );

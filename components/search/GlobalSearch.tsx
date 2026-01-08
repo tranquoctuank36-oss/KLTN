@@ -32,14 +32,19 @@ export default function GlobalSearch({ className = "", limit = 6 }: Props) {
 
   // debounce 300ms
   useEffect(() => {
-    if (!q.trim()) {
+    const trimmed = q.trim();
+    
+    // Chỉ search khi có ít nhất 2 ký tự
+    if (trimmed.length < 2) {
       setResults([]);
+      setLoading(false);
       return;
     }
+    
     setLoading(true);
     const t = setTimeout(async () => {
       try {
-        const data = await autocompleteSearch(q.trim(), limit);
+        const data = await autocompleteSearch(trimmed, limit);
         setResults(Array.isArray(data) ? data : []);
         setOpen(true);
         setActive(0);
@@ -102,7 +107,7 @@ export default function GlobalSearch({ className = "", limit = 6 }: Props) {
         type="text"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        onFocus={() => q.trim() && setOpen(true)}
+        onFocus={() => q.trim().length >= 2 && setOpen(true)}
         onKeyDown={onKey}
         placeholder="Tôi đang tìm kiếm ..."
         className="w-full sm:w-64 rounded-full border px-4 py-2 pl-10 pr-10 text-sm bg-gray-200 outline-none"

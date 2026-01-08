@@ -8,6 +8,7 @@ import VoucherSection from "@/components/VoucherSection";
 import { useCart } from "@/context/CartContext";
 import { Order } from "@/types/order";
 import { PaymentMethodType } from "@/types/payment";
+import CheckoutAuthGuard from "./CheckoutAuthGuard";
 
 export default function CheckoutPage() {
   const { cart } = useCart();
@@ -39,41 +40,61 @@ export default function CheckoutPage() {
   };
 
   useEffect(() => {
-    if (hasLoadedRef.current || cart.length === 0) return;
+    if (cart.length === 0) {
+      setCheckoutCart([]);
+      setShippingFee(0);
+      return;
+    }
+
+    // Kiểm tra xem có phải từ "Mua ngay" không
+    const buyNowVariantId = localStorage.getItem("buyNowVariant");
+    
+    if (buyNowVariantId) {
+      // Tìm cartItemId tương ứng với variantId
+      const buyNowItem = cart.find(
+        (item) => item.selectedVariant.id === buyNowVariantId
+      );
+
+      if (buyNowItem?.cartItemId) {
+        // Lưu cartItemId vào checkoutSelectedItems
+        localStorage.setItem(
+          "checkoutSelectedItems",
+          JSON.stringify([buyNowItem.cartItemId])
+        );
+        // Xóa flag buyNowVariant
+        localStorage.removeItem("buyNowVariant");
+      }
+    }
+
     const savedSelectedItems = localStorage.getItem("checkoutSelectedItems");
 
     if (!savedSelectedItems) {
       setCheckoutCart([]);
       setShippingFee(0);
-      hasLoadedRef.current = true;
       return;
     }
 
-    if (savedSelectedItems) {
-      try {
-        const selectedKeys = JSON.parse(savedSelectedItems) as string[];
-        const selectedSet = new Set(selectedKeys);
+    try {
+      const selectedKeys = JSON.parse(savedSelectedItems) as string[];
+      const selectedSet = new Set(selectedKeys);
 
-        const filteredCart = cart.filter((item) => {
-          // Tạo key theo cùng logic với CartItems
-          const key = item.cartItemId || `${item.product.slug}__${item.selectedVariant.id}`;
-          const isSelected = selectedSet.has(key);
-          return isSelected;
-        });
+      const filteredCart = cart.filter((item) => {
+        // Tạo key theo cùng logic với CartItems
+        const key = item.cartItemId || `${item.product.slug}__${item.selectedVariant.id}`;
+        return selectedSet.has(key);
+      });
 
-        if (filteredCart.length > 0) {
-          setCheckoutCart(filteredCart);
-        } else {
-          setCheckoutCart([]);
-          setShippingFee(0);
-        }
-      } catch (error) {
+      if (filteredCart.length > 0) {
+        setCheckoutCart(filteredCart);
+      } else {
         setCheckoutCart([]);
         setShippingFee(0);
       }
+    } catch (error) {
+      console.error("Error parsing selected items:", error);
+      setCheckoutCart([]);
+      setShippingFee(0);
     }
-
-    hasLoadedRef.current = true;
   }, [cart]);
 
   useEffect(() => {
@@ -170,8 +191,9 @@ export default function CheckoutPage() {
   ]);
 
   return (
-    <ClientOnly>
-      <div className="max-w-full px-20 lg:px-30 py-10 grid grid-cols-1 lg:grid-cols-3 gap-5 bg-gray-50">
+    <CheckoutAuthGuard>
+      <ClientOnly>
+        <div className="max-w-full px-20 lg:px-30 py-10 grid grid-cols-1 lg:grid-cols-3 gap-5 bg-gray-50">
         <div className="lg:col-span-2">
           <CheckoutForm
             paymentMethod={paymentMethod}
@@ -220,6 +242,7 @@ export default function CheckoutPage() {
           hasShippingError={hasShippingError} 
         />
       </div>
-    </ClientOnly>
+      </ClientOnly>
+    </CheckoutAuthGuard>
   );
 }

@@ -33,6 +33,7 @@ export default function LoginDialog({
   onSwitchToSignup?: () => void;
   onLoginSuccess?: () => void;
 }) {
+  console.log("[LoginDialog] Rendered with open:", open);
   const [showPwd, setShowPwd] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

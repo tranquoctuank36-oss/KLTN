@@ -75,7 +75,7 @@ export default function Topbar() {
                   <span>
                     Áp dụng nhiều ưu đãi hấp dẫn{" "}
                     <a href="/sale" className="underline hover:text-white">
-                      Nhận Ngay
+                      Nhận ngay
                     </a>
                   </span>
                 )}

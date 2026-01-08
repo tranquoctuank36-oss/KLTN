@@ -40,7 +40,7 @@ export default function OrderTrackingPage() {
       if (orderData) {
         orderFound = true;
       } else {
-        errorMsg = "Incorrect Order ID";
+        errorMsg = "Mã đơn hàng không đúng";
       }
     } catch (err: any) {
       console.log("❌ API Error:", err);

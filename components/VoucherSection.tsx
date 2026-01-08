@@ -323,7 +323,7 @@ export default function VoucherSection({
                         </p>
                         <div className="flex items-center gap-4 text-xs text-gray-600">
                           <span>
-                            Min Order:{" "}
+                            Đơn hàng tối thiểu:{" "}
                             {Number(voucher.minOrderAmount).toLocaleString(
                               "en-US"
                             )}
@@ -331,7 +331,7 @@ export default function VoucherSection({
                           </span>
                           {voucher.maxDiscountValue && (
                             <span>
-                              Max:{" "}
+                              Giảm tối đa:{" "}
                               {Number(voucher.maxDiscountValue).toLocaleString(
                                 "en-US"
                               )}

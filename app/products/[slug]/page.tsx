@@ -13,6 +13,7 @@ import Breadcrumb from "@/components/productDetail/Breadcrumb";
 import ProductGallery from "@/components/productDetail/ProductGallery";
 import ColorSelector from "@/components/colorSelector";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { ProductVariants } from "@/types/productVariants";
 import { Routes } from "@/lib/routes";
 import { addToRecentlyViewed } from "@/lib/recentlyViewed";
@@ -22,6 +23,7 @@ import { Review } from "@/types/review";
 import Image from "next/image";
 import BrandProductsSection from "@/components/brand-products-section/BrandProductsSection";
 import RelatedProductsSection from "@/components/related-products-section/RelatedProductsSection";
+import { getCart } from "@/services/cartService";
 // import RecommendedProducts from "@/components/RecommendedProducts";
 
 export default function ProductDetailPage() {
@@ -29,10 +31,12 @@ export default function ProductDetailPage() {
   const searchParams = useSearchParams();
   const variantIdFromUrl = searchParams.get("variantId");
   const { addToCart, cart, openDrawer } = useCart();
+  const { isLoggedIn } = useAuth();
   const router = useRouter();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [buyNowLoading, setBuyNowLoading] = useState(false);
 
   const [selectedVariant, setSelectedVariant] =
     useState<ProductVariants | null>(null);
@@ -60,6 +64,32 @@ export default function ProductDetailPage() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [slug]);
+
+  // Auto trigger buy now after login
+  useEffect(() => {
+    const triggerBuyNowStr = localStorage.getItem("triggerBuyNow");
+    if (triggerBuyNowStr && isLoggedIn && selectedVariant) {
+      try {
+        const triggerData = JSON.parse(triggerBuyNowStr);
+        
+        // Kiểm tra variant có khớp không
+        if (triggerData.variantId === selectedVariant.id) {
+          localStorage.removeItem("triggerBuyNow");
+          
+          // Set quantity và trigger mua ngay
+          setQuantity(triggerData.quantity);
+          
+          // Đợi một chút để UI update xong
+          setTimeout(() => {
+            handleBuyNow();
+          }, 300);
+        }
+      } catch (error) {
+        console.error("Error triggering buy now:", error);
+        localStorage.removeItem("triggerBuyNow");
+      }
+    }
+  }, [selectedVariant, isLoggedIn]);
 
   useEffect(() => {
     if (!slug) return;
@@ -249,6 +279,64 @@ export default function ProductDetailPage() {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!selectedVariant?.id || maxQuantity === 0) {
+      return;
+    }
+
+    console.log("[BuyNow] handleBuyNow called, isLoggedIn:", isLoggedIn);
+    setBuyNowLoading(true);
+    try {
+      const variantIdToFind = selectedVariant.id;
+      const qty = typeof quantity === "number" ? quantity : 1;
+
+      // Nếu chưa đăng nhập, lưu thông tin và chuyển đến checkout với flag cần login
+      if (!isLoggedIn) {
+        console.log("[BuyNow] User not logged in, redirecting to checkout with needLogin=true");
+        const redirectUrl = `${Routes.checkouts()}?needLogin=true`;
+        console.log("[BuyNow] Redirect URL:", redirectUrl);
+        localStorage.setItem("buyNowPending", JSON.stringify({
+          variantId: variantIdToFind,
+          quantity: qty,
+          productSlug: product.slug
+        }));
+        console.log("[BuyNow] Saved buyNowPending to localStorage:", localStorage.getItem("buyNowPending"));
+        router.push(redirectUrl);
+        console.log("[BuyNow] router.push called");
+        return;
+      }
+      
+      console.log("[BuyNow] User logged in, proceeding with add to cart");
+      
+      // Đã đăng nhập: Thêm sản phẩm vào giỏ hàng (không mở drawer)
+      await addToCart(
+        {
+          product,
+          selectedVariant: selectedVariant,
+          quantity: qty,
+        },
+        { autoOpenDrawer: false } // Không mở drawer khi mua ngay
+      );
+
+      // Lưu variantId tạm thời để checkout page tự tìm cartItemId
+      localStorage.setItem(
+        "buyNowVariant",
+        variantIdToFind
+      );
+
+      // Chuyển đến trang checkout ngay lập tức (không đợi)
+      router.push(Routes.checkouts());
+      // Không cần setBuyNowLoading(false) vì trang sẽ chuyển đi
+    } catch (error: any) {
+      console.error("Lỗi khi mua ngay:", error);
+      toast.error(
+        error.response?.data?.detail ||
+          "Không thể thực hiện mua ngay. Vui lòng thử lại."
+      );
+      setBuyNowLoading(false);
     }
   };
 
@@ -701,7 +789,7 @@ export default function ProductDetailPage() {
                       return Math.max(1, current - 1);
                     })
                   }
-                  disabled={typeof quantity === "number" ? quantity <= 1 : true}
+                  disabled={(typeof quantity === "number" ? quantity <= 1 : true) || buyNowLoading}
                   className="w-10 h-full text-xl p-0 hover:bg-white text-gray-400"
                   variant="ghost"
                 >
@@ -710,6 +798,7 @@ export default function ProductDetailPage() {
                 <input
                   type="text"
                   value={quantity}
+                  disabled={buyNowLoading}
                   onChange={(e) => {
                     const val = e.target.value;
 
@@ -752,7 +841,7 @@ export default function ProductDetailPage() {
                       return Math.min(99, current + 1);
                     })
                   }
-                  disabled={typeof quantity === "number" && quantity >= 99}
+                  disabled={(typeof quantity === "number" && quantity >= 99) || buyNowLoading}
                   className="w-10 h-full text-xl p-0 hover:bg-white text-gray-400"
                   variant="ghost"
                 >
@@ -761,7 +850,7 @@ export default function ProductDetailPage() {
               </div>
               <Button
                 onClick={handleAddToCart}
-                disabled={loading}
+                disabled={loading || buyNowLoading}
                 className="flex-1 h-14 text-xl font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center"
               >
                 {loading ? (
@@ -784,14 +873,19 @@ export default function ProductDetailPage() {
 
           {/* Buy now */}
           <Button
-            disabled={maxQuantity === 0}
+            onClick={handleBuyNow}
+            disabled={maxQuantity === 0 || buyNowLoading}
             className={`w-full h-14 text-xl font-bold mb-3 ${
-              maxQuantity === 0
+              maxQuantity === 0 || buyNowLoading
                 ? "bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed"
                 : "bg-white border-2 border-blue-600 text-blue-600 hover:border-blue-700 hover:text-blue-700"
             } transition-colors`}
           >
-            Mua ngay
+            {buyNowLoading ? (
+              <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              "Mua ngay"
+            )}
           </Button>
 
           {/* Extra sections */}

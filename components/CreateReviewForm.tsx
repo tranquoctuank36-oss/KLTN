@@ -123,7 +123,7 @@ export default function CreateReviewForm({
     } catch (error: any) {
       console.error("Failed to submit review:", error);
       toast.error(
-        error.response?.data?.detail || "Failed to submit review. Please try again."
+        error.response?.data?.detail || "Gửi đánh giá thất bại. Vui lòng thử lại."
       );
     } finally {
       setIsSubmitting(false);

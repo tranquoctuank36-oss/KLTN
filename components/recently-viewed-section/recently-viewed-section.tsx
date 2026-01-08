@@ -25,19 +25,25 @@ export default function RecentlyViewedSection() {
           return;
         }
 
-        // Fetch product details for each slug
-        const productPromises = recentlyViewed
-          .slice(0, 8) // Limit to 8 most recent products
-          .map((item) =>
-            getProductBySlug(item.slug).catch(() => null)
-          );
-
-        const fetchedProducts = await Promise.all(productPromises);
+        // Fetch product details sequentially to avoid overwhelming server
+        const validProducts: Product[] = [];
+        const items = recentlyViewed.slice(0, 8); // Limit to 8 most recent products
         
-        // Filter out null values (failed requests)
-        const validProducts = fetchedProducts.filter(
-          (product): product is Product => product !== null
-        );
+        for (let i = 0; i < items.length; i++) {
+          try {
+            const product = await getProductBySlug(items[i].slug);
+            if (product) {
+              validProducts.push(product);
+            }
+          } catch (err) {
+            console.warn(`Failed to fetch recently viewed product ${items[i].slug}:`, err);
+          }
+          
+          // Add small delay between requests
+          if (i < items.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+          }
+        }
 
         setProducts(validProducts);
       } catch (error) {

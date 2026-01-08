@@ -199,9 +199,29 @@ export async function searchProductsElastic(
   };
 }
 
+// Simple in-memory cache for product details
+const productCache = new Map<string, { data: Product | null; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 export async function getProductBySlug(slug: string): Promise<Product | null> {
-  const res = await api.get(`/products/${slug}`);
-  return res.data?.data as Product;
+  // Check cache first
+  const cached = productCache.get(slug);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+
+  try {
+    const res = await api.get(`/products/${slug}`);
+    const product = res.data?.data as Product;
+    
+    // Store in cache
+    productCache.set(slug, { data: product, timestamp: Date.now() });
+    
+    return product;
+  } catch (error) {
+    console.error(`Error fetching product ${slug}:`, error);
+    return null;
+  }
 }
 
 export async function getProductById(id: string): Promise<Product | null> {

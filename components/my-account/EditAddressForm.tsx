@@ -154,14 +154,14 @@ export default function EditAddressForm({
     setSaving(true);
     const newErrors: { [key: string]: string } = {};
 
-    if (!name) newErrors.name = "Name is required";
-    if (!phoneRegex.test(phone)) newErrors.phone = "Invalid phone number";
-    if (!address) newErrors.address = "Address is required";
+    if (!name) newErrors.name = "Tên là bắt buộc";
+    if (!phoneRegex.test(phone)) newErrors.phone = "Số điện thoại không hợp lệ";
+    if (!address) newErrors.address = "Địa chỉ là bắt buộc";
     if (
       country === "VN" &&
       (!selectedProvince || !selectedDistrict || !selectedWard)
     ) {
-      newErrors.location = "Please select Province, District and Ward";
+      newErrors.location = "Vui lòng chọn Tỉnh/Thành phố, Quận/Huyện và Phường/Xã";
     }
 
     setErrors(newErrors);
@@ -254,7 +254,7 @@ export default function EditAddressForm({
         />
         <FloatingInput
           id="email"
-          label="Email"
+          label="Địa chỉ Email"
           type="email"
           value={email}
           onChange={setEmail}

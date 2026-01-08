@@ -25,7 +25,7 @@ export default function ProductTabs({ product }: Props) {
               data-[state=active]:rounded-none
               bg-transparent"
           >
-            Về gọng
+            Thông tin về gọng kính
           </TabsTrigger>
           <TabsTrigger
             value="shipping"
@@ -39,7 +39,7 @@ export default function ProductTabs({ product }: Props) {
               data-[state=active]:rounded-none 
               bg-transparent"
           >
-            Vận Chuyển / Đổi & Trả hàng
+            Vận chuyển / Đổi & Trả hàng
           </TabsTrigger>
         </TabsList>
 

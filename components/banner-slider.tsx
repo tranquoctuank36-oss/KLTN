@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./ui/button";
@@ -95,7 +96,7 @@ export default function BannerSlider() {
         <div className="relative h-[50vh] md:h-[55vh] overflow-hidden">
           {/* track slides */}
           <div
-            className={`flex w-full h-full overflow-hidden ${
+            className={`flex w-full h-full ${
               isTransitioning ? "transition-transform duration-500 ease-in-out" : ""
             }`}
             style={{
@@ -103,20 +104,49 @@ export default function BannerSlider() {
               transform: `translateX(-${index * (100 / slides.length)}%)`,
             }}
           >
-            {slides.map((banner, i) => (
-              <div
-                key={`${banner.id}-${i}`}
-                className="relative h-full"
-                style={{ width: `${100 / slides.length}%` }}
-              >
-                <Image
-                  src={banner.imageUrl}
-                  alt={banner.title || `Banner ${i}`}
-                  fill
-                  priority={i === index}
-                />
-              </div>
-            ))}
+            {slides.map((banner, i) => {
+              const slideContent = (
+                <div
+                  key={`${banner.id}-${i}`}
+                  className="relative h-full cursor-pointer"
+                  style={{ width: `${100 / slides.length}%` }}
+                >
+                  <Image
+                    src={banner.imageUrl}
+                    alt={banner.title || `Banner ${i}`}
+                    fill
+                    priority={i === index}
+                    // className="object-cover"
+                  />
+                </div>
+              );
+
+              // Wrap with Link if linkUrl exists
+              if (banner.linkUrl) {
+                return (
+                  <Link
+                    key={`${banner.id}-${i}`}
+                    href={banner.linkUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block h-full"
+                    style={{ width: `${100 / slides.length}%` }}
+                  >
+                    <div className="relative h-full">
+                      <Image
+                        src={banner.imageUrl}
+                        alt={banner.title || `Banner ${i}`}
+                        fill
+                        priority={i === index}
+                        className="object-cover"
+                      />
+                    </div>
+                  </Link>
+                );
+              }
+
+              return slideContent;
+            })}
           </div>
 
           <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-3 md:px-6 ">

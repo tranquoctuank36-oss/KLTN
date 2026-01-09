@@ -20,6 +20,7 @@ export default function SalePage() {
   const [activeTab, setActiveTab] = useState<"discounts" | "vouchers">(
     "discounts"
   );
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
     Promise.all([getActiveDiscounts(), getActiveVouchers()])
@@ -47,7 +48,7 @@ export default function SalePage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    return new Date(dateString).toLocaleDateString("vi-VN", {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -65,10 +66,14 @@ export default function SalePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Banner Section */}
-      <div className="relative bg-[#9CBAC7] overflow-hidden">
+      <div className={`relative overflow-hidden transition-colors duration-500 ${
+        imageLoaded ? 'bg-[#9CBAC7]' : 'bg-gray-100'
+      }`}>
         <div className="max-w-full px-20 lg:px-30 py-10 mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 items-center">
-            <div className="space-y-4">
+            <div className={`space-y-4 transition-opacity duration-700 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}>
               <h1 className="text-3xl lg:text-4xl text-gray-900 leading-tight pl-15">
                 Tìm ưu đãi hoàn hảo cho
                 <br />
@@ -80,15 +85,27 @@ export default function SalePage() {
                 dành cho kính mắt cao cấp.
               </p>
             </div>
-            <div className="flex justify-center lg:justify-end">
-              <Image
-                src="/sale-banner-glasses.avif"
-                alt="Kính"
-                width={400}
-                height={400}
-                className="object-contain"
-                priority
-              />
+            <div className="flex justify-center lg:justify-end relative">
+              {/* Loading Skeleton */}
+              {!imageLoaded && (
+                <div className="w-[400px] h-[400px] bg-gray-200 rounded-lg animate-pulse flex items-center justify-center">
+                  <div className="w-16 h-16 border-4 border-gray-300 border-t-gray-500 rounded-full animate-spin"></div>
+                </div>
+              )}
+              {/* Image with fade-in effect */}
+              <div className={`transition-opacity duration-700 ${
+                imageLoaded ? 'opacity-100' : 'opacity-0'
+              }`}>
+                <Image
+                  src="/sale-banner-glasses.avif"
+                  alt="Kính"
+                  width={400}
+                  height={400}
+                  className="object-contain"
+                  priority
+                  onLoad={() => setImageLoaded(true)}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -186,8 +203,7 @@ export default function SalePage() {
                             {discount.name}
                           </h3>
                           <span className="bg-green-100 text-green-700 text-sx font-bold px-3 py-1 rounded-full whitespace-nowrap ml-4">
-                            {calculateDiscount(discount.type, discount.value)}{" "}
-                            OFF
+                            Giảm {calculateDiscount(discount.type, discount.value)}
                           </span>
                         </div>
 
@@ -200,7 +216,7 @@ export default function SalePage() {
                         {discount.maxDiscountValue && (
                           <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 mb-3">
                             <p className="text-blue-700 text-sm font-medium">
-                              Max discount:{" "}
+                              Giảm tối đa:{" "}
                               <span className="font-semibold">
                                 {Number(
                                   discount.maxDiscountValue
@@ -214,7 +230,7 @@ export default function SalePage() {
                         {/* Valid Period */}
                         <div className="flex items-center gap-2 text-base text-gray-500 pt-2 border-t border-gray-100">
                           <Clock className="w-4 h-4 flex-shrink-0" />
-                          Valid:{" "}
+                          Có hiệu lực:{" "}
                           <span className="font-semibold">
                             <span className="truncate">
                               {formatDate(discount.startAt)} -{" "}
@@ -240,7 +256,7 @@ export default function SalePage() {
         {activeTab === "vouchers" && (
           <section>
             <p className="text-gray-600 mb-8">
-              Claim exclusive voucher codes for extra savings
+              Nhận mã giảm giá độc quyền để tiết kiệm thêm.
             </p>
 
             {loading ? (
@@ -280,13 +296,13 @@ export default function SalePage() {
                                 <>
                                   <Check className="w-4 h-4 text-green-500" />
                                   <span className="text-green-500">
-                                    Copied!
+                                    Đã sao chép!
                                   </span>
                                 </>
                               ) : (
                                 <>
                                   <Copy className="w-4 h-4" />
-                                  <span>Copy</span>
+                                  <span>Sao chép</span>
                                 </>
                               )}
                             </Button>
@@ -316,7 +332,7 @@ export default function SalePage() {
 
                           {voucher.maxDiscountValue && (
                             <span>
-                              Max discount:{" "}
+                              Giảm tối đa:{" "}
                               <span className="font-semibold">
                                 {Number(
                                   voucher.maxDiscountValue

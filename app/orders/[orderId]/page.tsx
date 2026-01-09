@@ -77,11 +77,11 @@ function OrderItem({
           </Link>
 
           <p className="text-sm text-gray-600 mt-1">
-            <span className="font-semibold">Color:</span> {item.colors}
+            <span className="font-semibold">Màu sắc:</span> {item.colors}
           </p>
 
           <p className="text-sm text-gray-600 mt-2">
-            <span className="font-semibold">Quantity:</span> {item.quantity}
+            <span className="font-semibold">Số lượng:</span> {item.quantity}
           </p>
 
           {/* ACTIONS: đặt dưới item */}
@@ -385,7 +385,7 @@ export default function OrderDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="border border-gray-200 rounded-lg p-4">
               <h3 className="font-semibold text-base mb-3">
-                Thông tin vận chuyển
+                Thông tin nhận hàng
               </h3>
               <div className="text-sm black space-y-1">
                 <p className="font-medium">{order.recipientName || "--"}</p>
@@ -466,7 +466,7 @@ export default function OrderDetailPage() {
           {/* Cart Items */}
           <div className="border border-gray-200 rounded-lg p-6">
             <h3 className="font-bold text-lg mb-4">
-              Thông tin vận chuyển 
+              Thông tin đơn hàng
             </h3>
 
             <div className="space-y-4">

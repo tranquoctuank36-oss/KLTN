@@ -101,7 +101,8 @@ function ProductsPageInner() {
     }
 
     if (initialFilters.genders?.length) {
-      return genderMap[initialFilters.genders[0]] || "Sản phẩm";
+      const gender = genderMap[initialFilters.genders[0]] || "";
+      return `Sản phẩm ${gender}`.trim();
     }
 
     if (initialFilters.search) {

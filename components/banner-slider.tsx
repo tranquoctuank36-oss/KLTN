@@ -116,7 +116,7 @@ export default function BannerSlider() {
                     alt={banner.title || `Banner ${i}`}
                     fill
                     priority={i === index}
-                    // className="object-cover"
+                    // className="object-contain"
                   />
                 </div>
               );

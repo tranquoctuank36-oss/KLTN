@@ -9,12 +9,11 @@ export default function Footer() {
     <footer className="bg-[#050524] text-gray-300 text-sm">
       <div className="max-w-full px-20 lg:px-30 py-10 space-y-10">
         {/* Support Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
           {SUPPORT_ITEMS.map((item) => (
-            <Link
+            <div
               key={item.title}
-              href={item.href}
-              className="group block rounded-xl focus:outline-none"
+              className="group block rounded-xl focus:outline-none w-full max-w-md"
             >
               <Card
                 className="bg-transparent border border-gray-700/80 rounded-xl 
@@ -25,7 +24,7 @@ export default function Footer() {
                   <div className="flex items-start gap-3">
                     {item.icon}
                     <div>
-                      <h4 className="font-medium text-white group-hover:text-blue-300">
+                      <h4 className="font-medium text-white">
                         {item.title}
                       </h4>
                       <p className="text-[13px] text-gray-400">{item.desc}</p>
@@ -33,7 +32,7 @@ export default function Footer() {
                   </div>
                 </CardContent>
               </Card>
-            </Link>
+            </div>
           ))}
         </div>
 
@@ -41,7 +40,7 @@ export default function Footer() {
         <div className="border-b border-gray-700/80" />
 
         {/* Footer Links */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-40 justify-items-start max-w-5xl mx-auto">
           {FOOTER_LINKS.map((col) => (
             <div key={col.title}>
               <h5 className="font-semibold text-white mb-3">{col.title}</h5>
@@ -49,7 +48,7 @@ export default function Footer() {
                 {col.links.map((link) => (
                   <li key={link.label}>
                     <Link
-                      href={link.href}
+                      href={link.href || "#"}
                       className="transition-colors text-gray-400 hover:text-blue-400"
                     >
                       {link.label}

@@ -114,7 +114,6 @@ export default function EditInfoForm({
                 id="dateOfBirth"
                 label="Ngày sinh"
                 type="date"
-                required
                 placeholder=""
                 value={draftDateOfBirth}
                 onChange={setDraftDateOfBirth}
@@ -132,7 +131,6 @@ export default function EditInfoForm({
                 id="gender"
                 label="Giới tính"
                 as="select"
-                required
                 value={draftGender}
                 onChange={setDraftGender}
                 options={[

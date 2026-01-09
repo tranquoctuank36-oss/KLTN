@@ -121,9 +121,10 @@ export default function Mainbar() {
                 >
                   <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-base font-normal">
                     {category.children?.map((childCategory) => {
-                      const childFilterUrl = `/products?productTypes=${encodeURIComponent(
-                        childCategory.slug
-                      )}&source=dropdown`;
+                      // Sử dụng relativeUrl từ API thay vì xử lý slug
+                      const childFilterUrl = childCategory.relativeUrl?.startsWith("/")
+                        ? `${childCategory.relativeUrl}&source=dropdown`
+                        : `/${childCategory.relativeUrl}&source=dropdown`;
 
                       return (
                         <div key={childCategory.id} className="space-y-2">
@@ -137,13 +138,10 @@ export default function Mainbar() {
                           {childCategory.children && childCategory.children.length > 0 && (
                             <div className="pl-4 space-y-1">
                               {childCategory.children?.map((subChild) => {
-                                const genderSlug =
-                                  subChild.slug.split("-").pop() || subChild.slug;
-                                const subChildFilterUrl = `/products?productTypes=${encodeURIComponent(
-                                  childCategory.slug
-                                )}&genders=${encodeURIComponent(
-                                  genderSlug
-                                )}&source=dropdown`;
+                                // Sử dụng relativeUrl từ API - đã có query params chính xác
+                                const subChildFilterUrl = subChild.relativeUrl?.startsWith("/")
+                                  ? `${subChild.relativeUrl}&source=dropdown`
+                                  : `/${subChild.relativeUrl}&source=dropdown`;
 
                                 return (
                                   <Link

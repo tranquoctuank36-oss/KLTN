@@ -34,7 +34,7 @@ export default function RootLayout({
                 <Toaster position="top-center" />
                 <BackToTop />
                 <ChatFab/>
-                <GuaranteeSection />
+                {/* <GuaranteeSection /> */}
                 <Footer />
                 <CartDrawerWrapper /> 
               </div>

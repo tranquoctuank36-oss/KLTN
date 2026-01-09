@@ -68,7 +68,7 @@ export default function CartSummary({
         <span>{grandTotal.toLocaleString("en-US")}đ</span>
       </div>
 
-      <ul className="space-y-2 text-sm text-blue-500 font-semibold mb-6">
+      {/* <ul className="space-y-2 text-sm text-blue-500 font-semibold mb-6">
         <li className="flex items-center gap-2">
           <Check className="w-4 h-4 text-blue-500 mt-1" /> Miễn phí vận chuyển
           và trả hàng
@@ -77,7 +77,7 @@ export default function CartSummary({
           <Check className="w-4 h-4 text-blue-500 mt-1" /> Bảo hành hoàn tiền
           100%
         </li>
-      </ul>
+      </ul> */}
 
       <LoginDialog
         open={showLoginDialog}

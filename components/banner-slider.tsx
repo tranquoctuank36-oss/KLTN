@@ -127,8 +127,6 @@ export default function BannerSlider() {
                   <Link
                     key={`${banner.id}-${i}`}
                     href={banner.linkUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="block h-full"
                     style={{ width: `${100 / slides.length}%` }}
                   >

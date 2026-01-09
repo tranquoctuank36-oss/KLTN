@@ -126,7 +126,7 @@ export default function SalePage() {
                 }`}
               >
                 <Percent className="w-5 h-5" />
-                Giảm giá
+                Chương trình giảm giá
               </button>
             )}
             {vouchers.length > 0 && (

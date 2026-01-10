@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Footer from "@/components/footer";
-import BackToTop from "@/components/back-to-top";
-import GuaranteeSection from "@/components/guarantee-section";
+import Footer from "@/components/layout/footer";
 import { CartProvider, useCart } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { ChatProvider } from "@/context/ChatContext";
 import { Toaster } from "react-hot-toast";
-import ChatFab from "@/components/chat";
+import ChatFab from "@/components/chat/chat";
 import CartDrawerWrapper from "@/components/cart/CartDrawerWrapper";
-import Header from "@/components/navbar/Header";
+import Header from "@/components/layout/navbar/Header";
+import BackToTop from "@/components/ui-common/back-to-top";
 
 export const metadata: Metadata = {
   title: "Cửa Hàng Kính Trực Tuyến | Giảm Giá Lên Đến 50% + Giao Hàng Miễn Phí",
@@ -34,7 +33,6 @@ export default function RootLayout({
                 <Toaster position="top-center" />
                 <BackToTop />
                 <ChatFab/>
-                {/* <GuaranteeSection /> */}
                 <Footer />
                 <CartDrawerWrapper /> 
               </div>

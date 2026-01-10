@@ -1,16 +1,15 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import ClientOnly from "@/components/ClientOnly";
-import CheckoutForm from "./CheckoutForm";
-import OrderSummary from "./OrderSummary";
-import VoucherSection from "@/components/VoucherSection";
+import ClientOnly from "@/components/ui-common/ClientOnly";
+import OrderSummary from "../../components/checkout/OrderSummary";
+import VoucherSection from "@/components/checkout/VoucherSection";
 import { useCart } from "@/context/CartContext";
 import { Order } from "@/types/order";
 import { PaymentMethodType } from "@/types/payment";
-import CheckoutAuthGuard from "./CheckoutAuthGuard";
+import CheckoutAuthGuard from "../../components/checkout/CheckoutAuthGuard";
+import CheckoutForm from "@/components/checkout/CheckoutForm";
 
-// Prevent static generation for this page
 export const dynamic = 'force-dynamic';
 
 export default function CheckoutPage() {
@@ -20,12 +19,10 @@ export default function CheckoutPage() {
   const [checkoutCart, setCheckoutCart] = useState<typeof cart>([]);
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [selectedWard, setSelectedWard] = useState("");
-  const hasLoadedRef = useRef(false);
   const [isFormValid, setIsFormValid] = useState(false);
   const [hasShippingError, setHasShippingError] = useState(false);
   const [note, setNote] = useState("");
   
-  // Voucher states
   const [voucherCode, setVoucherCode] = useState<string | null>(null);
   const [voucherOrderDiscount, setVoucherOrderDiscount] = useState(0);
   const [voucherShippingDiscount, setVoucherShippingDiscount] = useState(0);

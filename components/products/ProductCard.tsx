@@ -8,7 +8,7 @@ import { Copy, Video } from "lucide-react";
 import { Product } from "@/types/product";
 import { Routes } from "@/lib/routes";
 import { getProductBySlug, getSimilarProducts } from "@/services/productService";
-import ColorSelector from "../colorSelector";
+import ColorSelector from "../ui-common/colorSelector";
 import { ProductVariants } from "@/types/productVariants";
 import SimilarFramesDrawer from "./SimilarFramesDrawer";
 

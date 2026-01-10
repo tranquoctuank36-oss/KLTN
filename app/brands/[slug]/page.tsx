@@ -67,18 +67,6 @@ export default function BrandDetailPage() {
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-        {/* <div className="absolute bottom-0 left-0 right-0 p-8 lg:p-12 text-white">
-          <div className="max-w-full px-20 lg:px-30">
-            <h1 className="text-4xl lg:text-6xl font-bold mb-3">
-              {brand.name}
-            </h1>
-            {brand.description && (
-              <p className="text-lg lg:text-xl max-w-3xl opacity-90">
-                {brand.description}
-              </p>
-            )}
-          </div>
-        </div> */}
       </section>
 
       <ProductGrid brandSlug={slug} title={`Kính mắt - ${brand.name}`} hideBrandsSelection={true} />

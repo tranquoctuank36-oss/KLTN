@@ -9,7 +9,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import FloatingInput from "../FloatingInput";
+import FloatingInput from "../ui-common/FloatingInput";
 import { toast } from "react-hot-toast";
 import { forgotPassword } from "@/services/authService";
 

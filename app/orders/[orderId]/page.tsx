@@ -14,10 +14,10 @@ import AddToCartOrderDialog from "@/components/dialog/AddToCartOrderDialog";
 import { useCart } from "@/context/CartContext";
 import { ProductVariants } from "@/types/productVariants";
 import CancelOrderDialog from "@/components/dialog/CancelOrderDialog";
-import OrderStatusTimeline from "@/components/OrderStatusTimeline";
-import CreateReviewForm from "@/components/CreateReviewForm";
+import OrderStatusTimeline from "@/components/order/OrderStatusTimeline";
+import CreateReviewForm from "@/components/review/CreateReviewForm";
 import { getMyReviews } from "@/services/reviewService";
-import CreateReturnForm from "@/components/CreateReturnForm";
+import CreateReturnForm from "@/components/order/CreateReturnForm";
 
 type OrderItemProps = {
   item: any;
@@ -84,7 +84,7 @@ function OrderItem({
             <span className="font-semibold">Số lượng:</span> {item.quantity}
           </p>
 
-          {/* ACTIONS: đặt dưới item */}
+          {/* ACTIONS */}
           {canAction && (
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
               {/* Review */}
@@ -112,7 +112,7 @@ function OrderItem({
         </div>
       </div>
 
-      {/* RIGHT: chỉ để giá */}
+      {/* RIGHT */}
       <div className="flex items-center gap-3 mt-2">
         {item.originalPrice &&
           Number(item.originalPrice) > Number(item.finalPrice) && (
@@ -241,18 +241,17 @@ export default function OrderDetailPage() {
 
         setOrder(orderData);
 
-        // Load reviewed items from my reviews API
         try {
           const reviewsResponse = await getMyReviews();
           if (reviewsResponse?.data) {
-            // Get all order item IDs that have been reviewed
+            // Lấy tất cả ID mặt hàng trong đơn hàng đã được xem xét.
             const reviewedIds = new Set<string>(
               reviewsResponse.data
                 .filter((review: any) => review.orderItem?.id)
                 .map((review: any) => review.orderItem.id as string)
             );
 
-            // Match with current order items
+            // Đối chiếu với các mặt hàng trong đơn hàng hiện tại
             const currentOrderReviewedIds = new Set<string>(
               orderData.items
                 ?.filter((item: any) => reviewedIds.has(item.id))
@@ -261,7 +260,7 @@ export default function OrderDetailPage() {
 
             setReviewedItemIds(currentOrderReviewedIds);
 
-            // Store review data by item ID
+            // Lưu dữ liệu đánh giá theo ID mặt hàng
             const reviewsMap = new Map<string, any>();
             reviewsResponse.data.forEach((review: any) => {
               if (review.orderItem?.id) {
@@ -310,7 +309,7 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-6">
-          {/* Order Header */}
+          {/* Header */}
           <div className="mb-6">
             <h2 className="text-xl font-bold mb-2">
               Mã Đơn Hàng:{" "}
@@ -482,8 +481,7 @@ export default function OrderDetailPage() {
                       );
                     }}
                   />
-
-                  {/* Review Form for this specific item */}
+                  {/* Review Form */}
                   {showReviewFormForItemId === item.id && (
                     <div className="mt-4 mb-4">
                       <CreateReviewForm
@@ -495,7 +493,6 @@ export default function OrderDetailPage() {
                         }}
                         existingReview={reviewsData.get(item.id)}
                         onSuccess={async () => {
-                          // Reload reviews data
                           try {
                             const reviewsResponse = await getMyReviews();
                             if (reviewsResponse?.data) {
@@ -538,8 +535,6 @@ export default function OrderDetailPage() {
                       />
                     </div>
                   )}
-
-
                 </div>
               ))}
             </div>
@@ -588,7 +583,7 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
-          {/* Return Form for Order */}
+          {/* Return Form */}
           {showReturnForm && (
             <div ref={returnFormRef} className="mt-6 border border-orange-200 rounded-lg p-6 bg-orange-50">
               <CreateReturnForm

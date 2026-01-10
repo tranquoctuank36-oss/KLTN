@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { resetPassword } from "@/services/authService";
-import FloatingInput from "@/components/FloatingInput";
+import FloatingInput from "@/components/ui-common/FloatingInput";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
 import { Check, Circle, Eye, EyeOff } from "lucide-react";
@@ -87,7 +87,6 @@ export default function ResetPasswordClient() {
           Nhập mật khẩu mới của bạn dưới đây.
         </p>
 
-        {/* Password */}
         <FloatingInput
           id="new-password"
           label="Mật khẩu mới"
@@ -111,7 +110,7 @@ export default function ResetPasswordClient() {
           }
         />
 
-        {/* Password rules */}
+        {/* rules */}
         {!hasTypedPwd ? (
           <ul className="mt-1 space-y-1 text-sm">
             <li className="flex items-center gap-2">
@@ -156,7 +155,6 @@ export default function ResetPasswordClient() {
           </ul>
         )}
 
-        {/* Confirm Password */}
         <FloatingInput
           id="confirm-password"
           label="Xác nhận mật khẩu"

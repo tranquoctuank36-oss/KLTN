@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
-import FloatingInput from "../FloatingInput";
+import FloatingInput from "../ui-common/FloatingInput";
 import { useAuth } from "@/context/AuthContext";
 import ForgotPasswordDialog from "./ForgotPasswordDialog";
 import toast from "react-hot-toast";

@@ -5,13 +5,12 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { getProductBySlug } from "@/services/productService";
 import { Product } from "@/types/product";
 import { Button } from "@/components/ui/button";
-import { Star, Check, ChevronRight, Heart, Filter, X } from "lucide-react";
-import IncludingStrip from "@/components/productDetail/IncludingStrip";
+import { Star, Check, ChevronRight, Filter, X } from "lucide-react";
 import ProductTabs from "@/components/productDetail/ProductInfo";
 import FrameMeasurementsTable from "@/components/productDetail/FrameMeasurementsTable";
 import Breadcrumb from "@/components/productDetail/Breadcrumb";
 import ProductGallery from "@/components/productDetail/ProductGallery";
-import ColorSelector from "@/components/colorSelector";
+import ColorSelector from "@/components/ui-common/colorSelector";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { ProductVariants } from "@/types/productVariants";
@@ -21,10 +20,7 @@ import toast from "react-hot-toast";
 import { getReviewsByProduct } from "@/services/reviewService";
 import { Review } from "@/types/review";
 import Image from "next/image";
-import BrandProductsSection from "@/components/brand-products-section/BrandProductsSection";
-import RelatedProductsSection from "@/components/related-products-section/RelatedProductsSection";
-import { getCart } from "@/services/cartService";
-// import RecommendedProducts from "@/components/RecommendedProducts";
+import RelatedProductsSection from "@/components/productDetail/RelatedProductsSection";
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -48,7 +44,6 @@ export default function ProductDetailPage() {
     alt: string;
   } | null>(null);
 
-  // Reviews filter & pagination
   const [selectedRating, setSelectedRating] = useState<number>(0);
   const [hasImage, setHasImage] = useState<boolean>(false);
   const [sortOption, setSortOption] = useState<string>("createdAt-DESC");
@@ -56,16 +51,16 @@ export default function ProductDetailPage() {
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const itemsPerPage = 5;
 
-  // 👉 ref để scroll
+  // ref để scroll
   const frameRef = useRef<HTMLDivElement | null>(null);
   const reviewsRef = useRef<HTMLDivElement | null>(null);
 
-  // Scroll to top whenever slug changes (including back navigation)
+  // Scroll
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [slug]);
 
-  // Auto trigger buy now after login
+  // Tự động kích hoạt lệnh mua ngay sau khi đăng nhập.
   useEffect(() => {
     const triggerBuyNowStr = localStorage.getItem("triggerBuyNow");
     if (triggerBuyNowStr && isLoggedIn && selectedVariant) {
@@ -79,7 +74,6 @@ export default function ProductDetailPage() {
           // Set quantity và trigger mua ngay
           setQuantity(triggerData.quantity);
           
-          // Đợi một chút để UI update xong
           setTimeout(() => {
             handleBuyNow();
           }, 300);
@@ -98,7 +92,7 @@ export default function ProductDetailPage() {
       .then((res) => {
         setProduct(res);
 
-        // Save to recently viewed
+        // Lưu vào mục đã xem gần đây
         if (res?.id && res?.slug) {
           addToRecentlyViewed(res.id, res.slug);
         }
@@ -126,7 +120,7 @@ export default function ProductDetailPage() {
       .finally(() => setLoading(false));
   }, [slug, variantIdFromUrl]);
 
-  // Fetch reviews when product is loaded
+  //  Tải đánh giá khi sản phẩm được tải
   useEffect(() => {
     if (!product?.id) return;
 
@@ -135,7 +129,7 @@ export default function ProductDetailPage() {
         setReviewsLoading(true);
         const result = await getReviewsByProduct(product.id);
 
-        // Sort reviews by createdAt (newest first)
+        // Sắp xếp các đánh giá theo thời gian tạo (mới nhất trước)
         const sortedReviews = (result.data || []).sort(
           (a: Review, b: Review) => {
             const dateA = new Date(a.createdAt).getTime();
@@ -156,12 +150,10 @@ export default function ProductDetailPage() {
     fetchReviews();
   }, [product?.id]);
 
-  // Filter reviews by selected variant
-  // Note: Currently API doesn't return orderItem.productVariantId
-  // So we show all reviews for the product
+  // Hiển thị tất cả đánh giá cho sản phẩm 
   const variantReviews = reviews;
 
-  // Apply filters and sorting
+  // Lọc và sắp xếp đánh giá
   const filteredAndSortedReviews = variantReviews
     .filter((review) => {
       if (selectedRating > 0 && review.rating !== selectedRating) return false;
@@ -184,7 +176,6 @@ export default function ProductDetailPage() {
       return sortOrder === "DESC" ? -comparison : comparison;
     });
 
-  // Pagination
   const totalPages = Math.ceil(filteredAndSortedReviews.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedReviews = filteredAndSortedReviews.slice(
@@ -192,7 +183,7 @@ export default function ProductDetailPage() {
     startIndex + itemsPerPage
   );
 
-  // Show loading skeleton while fetching
+  // Loding
   if (loading) {
     return (
       <div className="mx-auto max-w-full px-20 lg:px-30 py-10">
@@ -287,7 +278,6 @@ export default function ProductDetailPage() {
       return;
     }
 
-    console.log("[BuyNow] handleBuyNow called, isLoggedIn:", isLoggedIn);
     setBuyNowLoading(true);
     try {
       const variantIdToFind = selectedVariant.id;
@@ -295,21 +285,16 @@ export default function ProductDetailPage() {
 
       // Nếu chưa đăng nhập, lưu thông tin và chuyển đến checkout với flag cần login
       if (!isLoggedIn) {
-        console.log("[BuyNow] User not logged in, redirecting to checkout with needLogin=true");
         const redirectUrl = `${Routes.checkouts()}?needLogin=true`;
-        console.log("[BuyNow] Redirect URL:", redirectUrl);
         localStorage.setItem("buyNowPending", JSON.stringify({
           variantId: variantIdToFind,
           quantity: qty,
           productSlug: product.slug
         }));
-        console.log("[BuyNow] Saved buyNowPending to localStorage:", localStorage.getItem("buyNowPending"));
         router.push(redirectUrl);
-        console.log("[BuyNow] router.push called");
         return;
       }
       
-      console.log("[BuyNow] User logged in, proceeding with add to cart");
       
       // Đã đăng nhập: Thêm sản phẩm vào giỏ hàng (không mở drawer)
       await addToCart(
@@ -327,9 +312,8 @@ export default function ProductDetailPage() {
         variantIdToFind
       );
 
-      // Chuyển đến trang checkout ngay lập tức (không đợi)
+      // Chuyển đến trang checkout
       router.push(Routes.checkouts());
-      // Không cần setBuyNowLoading(false) vì trang sẽ chuyển đi
     } catch (error: any) {
       console.error("Lỗi khi mua ngay:", error);
       toast.error(
@@ -381,10 +365,6 @@ export default function ProductDetailPage() {
             isSale={isOnSale}
           />
 
-          {/* <div className="mt-16">
-            <IncludingStrip />
-          </div> */}
-
           <ProductTabs product={product} />
 
           <div ref={frameRef}>
@@ -409,7 +389,6 @@ export default function ProductDetailPage() {
             {showFilters && (
               <div className="mb-8 p-4 bg-gray-50 rounded-lg space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Sort Option */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Sắp xếp
@@ -429,7 +408,6 @@ export default function ProductDetailPage() {
                     </select>
                   </div>
 
-                  {/* Rating Filter */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Lọc theo đánh giá
@@ -522,7 +500,6 @@ export default function ProductDetailPage() {
                       key={review.id}
                       className="border border-gray-200 rounded-lg p-6 bg-white"
                     >
-                      {/* Header: Avatar + Name + Rating */}
                       <div className="flex items-start gap-3 mb-4">
                         <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0 text-white font-semibold">
                           {review.nameDisplay?.charAt(0).toUpperCase() || "U"}
@@ -560,14 +537,12 @@ export default function ProductDetailPage() {
                         </div>
                       </div>
 
-                      {/* Review Content */}
                       {review.comment && (
                         <p className="text-gray-800 text-sm leading-relaxed mb-3">
                           {review.comment}
                         </p>
                       )}
 
-                      {/* Review Image */}
                       {review.image?.publicUrl && (
                         <div className="mt-3">
                           <Image
@@ -589,7 +564,6 @@ export default function ProductDetailPage() {
                   ))}
                 </div>
 
-                {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="mt-8 flex items-center justify-center gap-2">
                     <button
@@ -633,7 +607,7 @@ export default function ProductDetailPage() {
             )}
           </div>
 
-          {/* Lightbox Modal */}
+          {/* Fullscreen */}
           {lightboxImage && (
             <div
               className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90"

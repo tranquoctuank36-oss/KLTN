@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
-import ConfirmPopover from "@/components/ConfirmPopover";
+import ConfirmPopover from "@/components/ui-common/ConfirmPopover";
 import { CartItem } from "@/types/cart";
 import Link from "next/link";
 import { Routes } from "@/lib/routes";

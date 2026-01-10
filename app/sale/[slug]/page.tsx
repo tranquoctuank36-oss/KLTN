@@ -1,20 +1,19 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Image from "next/image";
-import { ArrowLeft, Clock, Percent, Tag, Loader2 } from "lucide-react";
+import { Percent, Tag, Loader2, Search, X } from "lucide-react";
 import { getDiscountBySlug, getDiscountProducts, type Discount } from "@/services/discountService";
-import { Button } from "@/components/ui/button";
 import type { Product } from "@/types/product";
 import ProductCard from "@/components/products/ProductCard";
 import ReactPaginate from "react-paginate";
+import { Button } from "@/components/ui/button";
 
-const PER_PAGE = 20;
+const PER_PAGE = 12;
 
 export default function DiscountDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const slug = params.slug as string;
 
   const [discount, setDiscount] = useState<Discount | null>(null);
@@ -24,7 +23,7 @@ export default function DiscountDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
   const topRef = useRef<HTMLDivElement | null>(null);
   const firstLoad = useRef(true);
 
@@ -56,15 +55,14 @@ export default function DiscountDetailPage() {
         const result = await getDiscountProducts(
           discount.id,
           currentPage + 1,
-          PER_PAGE
+          PER_PAGE,
+          searchTerm || undefined
         );
         setProducts(result.data);
-        setTotalItems(result.pagination.total || 0);
         setTotalPages(Math.max(1, result.pagination.totalPages || 1));
       } catch (err) {
         console.error("Failed to fetch products:", err);
         setProducts([]);
-        setTotalItems(0);
         setTotalPages(1);
       } finally {
         setLoadingProducts(false);
@@ -72,7 +70,7 @@ export default function DiscountDetailPage() {
     };
 
     fetchProducts();
-  }, [discount?.id, currentPage]);
+  }, [discount?.id, currentPage, searchTerm]);
 
   useEffect(() => {
     if (firstLoad.current) {
@@ -81,7 +79,6 @@ export default function DiscountDetailPage() {
     }
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [currentPage]);
-
 
   if (loading) {
     return (
@@ -134,11 +131,54 @@ export default function DiscountDetailPage() {
         )}
       </div>
 
-      {/* Products Section */}
+      {/* Products */}
       <div className="max-w-full px-20 lg:px-30 py-10 mx-auto">
         <div ref={topRef} className="scroll-mt-[var(--header-h)]" />
 
-        {/* Grid with loading overlay */}
+        {/* Search */}
+        {/* <div className="mb-8 relative w-full">
+          <div
+            className="group relative w-full border border-gray-500 rounded-full px-2 py-2 flex items-center 
+               focus-within:border-sky-500 focus-within:border-2 transition bg-white"
+          >
+            <div
+              className="p-3 rounded-full transition-colors 
+                 hover:bg-orange-100 group-hover:bg-orange-100 group-focus-within:bg-orange-100 "
+            >
+              <Search className="h-5 w-5 text-gray-600" />
+            </div>
+
+            <input
+              type="text"
+              placeholder="Tìm kiếm sản phẩm..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(0);
+              }}
+              className="flex-1 outline-none text-gray-700 bg-transparent ml-3"
+            />
+
+            {searchTerm && (
+              <Button
+                onClick={() => {
+                  setSearchTerm("");
+                  setCurrentPage(0);
+                }}
+                className="p-2 rounded-full hover:bg-gray-200 transition-colors drop-shadow-none w-9"
+              >
+                <X className="!h-5 !w-5 text-gray-500" />
+              </Button>
+            )}
+          </div>
+
+          {searchTerm && products.length === 0 && !loadingProducts && (
+            <div className="absolute left-0 right-0 mt-3 bg-white shadow-[0_0_6px_rgba(0,0,0,0.2)] rounded-lg p-4 text-gray-600 text-base font-medium">
+              Không tìm thấy kết quả cho tìm kiếm của bạn.
+            </div>
+          )}
+        </div> */}
+
         <div className="relative" aria-busy={loadingProducts ? "true" : "false"}>
           {loadingProducts && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[2px] rounded-lg min-h-[400px]">
@@ -156,13 +196,12 @@ export default function DiscountDetailPage() {
             <div className="text-center py-16 rounded-lg min-h-[400px] flex flex-col items-center justify-center">
               <Tag className="w-16 h-16 mx-auto mb-4 text-gray-400 opacity-50" />
               <p className="text-gray-600">
-                No products available for this discount yet
+                Hiện chưa có sản phẩm nào được áp dụng mức giảm giá này.
               </p>
             </div>
           ) : null}
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="mt-10 flex items-center justify-center gap-2">
             <button

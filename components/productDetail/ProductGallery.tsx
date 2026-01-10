@@ -116,7 +116,7 @@ export default function ProductGallery({ product, selectedVariant, isSale }: Pro
                 )}
               </Button>
 
-      {/* Image Lightbox Modal */}
+      {/* Fullscreen*/}
       {selectedImage && (
         <motion.div
           initial={{ opacity: 0 }}

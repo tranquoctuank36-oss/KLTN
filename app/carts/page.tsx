@@ -4,15 +4,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { Routes } from "@/lib/routes";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import CartSummary from "../../components/cart/CartSummary";
 import CartItems from "../../components/cart/CartItems";
-// import RecommendedProducts from "@/components/RecommendedProducts";
 
 export default function CartPage() {
   const {
     cart,
-    cartLoading,
     setItemQuantity,
     removeFromCart,
     clearCart,
@@ -24,7 +22,6 @@ export default function CartPage() {
   const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate initial loading
     const timer = setTimeout(() => {
       setInitialLoading(false);
     }, 500);
@@ -46,7 +43,7 @@ export default function CartPage() {
     0
   );
 
-  // Check if any selected item is out of stock or unavailable
+  // Kiểm tra xem mặt hàng nào bạn đã chọn có hết hàng hoặc không có sẵn không.
   const hasOutOfStockItems = selectedCart.some((item) => {
     const maxInv = item.selectedVariant.availableQuantity ?? item.selectedVariant.quantityAvailable ?? Infinity;
     return item.status === "out_of_stock" || item.status === "unavailable" || maxInv <= 0;
@@ -89,7 +86,7 @@ export default function CartPage() {
     }, 300);
   };
 
-  // Show loading skeleton only on initial load
+  // Loading
   if (initialLoading) {
     return (
       <div className="max-w-full px-20 lg:px-30 py-10 bg-gray-100">
@@ -126,7 +123,6 @@ export default function CartPage() {
                   className="mb-6"
                 />
 
-                {/* Tiêu đề */}
                 <h1 className="text-2xl font-bold mb-2">Giỏ hàng của bạn trống</h1>
                 <p className="text-gray-500 mb-6">
                   Mua sắm ngay trên trang chủ!!!
@@ -140,9 +136,6 @@ export default function CartPage() {
                 </Link>
               </div>
             </div>
-            {/* <div className="mt-15">
-              <RecommendedProducts />
-            </div> */}
           </div>
 
           <div className="lg:col-span-1">
@@ -182,9 +175,6 @@ export default function CartPage() {
             removingItems={removingItems}
           />
 
-          {/* <div className="mt-15">
-            <RecommendedProducts />
-          </div> */}
         </div>
 
         <div className="lg:col-span-1">

@@ -1,20 +1,19 @@
-import BannerSlider from "@/components/banner-slider";
-import BrandListButton from "@/components/brandList-section";
+import BannerSlider from "@/components/banner/banner-slider";
+import BrandListSection from "@/components/brand/BrandListSection";
 
-import ProductGrid from "@/components/products/ProductGird";
-import RecentlyViewedSection from "@/components/recently-viewed-section/recently-viewed-section";
-import HotProductsSection from "@/components/hot-products-section/HotProductsSection";
-import BestSellersSection from "@/components/best-sellers-section/BestSellersSection";
-import TopRatedSection from "@/components/top-rated-section/TopRatedSection";
+import RecentlyViewedSection from "@/components/product-sections/RecentlyViewedSection";
+import HotProductsSection from "@/components/product-sections/HotProductsSection";
+import BestSellersSection from "@/components/product-sections/BestSellersSection";
+import TopRatedSection from "@/components/product-sections/TopRatedSection";
 import { Suspense } from "react";
 
 export default function HomePage() {
   return (
     <main>
       <BannerSlider />
-      <BrandListButton />
+      <BrandListSection />
       
-      {/* Load sections with Suspense to improve initial page load */}
+      {/* Suspense để cải thiện tốc độ tải trang */}
       <Suspense fallback={<div className="h-96 animate-pulse bg-gray-50" />}>
         <BestSellersSection />
       </Suspense>
@@ -30,7 +29,7 @@ export default function HomePage() {
       <Suspense fallback={<div className="h-96 animate-pulse bg-gray-50" />}>
         <RecentlyViewedSection />
       </Suspense>
-      {/* <ProductGrid /> */}
+
     </main>
   );
 }

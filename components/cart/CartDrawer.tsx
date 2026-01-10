@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Routes } from "@/lib/routes";
 import { useCart } from "@/context/CartContext";
-import ConfirmPopover from "@/components/ConfirmPopover";
+import ConfirmPopover from "@/components/ui-common/ConfirmPopover";
 import { useEffect, useState, useRef } from "react";
 
 type Props = {

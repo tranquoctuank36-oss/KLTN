@@ -19,13 +19,13 @@ import { Routes } from "@/lib/routes";
 import { useAuth } from "@/context/AuthContext";
 import { useChat } from "@/context/ChatContext";
 import ConfirmDialog from "@/components/dialog/ConfirmDialog";
-import EditInfoForm from "@/components/my-account/EditInfoForm";
-import ChangePasswordForm from "@/components/my-account/ChangePasswordForm";
-import AddAddressForm from "@/components/my-account/AddAddressForm";
-import EditAddressForm from "@/components/my-account/EditAddressForm";
-import OrdersSection from "@/components/my-account/OrdersSection";
-import DetailsSection from "@/components/my-account/DetailsSection";
-import AddressSection from "@/components/my-account/AddressSection";
+import EditInfoForm from "@/components/my-account/profile/EditInfoForm";
+import ChangePasswordForm from "@/components/my-account/profile/ChangePasswordForm";
+import AddAddressForm from "@/components/my-account/addresses/AddAddressForm";
+import OrdersSection from "@/components/my-account/orders/OrdersSection";
+import DetailsSection from "@/components/my-account/profile/DetailsSection";
+import EditAddressForm from "@/components/my-account/addresses/EditAddressForm";
+import AddressSection from "@/components/my-account/addresses/AddressSection";
 
 export default function MyAccountClient() {
   const [isLoading, setIsLoading] = useState(true);
@@ -61,7 +61,7 @@ export default function MyAccountClient() {
   const searchParams = useSearchParams();
   const section = searchParams.get("section");
   
-  // Determine active menu based on section
+  // Xác định menu đang hoạt động dựa trên mục
   const getActiveMenu = (currentSection: string | null) => {
     if (!currentSection) return null;
     if (currentSection.startsWith("my-orders")) return "my-orders";
@@ -73,7 +73,6 @@ export default function MyAccountClient() {
     cancelChangePassword();
     cancelAddAddress();
     cancelEditAddress();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [section]);
 
   useEffect(() => {
@@ -145,7 +144,6 @@ export default function MyAccountClient() {
     }
   }, [authUser]);
 
-  // menu items
   const menuItems = [
     {
       id: "my-orders",
@@ -205,7 +203,7 @@ export default function MyAccountClient() {
   };
 
   useEffect(() => {
-    // Set active based on section parameter
+    // Đặt trạng thái hoạt động dựa trên parameter
     if (section) {
       setActive(getActiveMenu(section));
     }
@@ -213,7 +211,7 @@ export default function MyAccountClient() {
 
   useEffect(() => {
     const handleScroll = () => {
-      // Only update active from scroll if no section parameter
+      // Chỉ cập nhật trạng thái hoạt động từ cuộn nếu không có tham số section
       if (section) return;
       
       let current: string | null = null;
@@ -234,7 +232,7 @@ export default function MyAccountClient() {
     window.addEventListener("scroll", handleScroll);
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [section]);
 
   const openEdit = () => {

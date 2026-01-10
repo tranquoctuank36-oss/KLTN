@@ -10,18 +10,12 @@ import type { ElasticSearchFilters } from "@/services/productService";
 const SLUG_TO_PRODUCT_TYPE: Record<string, string> = {
   "gong-kinh": "frame",
   "kinh-mat": "sunglasses",
-  "frame": "frame",
-  "sunglasses": "sunglasses",
 };
 
 const SLUG_TO_GENDER: Record<string, string> = {
   "nam": "male",
   "nu": "female",
-  "unisex": "unisex",
   "tre-em": "kid",
-  "male": "male",
-  "female": "female",
-  "kid": "kid",
 };
 
 function ProductsPageInner() {
@@ -34,7 +28,7 @@ function ProductsPageInner() {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, []);
 
-  // Kiểm tra xem productTypes có đến từ menu level 1 không (không có source=dropdown)
+  // Kiểm tra xem productTypes có đến từ menu level 1 không
   const hideProductTypesSelection = useMemo(() => {
     const productTypes = searchParams.get("productTypes");
     const source = searchParams.get("source");
@@ -73,7 +67,7 @@ function ProductsPageInner() {
     }
 
     return filters;
-    // Quan trọng: phụ thuộc vào string để tránh object identity thay đổi
+    // Phụ thuộc vào string để tránh object identity thay đổi
   }, [searchParams.toString()]);
 
   // Tạo title động dựa trên filter

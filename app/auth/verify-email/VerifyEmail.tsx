@@ -25,7 +25,6 @@ export default function VerifyEmailClient() {
       setVerified(true);
       setError(null);
       
-      // Đánh dấu đã verify thành công để đóng CheckEmailDialog
       localStorage.setItem("emailVerified", "true");
       window.dispatchEvent(new Event("storage"));
       

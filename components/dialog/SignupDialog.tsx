@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Check, Circle } from "lucide-react";
 import { register } from "@/services/authService";
-import FloatingInput from "../FloatingInput";
+import FloatingInput from "../ui-common/FloatingInput";
 
 export default function SignupDialog({
   open,

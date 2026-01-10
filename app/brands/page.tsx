@@ -81,7 +81,6 @@ export default function BrandsPage() {
           )}
         </div>
 
-        {/* Overlay thông báo */}
         {searchTerm && filteredBrands.length === 0 && (
           <div className="absolute left-0 right-0 mt-3 bg-white shadow-[0_0_6px_rgba(0,0,0,0.2)] rounded-lg p-4 text-gray-600 text-base font-medium">
             Không tìm thấy kết quả cho tìm kiếm của bạn.
@@ -89,23 +88,7 @@ export default function BrandsPage() {
         )}
       </div>
 
-      {/* Popular brands */}
-      {/* <div className="mt-10">
-        <h2 className="text-lg font-semibold mb-4">Những Thương Hiệu Phổ Biến Nhất Của Chúng Tôi:</h2>
-        <div className="flex flex-wrap gap-4">
-          {popularBrands.map((brand) => (
-            <Link
-              key={brand.id}
-              href={`/brands/${brand.slug}`}
-              className="px-6 py-3 border rounded-lg hover:shadow transition text-lg font-medium bg-white"
-            >
-              {brand.name}
-            </Link>
-          ))}
-        </div>
-      </div> */}
 
-      {/* A-Z Brands */}
       <div className="mt-14">
         <h2 className="text-lg font-bold mb-8">Thương Hiệu A-Z</h2>
 

@@ -28,7 +28,7 @@ export default function SalePage() {
         setDiscounts(discountsData);
         setVouchers(vouchersData);
 
-        // Auto-select available tab
+        // tab logic
         if (discountsData.length === 0 && vouchersData.length > 0) {
           setActiveTab("vouchers");
         } else if (vouchersData.length === 0 && discountsData.length > 0) {
@@ -65,7 +65,7 @@ export default function SalePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Banner Section */}
+      {/* Banner */}
       <div className={`relative overflow-hidden transition-colors duration-500 ${
         imageLoaded ? 'bg-[#9CBAC7]' : 'bg-gray-100'
       }`}>
@@ -111,9 +111,9 @@ export default function SalePage() {
         </div>
       </div>
 
-      {/* Content Section */}
+      {/* Content */}
       <div className="max-w-full px-20 lg:px-30 py-12 mx-auto">
-        {/* Tabs Navigation - Only show if at least one has data */}
+        {/* Tabs Navigation - Chỉ hiển thị nếu ít nhất một tab có dữ liệu */}
         {!loading && (discounts.length > 0 || vouchers.length > 0) && (
           <div className="flex items-center gap-4 mb-8 border-b border-gray-200">
             {discounts.length > 0 && (
@@ -145,7 +145,6 @@ export default function SalePage() {
           </div>
         )}
 
-        {/* Show message if both are empty */}
         {!loading && discounts.length === 0 && vouchers.length === 0 && (
           <div className="text-center py-16 text-gray-500 bg-white rounded-lg">
             <Tag className="w-16 h-16 mx-auto mb-4 opacity-30" />
@@ -155,7 +154,7 @@ export default function SalePage() {
           </div>
         )}
 
-        {/* Active Discounts Section */}
+        {/* Discounts*/}
         {activeTab === "discounts" && (
           <section className="mb-16">
             <p className="text-gray-600 mb-8">
@@ -180,7 +179,6 @@ export default function SalePage() {
                       href={`/sale/${discount.slug}`}
                       className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 block"
                     >
-                      {/* Banner Image */}
                       {discount.bannerImage ? (
                         <div className="relative h-44 overflow-hidden">
                           <Image
@@ -207,12 +205,10 @@ export default function SalePage() {
                           </span>
                         </div>
 
-                        {/* Description */}
                         <p className="text-gray-600 text-base mb-4 line-clamp-2 min-h-[40px]">
                           {discount.description || "Áp dụng toàn bộ sản phẩm"}
                         </p>
 
-                        {/* Max Discount */}
                         {discount.maxDiscountValue && (
                           <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 mb-3">
                             <p className="text-blue-700 text-sm font-medium">
@@ -227,7 +223,6 @@ export default function SalePage() {
                           </div>
                         )}
 
-                        {/* Valid Period */}
                         <div className="flex items-center gap-2 text-base text-gray-500 pt-2 border-t border-gray-100">
                           <Clock className="w-4 h-4 flex-shrink-0" />
                           Có hiệu lực:{" "}
@@ -252,7 +247,7 @@ export default function SalePage() {
           </section>
         )}
 
-        {/* Vouchers Section */}
+        {/* Vouchers */}
         {activeTab === "vouchers" && (
           <section>
             <p className="text-gray-600 mb-8">
@@ -357,7 +352,7 @@ export default function SalePage() {
                             </span>
                           )}
                         </div>
-                        {/* Usage Progress Bar */}
+                        
                         <div className="pt-2">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-gray-600 font-medium">

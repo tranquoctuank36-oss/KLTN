@@ -32,16 +32,27 @@ const ReturnsTab = ({ containerRef }: ReturnsTabProps) => {
   const fetchReturns = useCallback(async () => {
     try {
       setReturnsLoading(true);
-      let statusParam: string | undefined = undefined;
-      if (returnsSelectedStatus !== "Tất cả trạng thái") {
-        statusParam = RETURN_STATUS_API_MAP[returnsSelectedStatus.toUpperCase()];
-      }
-      const result = await getMyReturns({
-        search: returnsSearchTerm || undefined,
+      
+      const params: any = {
         page: returnsCurrentPage,
         limit: 10,
-        status: statusParam,
-      });
+      };
+      
+      // Chỉ thêm search nếu có giá trị
+      if (returnsSearchTerm) {
+        params.search = returnsSearchTerm;
+      }
+      
+      // Chỉ thêm status nếu không phải "Tất cả trạng thái"
+      if (returnsSelectedStatus !== "Tất cả trạng thái") {
+        const statusParam = RETURN_STATUS_API_MAP[returnsSelectedStatus.toUpperCase()];
+        if (statusParam) {
+          params.status = statusParam;
+        }
+      }
+      
+      const result = await getMyReturns(params);
+      
       setReturns(result.data || []);
       setReturnsTotalPages(result.meta.totalPages);
     } catch (err) {

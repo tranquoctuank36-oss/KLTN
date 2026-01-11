@@ -36,7 +36,6 @@ export default function DisplayForm({
   districtDisplayName,
   wardDisplayName,
   isDefault,
-  isLoggedIn,
   note,
   onEdit,
   onNewAddress,
@@ -48,6 +47,7 @@ export default function DisplayForm({
   const [addressList, setAddressList] = useState<any[]>([]);
   const addressDropdownRef = useRef<HTMLDivElement>(null);
 
+  // sự kiện click ngoài để đóng dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (

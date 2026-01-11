@@ -19,39 +19,32 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
   const [isVisible, setIsVisible] = useState(false);
   const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
 
-  // Local state cho số lượng đang editing (optimistic update)
   const [editingQuantities, setEditingQuantities] = useState<
     Map<string, number | string>
   >(new Map());
 
-  // Lưu số lượng đã sync thành công lần cuối (để rollback khi lỗi)
   const lastSyncedQuantities = useRef<Map<string, number>>(new Map());
 
-  // Track items đang trong quá trình sync với server
   const [syncingItems, setSyncingItems] = useState<Set<string>>(new Set());
 
-  // Debounce timers cho từng item
   const debounceTimers = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
-  // Request IDs để xử lý race condition
   const requestIds = useRef<Map<string, number>>(new Map());
 
   const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Lấy số lượng hiện tại (từ editing state hoặc cart data)
+  // Lấy số lượng hiện tại
   const getCurrentQuantity = (key: string, item: any): number => {
     const editing = editingQuantities.get(key);
     if (typeof editing === "number") return editing;
     return item.quantity;
   };
 
-  // Debounced function to update quantity - xử lý race condition và error
   const debouncedSetItemQuantity = (
     cartItemId: string,
     quantity: number,
     key: string
   ) => {
-    // Clear existing timer for this item
     const existingTimer = debounceTimers.current.get(key);
     if (existingTimer) {
       clearTimeout(existingTimer);
@@ -62,20 +55,15 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
 
     // Set new timer - đợi 2 giây không có thao tác mới gửi request
     const timer = setTimeout(async () => {
-      // Tạo request ID mới để xử lý race condition
       const currentRequestId = (requestIds.current.get(key) || 0) + 1;
       requestIds.current.set(key, currentRequestId);
 
       try {
-        // Gọi API để sync số lượng
         await setItemQuantity(cartItemId, quantity);
 
-        // Kiểm tra xem có phải request mới nhất không (race condition check)
         if (requestIds.current.get(key) === currentRequestId) {
-          // Sync thành công - lưu lại quantity đã sync
           lastSyncedQuantities.current.set(key, quantity);
 
-          // Xóa editing state để hiển thị data từ server
           setEditingQuantities((prev) => {
             const next = new Map(prev);
             next.delete(key);
@@ -108,12 +96,11 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
           debounceTimers.current.delete(key);
         }
       }
-    }, 2000); // Debounce 2 giây
+    }, 2000);
 
     debounceTimers.current.set(key, timer);
   };
 
-  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       debounceTimers.current.forEach((timer: NodeJS.Timeout) =>
@@ -123,7 +110,6 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
     };
   }, []);
 
-  // Khởi tạo lastSyncedQuantities từ cart data ban đầu
   useEffect(() => {
     cart.forEach((item) => {
       const key =
@@ -253,11 +239,8 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                       {item.product.name}
                     </Link>
 
-                    {/* Nhóm 2 dòng giá để chúng sát nhau */}
                     <div className="flex flex-col gap-2">
-                      {/* Row 1: Quantity Controls + Final Price */}
                       <div className="flex items-center justify-between">
-                        {/* Quantity Controls - Compact UI with Input */}
                         <div className="flex items-center border rounded-md w-fit overflow-hidden h-8">
                           <Button
                             onClick={(e) => {
@@ -297,8 +280,7 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                               if (isOutOfStock) return;
 
                               const val = e.target.value;
-
-                              // Allow empty string temporarily for user to clear and type
+                            
                               if (val === "") {
                                 setEditingQuantities((prev) =>
                                   new Map(prev).set(key, "")
@@ -306,13 +288,11 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                                 return;
                               }
 
-                              // Only allow digits
                               if (!/^\d+$/.test(val)) return;
 
                               const num = parseInt(val, 10);
                               const maxAllowed = Math.min(99, maxInv);
 
-                              // Allow any number during typing, will validate on blur
                               if (num >= 0 && num <= maxAllowed) {
                                 setEditingQuantities((prev) =>
                                   new Map(prev).set(key, num)
@@ -329,7 +309,6 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
 
                               const currentVal = editingQuantities.get(key);
 
-                              // If empty or invalid, reset to current quantity
                               if (
                                 currentVal === "" ||
                                 currentVal === undefined
@@ -352,24 +331,21 @@ export default function CartDrawer({ isOpen, onClose }: Props) {
                                   finalQty = maxAllowed;
                                 }
 
-                                // Update nếu khác với số lượng ban đầu trong cart
                                 const originalQty = item.quantity;
                                 if (
                                   finalQty !== originalQty &&
                                   item.cartItemId
                                 ) {
-                                  // Set editing state với giá trị cuối cùng
+
                                   setEditingQuantities((prev) =>
                                     new Map(prev).set(key, finalQty)
                                   );
-                                  // Debounced API call
                                   debouncedSetItemQuantity(
                                     item.cartItemId,
                                     finalQty,
                                     key
                                   );
                                 } else {
-                                  // Clear editing state if no change
                                   setEditingQuantities((prev) => {
                                     const next = new Map(prev);
                                     next.delete(key);

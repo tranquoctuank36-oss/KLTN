@@ -40,7 +40,6 @@ function CheckoutAuthGuardContent({ children }: { children: React.ReactNode }) {
         // Lưu flag để trigger mua ngay sau khi load product page
         localStorage.setItem("triggerBuyNow", JSON.stringify({ variantId, quantity }));
         
-        // Redirect về product page
         router.push(Routes.product(productSlug, variantId));
       } catch (error) {
         console.error("Error processing buyNowPending:", error);
@@ -55,7 +54,6 @@ function CheckoutAuthGuardContent({ children }: { children: React.ReactNode }) {
 
   const handleLoginCancel = () => {
     setShowLoginDialog(false);
-    // Quay về trang trước đó hoặc trang chủ
     router.back();
   };
 
@@ -72,7 +70,6 @@ function CheckoutAuthGuardContent({ children }: { children: React.ReactNode }) {
         }}
         onLoginSuccess={handleLoginSuccess}
         onSwitchToSignup={() => {
-          // Có thể mở signup dialog nếu cần
         }}
       />
       

@@ -120,7 +120,7 @@ export default function BannerSlider() {
                 </div>
               );
 
-              // Wrap with Link if linkUrl exists
+              
               if (banner.linkUrl) {
                 return (
                   <Link

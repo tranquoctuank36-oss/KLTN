@@ -42,12 +42,10 @@ export default function ChatFab({ bottom = 24, right = 24 }: ChatFabProps) {
         if (timeSinceLastActivity < INACTIVITY_TIMEOUT) {
           const parsedMessages = JSON.parse(savedMessages);
           setMessages(parsedMessages);
-          console.log("[Chat] Restored messages from localStorage");
         } else {
           // Quá 30 phút, xóa dữ liệu cũ
           localStorage.removeItem(CHAT_STORAGE_KEY);
           localStorage.removeItem(CHAT_TIMESTAMP_KEY);
-          console.log("[Chat] Cleared old messages (inactive > 30 min)");
         }
       }
     } catch (error) {
@@ -88,7 +86,6 @@ export default function ChatFab({ bottom = 24, right = 24 }: ChatFabProps) {
     setIsLoading(true);
 
     try {
-      console.log("[Chat] Sending message:", userMessage.content);
       
       // Chỉ giữ 6 tin nhắn gần nhất để gửi lên server (API giới hạn 6 tin nhắn)
       // Và đảm bảo mỗi content không quá 3000 ký tự
@@ -99,23 +96,16 @@ export default function ChatFab({ bottom = 24, right = 24 }: ChatFabProps) {
           content: String(msg.content || "").substring(0, 3000)
         }));
       
-      console.log("[Chat] Conversation history:", limitedHistory);
-      
-      // Gọi API chatbot
       const response = await chatService.sendMessage({
         message: userMessage.content,
         conversationHistory: limitedHistory,
       });
 
-      console.log("[Chat] Response received:", response);
-
-      // Thêm phản hồi từ AI vào chat
       if (response?.data?.reply) {
         const assistantMessage: ChatMessage = {
           role: "assistant",
           content: response.data.reply,
         };
-        console.log("[Chat] Adding assistant message:", assistantMessage);
         setMessages((prev) => [...prev, assistantMessage]);
       } else {
         console.warn("[Chat] Invalid response format:", response);
@@ -129,7 +119,6 @@ export default function ChatFab({ bottom = 24, right = 24 }: ChatFabProps) {
         error: error,
       });
       
-      // Lấy error message trực tiếp từ backend
       const errorContent = 
         error?.response?.data?.message || 
         error?.response?.data?.error ||

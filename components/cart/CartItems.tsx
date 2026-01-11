@@ -24,7 +24,6 @@ export default function CartItems({
   setItemQuantity,
   removeFromCart,
   clearCart,
-  selectedItems = new Set(),
   onSelectionChange,
   removingItems,
 }: Props) {
@@ -39,43 +38,35 @@ export default function CartItems({
   });
   const [isClearing, setIsClearing] = useState(false);
   
-  // Local state cho số lượng đang editing (optimistic update)
   const [editingQuantities, setEditingQuantities] = useState<
     Map<string, number | string>
   >(new Map());
   
-  // Lưu số lượng đã sync thành công lần cuối (để rollback khi lỗi)
   const lastSyncedQuantities = useRef<Map<string, number>>(new Map());
   
-  // Track items đang trong quá trình sync với server
   const [syncingItems, setSyncingItems] = useState<Set<string>>(new Set());
   
-  // Debounce timers cho từng item
   const debounceTimers = useRef<Map<string, NodeJS.Timeout>>(new Map());
   
-  // Request IDs để xử lý race condition
   const requestIds = useRef<Map<string, number>>(new Map());
 
-  // Lấy số lượng hiện tại (từ editing state hoặc cart data)
+  // Lấy số lượng hiện tại
   const getCurrentQuantity = (key: string, item: CartItem): number => {
     const editing = editingQuantities.get(key);
     if (typeof editing === "number") return editing;
     return item.quantity;
   };
 
-  // Debounced function to update quantity - xử lý race condition và error
   const debouncedSetItemQuantity = (
     cartItemId: string,
     quantity: number,
     key: string
   ) => {
-    // Clear existing timer for this item
     const existingTimer = debounceTimers.current.get(key);
     if (existingTimer) {
       clearTimeout(existingTimer);
     }
 
-    // Set syncing state (subtle indicator)
     setSyncingItems((prev) => new Set(prev).add(key));
 
     // Set new timer - đợi 2 giây không có thao tác mới gửi request
@@ -88,9 +79,8 @@ export default function CartItems({
         // Gọi API để sync số lượng
         await setItemQuantity(cartItemId, quantity);
         
-        // Kiểm tra xem có phải request mới nhất không (race condition check)
+        // Kiểm tra xem có phải request mới nhất không
         if (requestIds.current.get(key) === currentRequestId) {
-          // Sync thành công - lưu lại quantity đã sync
           lastSyncedQuantities.current.set(key, quantity);
           
           // Xóa editing state để hiển thị data từ server
@@ -115,8 +105,6 @@ export default function CartItems({
             });
           }
           
-          // TODO: Hiển thị toast/notification lỗi cho user
-          // toast.error("Không thể cập nhật số lượng. Vui lòng thử lại.");
         }
       } finally {
         // Chỉ clear syncing state nếu đây là request mới nhất
@@ -129,20 +117,18 @@ export default function CartItems({
           debounceTimers.current.delete(key);
         }
       }
-    }, 2000); // Debounce 2 giây
+    }, 2000);
 
     debounceTimers.current.set(key, timer);
   };
 
-  // Cleanup timers on unmount
   useEffect(() => {
-    return () => {
+    return () => {  
       debounceTimers.current.forEach((timer) => clearTimeout(timer));
       debounceTimers.current.clear();
     };
   }, []);
 
-  // Khởi tạo lastSyncedQuantities từ cart data ban đầu
   useEffect(() => {
     cart.forEach((item) => {
       const key = item.cartItemId || `${item.product.slug}__${item.selectedVariant.id}`;
@@ -154,7 +140,6 @@ export default function CartItems({
 
   useEffect(() => {
     if (cart.length > 0) {
-      // Only auto-select items that are in stock
       const inStockKeys = new Set(
         cart
           .filter((item) => {
@@ -171,7 +156,6 @@ export default function CartItems({
       setSelected(inStockKeys);
       onSelectionChange?.(inStockKeys);
     } else {
-      // Khi cart rỗng, reset selected
       setSelected(new Set());
       onSelectionChange?.(new Set());
     }
@@ -189,7 +173,6 @@ export default function CartItems({
   };
 
   const handleToggleAll = () => {
-    // Count only in-stock items
     const inStockItems = cart.filter((item) => {
       const maxInv = item.selectedVariant.availableQuantity ?? item.selectedVariant.quantityAvailable ?? Infinity;
       const isOutOfStock = item.status === "out_of_stock" || item.status === "unavailable" || maxInv <= 0;
@@ -200,7 +183,6 @@ export default function CartItems({
       setSelected(new Set());
       onSelectionChange?.(new Set());
     } else {
-      // Only select in-stock items
       const inStockKeys = new Set(
         inStockItems.map(
           (item) =>
@@ -225,7 +207,7 @@ export default function CartItems({
     }, 400);
   };
 
-  // Check if all in-stock items are selected
+  // Kiểm tra xem tất cả các mặt hàng còn trong kho đã được chọn chưa.
   const inStockItemsCount = cart.filter((item) => {
     const maxInv = item.selectedVariant.availableQuantity ?? item.selectedVariant.quantityAvailable ?? Infinity;
     const isOutOfStock = item.status === "out_of_stock" || item.status === "unavailable" || maxInv <= 0;
@@ -254,12 +236,10 @@ export default function CartItems({
         const key =
           item.cartItemId || `${item.product.slug}__${item.selectedVariant.id}`;
         const maxInv = item.selectedVariant.availableQuantity ?? item.selectedVariant.quantityAvailable ?? 99;
-        // Check if item is out of stock or unavailable - prioritize item.status from API
         const isOutOfStock = item.status === "out_of_stock" || item.status === "unavailable";
         
         const isSelected = selected.has(key);
         const isRemoving = removingItems.has(key) || isClearing;
-        const isSyncing = syncingItems.has(key);
         const currentQuantity = getCurrentQuantity(key, item);
         const finalPrice = Number(item.selectedVariant.finalPrice);
         const originalPrice = Number(item.selectedVariant.originalPrice);
@@ -285,14 +265,12 @@ export default function CartItems({
                 : `${index * 30}ms`,
             }}
           >
-            {/* Out of Stock Overlay */}
             {isOutOfStock && (
               <div className="absolute top-4 left-4 bg-red-100 text-red-600 px-3 py-1 rounded-md text-sm font-semibold z-10">
                 {item.status === "unavailable" ? "Không có sẵn" : "Hết hàng"}
               </div>
             )}
 
-            {/* Checkbox */}
             <div className="absolute top-1/2 -translate-y-1/2 left-4">
               <input
                 type="checkbox"
@@ -324,33 +302,19 @@ export default function CartItems({
                   </h2>
                 </Link>
 
-                {/* <p className="text-sm pt-2">
-                  <span className="text-gray-600 font-bold">Màu:</span>{" "}
-                  <span className="text-gray-500">
-                    {Array.isArray(item.selectedVariant.colors)
-                      ? item.selectedVariant.colors
-                          .map((c: { name: string }) => c.name)
-                          .join(", ")
-                      : "--"}
-                  </span>
-                </p> */}
-
                 <p className="text-base pt-2">
                   <span className="text-gray-600">Giá:</span>{" "}
                   {isOnSale ? (
                     <>
-                      {/* Original price (gạch ngang) */}
                       <span className="text-gray-400 line-through mr-2">
                         {originalPrice.toLocaleString("en-US")} đ
                       </span>
 
-                      {/* Final price */}
                       <span className="text-red-600 font-bold">
                         {finalPrice.toLocaleString("en-US")} đ
                       </span>
                     </>
                   ) : (
-                    /* Không sale → chỉ hiện final price */
                     <span className="text-gray-700 font-bold">
                       {finalPrice.toLocaleString("en-US")} đ
                     </span>
@@ -362,20 +326,16 @@ export default function CartItems({
                     onClick={() => {
                       if (!item.cartItemId || isOutOfStock) return;
                       
-                      // Lấy số lượng hiện tại từ editing state hoặc cart
                       const current = getCurrentQuantity(key, item);
                       
-                      // Không cho giảm xuống dưới 1
                       if (current <= 1) return;
                       
                       const newQty = current - 1;
-                      
-                      // Update local state immediately (optimistic)
+
                       setEditingQuantities((prev) =>
                         new Map(prev).set(key, newQty)
                       );
                       
-                      // Debounced API call
                       debouncedSetItemQuantity(item.cartItemId, newQty, key);
                     }}
                     disabled={
@@ -390,11 +350,10 @@ export default function CartItems({
                     type="text"
                     value={editingQuantities.get(key) ?? item.quantity}
                     onChange={(e) => {
-                      if (isOutOfStock) return; // Don't allow changes if out of stock
+                      if (isOutOfStock) return;
                       
                       const val = e.target.value;
 
-                      // Allow empty string temporarily for user to clear and type
                       if (val === "") {
                         setEditingQuantities((prev) =>
                           new Map(prev).set(key, "")
@@ -402,13 +361,11 @@ export default function CartItems({
                         return;
                       }
 
-                      // Only allow digits
                       if (!/^\d+$/.test(val)) return;
 
                       const num = parseInt(val, 10);
                       const maxAllowed = Math.min(99, maxInv);
 
-                      // Allow any number during typing, will validate on blur
                       if (num >= 0 && num <= maxAllowed) {
                         setEditingQuantities((prev) =>
                           new Map(prev).set(key, num)
@@ -420,11 +377,10 @@ export default function CartItems({
                       }
                     }}
                     onBlur={() => {
-                      if (isOutOfStock) return; // Don't validate if out of stock
+                      if (isOutOfStock) return; 
                       
                       const currentVal = editingQuantities.get(key);
 
-                      // If empty or invalid, reset to current quantity
                       if (currentVal === "" || currentVal === undefined) {
                         setEditingQuantities((prev) => {
                           const next = new Map(prev);
@@ -444,17 +400,13 @@ export default function CartItems({
                           finalQty = maxAllowed;
                         }
 
-                        // Update nếu khác với số lượng ban đầu trong cart
                         const originalQty = item.quantity;
                         if (finalQty !== originalQty && item.cartItemId) {
-                          // Set editing state với giá trị cuối cùng
                           setEditingQuantities((prev) =>
                             new Map(prev).set(key, finalQty)
                           );
-                          // Debounced API call
                           debouncedSetItemQuantity(item.cartItemId, finalQty, key);
                         } else {
-                          // Clear editing state if no change
                           setEditingQuantities((prev) => {
                             const next = new Map(prev);
                             next.delete(key);
@@ -470,20 +422,16 @@ export default function CartItems({
                     onClick={() => {
                       if (!item.cartItemId || isOutOfStock) return;
                       
-                      // Lấy số lượng hiện tại từ editing state hoặc cart
                       const current = getCurrentQuantity(key, item);
                       
-                      // Không cho tăng vượt max inventory
                       if (current >= maxInv) return;
                       
                       const newQty = current + 1;
                       
-                      // Update local state immediately (optimistic)
                       setEditingQuantities((prev) =>
                         new Map(prev).set(key, newQty)
                       );
                       
-                      // Debounced API call
                       debouncedSetItemQuantity(item.cartItemId, newQty, key);
                     }}
                     disabled={

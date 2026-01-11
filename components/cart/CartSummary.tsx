@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { Routes } from "@/lib/routes";
@@ -20,38 +19,33 @@ type Props = {
 
 export default function CartSummary({
   subtotal,
-  totalQuantity,
   isEmpty = false,
   selectedItems = new Set(),
   hasOutOfStockItems = false,
 }: Props) {
-  const { discountCode, discountAmount, cart } = useCart();
+  const { discountAmount, cart } = useCart();
   const { isLoggedIn } = useAuth();
   const router = useRouter();
   const [showLoginDialog, setShowLoginDialog] = useState(false);
 
   const handleCheckout = () => {
-    // Save selected items to localStorage
     localStorage.setItem(
       "checkoutSelectedItems",
       JSON.stringify(Array.from(selectedItems))
     );
     
-    // Check if user is logged in
     if (!isLoggedIn) {
-      // Save intended destination
       localStorage.setItem("intendedCheckout", "true");
       setShowLoginDialog(true);
       return;
     }
     
-    // If logged in, proceed to checkout
     router.push(Routes.checkouts());
   };
 
   const handleLoginSuccess = () => {
     setShowLoginDialog(false);
-    // Check if user was trying to checkout
+    // người dùng có đang cố gắng thanh toán hay không.
     const intendedCheckout = localStorage.getItem("intendedCheckout");
     if (intendedCheckout === "true") {
       localStorage.removeItem("intendedCheckout");
@@ -68,16 +62,6 @@ export default function CartSummary({
         <span>{grandTotal.toLocaleString("en-US")}đ</span>
       </div>
 
-      {/* <ul className="space-y-2 text-sm text-blue-500 font-semibold mb-6">
-        <li className="flex items-center gap-2">
-          <Check className="w-4 h-4 text-blue-500 mt-1" /> Miễn phí vận chuyển
-          và trả hàng
-        </li>
-        <li className="flex items-center gap-2">
-          <Check className="w-4 h-4 text-blue-500 mt-1" /> Bảo hành hoàn tiền
-          100%
-        </li>
-      </ul> */}
 
       <LoginDialog
         open={showLoginDialog}

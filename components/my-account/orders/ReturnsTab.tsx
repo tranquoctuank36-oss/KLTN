@@ -43,8 +43,8 @@ const ReturnsTab = ({ containerRef }: ReturnsTabProps) => {
         params.search = returnsSearchTerm;
       }
       
-      // Chỉ thêm status nếu không phải "Tất cả trạng thái"
-      if (returnsSelectedStatus !== "Tất cả trạng thái") {
+      // Chỉ thêm status nếu không phải "Tất cả trạng thái" và không phải "Đã nhận"
+      if (returnsSelectedStatus !== "Tất cả trạng thái" && returnsSelectedStatus !== "Đã nhận") {
         const statusParam = RETURN_STATUS_API_MAP[returnsSelectedStatus.toUpperCase()];
         if (statusParam) {
           params.status = statusParam;
@@ -52,9 +52,23 @@ const ReturnsTab = ({ containerRef }: ReturnsTabProps) => {
       }
       
       const result = await getMyReturns(params);
+      let filteredData = result.data || [];
       
-      setReturns(result.data || []);
-      setReturnsTotalPages(result.meta.totalPages);
+      // Client-side filter cho "Đã nhận" (bao gồm received_at_warehouse, qc_pass, qc_fail)
+      if (returnsSelectedStatus === "Đã nhận") {
+        filteredData = filteredData.filter(item => 
+          item.status === "received_at_warehouse" || 
+          item.status === "qc_pass" || 
+          item.status === "qc_fail"
+        );
+      }
+      
+      const startIndex = 0;
+      const endIndex = 10;
+      const paginatedData = filteredData.slice(startIndex, endIndex);
+      
+      setReturns(paginatedData);
+      setReturnsTotalPages(Math.ceil(filteredData.length / 10));
     } catch (err) {
       console.error("❌ Failed to fetch returns:", err);
       setReturns([]);

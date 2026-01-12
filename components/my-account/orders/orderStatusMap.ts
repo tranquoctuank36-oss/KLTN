@@ -19,8 +19,6 @@ export const ORDER_STATUS_API_MAP: Record<string, string> = {
   "ĐÃ GIAO": "delivered",
   "HOÀN THÀNH": "completed",
   "ĐÃ HỦY": "cancelled",
-  "YÊU CẦU TRẢ HÀNG": "return_requested",
-  "ĐANG TRẢ HÀNG": "returning",
   "ĐÃ TRẢ HÀNG": "returned",
 };
 
@@ -33,8 +31,6 @@ export const ORDER_STATUS_OPTIONS = [
   "Đã giao",
   "Hoàn thành",
   "Đã hủy",
-  "Yêu cầu trả hàng",
-  "Đang trả hàng",
   "Đã trả hàng",
 ];
 

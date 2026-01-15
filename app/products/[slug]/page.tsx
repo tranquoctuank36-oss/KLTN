@@ -365,7 +365,7 @@ export default function ProductDetailPage() {
             isSale={isOnSale}
           />
 
-          <ProductTabs product={product} />
+          <ProductTabs product={product} selectedVariant={selectedVariant} />
 
           <div ref={frameRef}>
             <FrameMeasurementsTable product={product} />

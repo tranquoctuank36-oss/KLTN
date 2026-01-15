@@ -21,6 +21,11 @@ export type ProductVariants = {
     name: string;
     slug: string;
   }>;
+  attributes?: Array<{
+    key: string;
+    value: string;
+    label: string;
+  }>;
   images?: ProductImages[];
   productImages?: ProductImages[]; // backward compatibility
   sortOrder?: number;

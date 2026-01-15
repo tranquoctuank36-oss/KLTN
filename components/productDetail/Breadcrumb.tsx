@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Product } from "@/types/product";
 import { ProductVariants } from "@/types/productVariants";
 import { Routes } from "@/lib/routes";
+import { frame } from "framer-motion";
 
 type Props = {
   product: Product;
@@ -17,6 +18,15 @@ export default function Breadcrumb({ product, selectedVariant }: Props) {
     selectedVariant?.colors && selectedVariant.colors.length > 1
       ? selectedVariant.colors.map((c) => c.name).join(", ")
       : selectedVariant?.colors?.[0]?.name || "";
+
+  // Map productType to Vietnamese
+  const productTypeMap: Record<string, string> = {
+    sunglasses: "Kính mát",
+    frame: "Gọng kính",
+  };
+  const productTypeVi =
+    productTypeMap[product.productType.toLowerCase()] ||
+    product.productType.charAt(0).toUpperCase() + product.productType.slice(1);
 
   return (
     <div className="flex items-center justify-between">
@@ -33,8 +43,7 @@ export default function Breadcrumb({ product, selectedVariant }: Props) {
           href={Routes.home()}
           className="text-xs font-medium hover:underline"
         >
-          {product.productType.charAt(0).toUpperCase() +
-            product.productType.slice(1)}
+          {productTypeVi}
         </Link>
 
         <span>›</span>

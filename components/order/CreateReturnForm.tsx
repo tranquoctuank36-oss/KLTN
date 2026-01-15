@@ -86,7 +86,7 @@ export default function CreateReturnForm({
       let imageIds: string[] = [];
       if (imageFiles.length > 0) {
         try {
-          const uploadPromises = imageFiles.map((file) => uploadImage(file));
+          const uploadPromises = imageFiles.map((file) => uploadImage(file, "order_return"));
           const uploadResults = await Promise.all(uploadPromises);
           imageIds = uploadResults.map((result) => result.id);
         } catch (error) {

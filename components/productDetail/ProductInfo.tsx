@@ -10,6 +10,18 @@ type Props = {
 };
 
 export default function ProductTabs({ product, selectedVariant }: Props) {
+  // Map gender to Vietnamese
+  const genderMap: Record<string, string> = {
+    male: "Nam",
+    female: "Nữ",
+    unisex: "Unisex",
+    kid: "Trẻ em",
+  };
+  
+  const genderVi = product.gender 
+    ? genderMap[product.gender.toLowerCase()] || product.gender.charAt(0).toUpperCase() + product.gender.slice(1)
+    : "";
+
   return (
     <div className="mt-8">
       <Tabs defaultValue="about" className="w-full">
@@ -95,8 +107,7 @@ export default function ProductTabs({ product, selectedVariant }: Props) {
                       Giới Tính:
                     </td>
                     <td className="px-3 py-2">
-                      {product.gender?.charAt(0).toUpperCase() +
-                        product.gender?.slice(1)}
+                      {genderVi}
                     </td>
                   </tr>
                   {selectedVariant?.attributes?.map((attr, index) => (

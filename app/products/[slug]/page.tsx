@@ -5,7 +5,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { getProductBySlug } from "@/services/productService";
 import { Product } from "@/types/product";
 import { Button } from "@/components/ui/button";
-import { Star, Check, ChevronRight, Filter, X } from "lucide-react";
+import { Star, Check, ChevronRight, Filter, X, ChevronDown } from "lucide-react";
 import ProductTabs from "@/components/productDetail/ProductInfo";
 import FrameMeasurementsTable from "@/components/productDetail/FrameMeasurementsTable";
 import Breadcrumb from "@/components/productDetail/Breadcrumb";
@@ -49,6 +49,13 @@ export default function ProductDetailPage() {
   const [sortOption, setSortOption] = useState<string>("createdAt-DESC");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [showFilters, setShowFilters] = useState<boolean>(false);
+  
+  // Custom select states
+  const [openSortDropdown, setOpenSortDropdown] = useState<boolean>(false);
+  const [openRatingDropdown, setOpenRatingDropdown] = useState<boolean>(false);
+  const sortContainerRef = useRef<HTMLDivElement>(null);
+  const ratingContainerRef = useRef<HTMLDivElement>(null);
+  
   const itemsPerPage = 5;
 
   // ref để scroll
@@ -59,6 +66,40 @@ export default function ProductDetailPage() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [slug]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (sortContainerRef.current && !sortContainerRef.current.contains(e.target as Node)) {
+        setOpenSortDropdown(false);
+      }
+      if (ratingContainerRef.current && !ratingContainerRef.current.contains(e.target as Node)) {
+        setOpenRatingDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (sortContainerRef.current && !sortContainerRef.current.contains(e.target as Node)) {
+        setOpenSortDropdown(false);
+      }
+      if (ratingContainerRef.current && !ratingContainerRef.current.contains(e.target as Node)) {
+        setOpenRatingDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Tự động kích hoạt lệnh mua ngay sau khi đăng nhập.
   useEffect(() => {
@@ -387,61 +428,129 @@ export default function ProductDetailPage() {
 
             {/* Filters & Sorting */}
             {showFilters && (
-              <div className="mb-8 p-4 bg-gray-50 rounded-lg space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="mb-8 p-6 bg-white border border-gray-200 rounded-xl shadow-sm space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
                       Sắp xếp
                     </label>
-                    <select
-                      value={sortOption}
-                      onChange={(e) => {
-                        setSortOption(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="createdAt-DESC">Ngày tạo giảm dần</option>
-                      <option value="createdAt-ASC">Ngày tạo tăng dần</option>
-                      <option value="rating-DESC">Xếp hạng giảm dần</option>
-                      <option value="rating-ASC">Xếp hạng tăng dần</option>
-                    </select>
+                    <div className="relative" ref={sortContainerRef}>
+                      <div
+                        onClick={() => setOpenSortDropdown(!openSortDropdown)}
+                        className="w-full h-12 px-4 rounded-lg border-2 border-gray-300 bg-white cursor-pointer
+                          flex items-center justify-between transition-all duration-200
+                          hover:border-blue-400 focus:outline-none"
+                      >
+                        <span className="text-gray-800 font-medium">
+                          {sortOption === "createdAt-DESC" ? "Ngày tạo giảm dần" :
+                           sortOption === "createdAt-ASC" ? "Ngày tạo tăng dần" :
+                           sortOption === "rating-DESC" ? "Xếp hạng giảm dần" : "Xếp hạng tăng dần"}
+                        </span>
+                        <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${
+                          openSortDropdown ? "rotate-180" : ""
+                        }`} />
+                      </div>
+                      
+                      {openSortDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden">
+                          {[
+                            { value: "createdAt-DESC", label: "Ngày tạo giảm dần" },
+                            { value: "createdAt-ASC", label: "Ngày tạo tăng dần" },
+                            { value: "rating-DESC", label: "Xếp hạng giảm dần" },
+                            { value: "rating-ASC", label: "Xếp hạng tăng dần" },
+                          ].map((option) => (
+                            <div
+                              key={option.value}
+                              onClick={() => {
+                                setSortOption(option.value);
+                                setCurrentPage(1);
+                                setOpenSortDropdown(false);
+                              }}
+                              className={`px-4 py-2.5 cursor-pointer transition-colors ${
+                                sortOption === option.value
+                                  ? "bg-blue-50 text-blue-600 font-medium"
+                                  : "bg-white hover:bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {option.label}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
                       Lọc theo đánh giá
                     </label>
-                    <select
-                      value={selectedRating}
-                      onChange={(e) => {
-                        setSelectedRating(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value={0}>Tất cả</option>
-                      <option value={5}>5 sao</option>
-                      <option value={4}>4 sao</option>
-                      <option value={3}>3 sao</option>
-                      <option value={2}>2 sao</option>
-                      <option value={1}>1 sao</option>
-                    </select>
+                    <div className="relative" ref={ratingContainerRef}>
+                      <div
+                        onClick={() => setOpenRatingDropdown(!openRatingDropdown)}
+                        className="w-full h-12 px-4 rounded-lg border-2 border-gray-300 bg-white cursor-pointer
+                          flex items-center justify-between transition-all duration-200
+                          hover:border-blue-400 focus:outline-none"
+                      >
+                        <span className="text-gray-800 font-medium">
+                          {selectedRating === 0 ? "Tất cả" :
+                           selectedRating === 5 ? "⭐⭐⭐⭐⭐ 5 sao" :
+                           selectedRating === 4 ? "⭐⭐⭐⭐ 4 sao" :
+                           selectedRating === 3 ? "⭐⭐⭐ 3 sao" :
+                           selectedRating === 2 ? "⭐⭐ 2 sao" : "⭐ 1 sao"}
+                        </span>
+                        <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${
+                          openRatingDropdown ? "rotate-180" : ""
+                        }`} />
+                      </div>
+                      
+                      {openRatingDropdown && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden">
+                          {[
+                            { value: 0, label: "Tất cả" },
+                            { value: 5, label: "⭐⭐⭐⭐⭐ 5 sao" },
+                            { value: 4, label: "⭐⭐⭐⭐ 4 sao" },
+                            { value: 3, label: "⭐⭐⭐ 3 sao" },
+                            { value: 2, label: "⭐⭐ 2 sao" },
+                            { value: 1, label: "⭐ 1 sao" },
+                          ].map((option) => (
+                            <div
+                              key={option.value}
+                              onClick={() => {
+                                setSelectedRating(option.value);
+                                setCurrentPage(1);
+                                setOpenRatingDropdown(false);
+                              }}
+                              className={`px-4 py-2.5 cursor-pointer transition-colors ${
+                                selectedRating === option.value
+                                  ? "bg-blue-50 text-blue-600 font-medium"
+                                  : "bg-white hover:bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {option.label}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Has Image Filter */}
-                  <div className="flex items-center justify-start md:justify-center">
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasImage}
-                        onChange={(e) => {
-                          setHasImage(e.target.checked);
-                          setCurrentPage(1);
-                        }}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                      />
-                      <span className="ml-2 text-sm font-medium text-gray-700">
+                  <div className="flex items-center justify-start md:justify-center pt-7">
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          checked={hasImage}
+                          onChange={(e) => {
+                            setHasImage(e.target.checked);
+                            setCurrentPage(1);
+                          }}
+                          className="w-5 h-5 text-blue-600 border-2 border-gray-300 rounded 
+                            cursor-pointer transition-all duration-200
+                            hover:border-blue-400"
+                        />
+                      </div>
+                      <span className="text-sm font-semibold text-gray-800 transition-colors">
                         Chỉ có hình ảnh
                       </span>
                     </label>
@@ -449,9 +558,9 @@ export default function ProductDetailPage() {
                 </div>
 
                 {/* Result count */}
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
-                    Tìm thấy <b>{filteredAndSortedReviews.length}</b> đánh giá
+                <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                  <div className="text-sm font-medium text-gray-700">
+                    Tìm thấy <span className="text-blue-600 font-bold">{filteredAndSortedReviews.length}</span> đánh giá
                     {filteredAndSortedReviews.length > 0 &&
                       ` (Trang ${currentPage} / ${totalPages})`}
                   </div>
@@ -462,7 +571,9 @@ export default function ProductDetailPage() {
                       setHasImage(false);
                       setCurrentPage(1);
                     }}
-                    className="px-2 py-1 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                    className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 border-2 border-gray-300 rounded-lg 
+                      hover:bg-gray-200 hover:border-gray-400 active:scale-95
+                      transition-all duration-200 cursor-pointer"
                   >
                     Đặt lại
                   </button>

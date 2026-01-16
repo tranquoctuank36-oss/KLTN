@@ -117,7 +117,7 @@ export default function SizePanel({
               className={`mx-auto w-full max-w-sm ${containerBase} ${containerActive}`}
             >
               <motion.div variants={itemV} className="text-center font-semibold mb-2">
-                Chiều rộng khung kính
+                Chiều rộng gọng kính
               </motion.div>
 
               <motion.div variants={itemV} className="flex flex-col items-center">

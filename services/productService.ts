@@ -134,7 +134,7 @@ function transformFacetsToAggregations(facets: any[]): ElasticAggregation {
     } else if (type === "range" && id === "size") {
       // Handle size range facet - use label to determine which dimension
       const label = (facet.label || "").toLowerCase();
-      if (label.includes("chiều rộng gọng kính") || label.includes("frame width")) {
+      if (label.includes("chiều rộng khung kính") || label.includes("frame width")) {
         // This is the total frame width (lensWidth + bridgeWidth)
         // Store it as a combined field for the filter
         (agg as any).size = {

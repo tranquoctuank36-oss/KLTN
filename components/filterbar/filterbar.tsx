@@ -167,6 +167,9 @@ function FilterBar({
   // Lưu giá trị bounds ban đầu để reset khi clear
   const initialBoundsRef = useRef<{ min: number; max: number } | null>(null);
   const initialSizeBoundsRef = useRef<{ min: number; max: number } | null>(null);
+  
+  // Cờ để đánh dấu đang trong quá trình xóa tất cả (chờ API fetch mới)
+  const isClearingRef = useRef(false);
 
   const GROUPS_NO_FRAME: FilterGroup[] = useMemo(() => {
     if (!aggregations) {
@@ -306,8 +309,21 @@ function FilterBar({
   );
 
   const bounds = useMemo(() => {
-    // Nếu đã có initial bounds thì luôn trả về giá trị đó
-    if (initialBoundsRef.current) {
+    // Kiểm tra có filter nào đang active không (không tính selectedPrice vì đang xét cho price bounds)
+    // Loại trừ productTypes nếu hideProductTypesSelection = true (filter ẩn)
+    const hasActiveFilters = Object.entries(selected).some(([key, set]) => {
+      if (hideProductTypesSelection && key === 'productTypes') return false;
+      return set.size > 0;
+    }) || selectedSize;
+    
+    // Nếu ĐÃ CÓ selectedPrice (đang filter giá), giữ nguyên bounds hiện tại (không update từ API)
+    // Điều này ngăn slider nhảy khi API trả về aggregations mới sau khi filter giá
+    if (selectedPrice && initialBoundsRef.current) {
+      return initialBoundsRef.current;
+    }
+    
+    // Nếu không có filter nào, dùng initialBoundsRef (bounds ban đầu)
+    if (!hasActiveFilters && initialBoundsRef.current) {
       return initialBoundsRef.current;
     }
 
@@ -332,21 +348,41 @@ function FilterBar({
     // đảm bảo min<=max
     const result = { min: Math.min(min, max), max: Math.max(min, max) };
     
-    // Lưu bounds ban đầu CHỈ KHI có dữ liệu thực từ API (không phải default)
-    if (!selectedPrice) {
-      // Chỉ lưu nếu có data thực từ API hoặc props, không lưu giá trị default
+    // Lưu bounds CHỈ KHI:
+    // 1. Chưa có selectedPrice (chưa filter giá)
+    // 2. Không đang clearing
+    // 3. Có dữ liệu thực từ API
+    if (!selectedPrice && !isClearingRef.current) {
       const hasRealData = Number.isFinite(apiMin) || Number.isFinite(propMin);
+      
       if (hasRealData) {
         initialBoundsRef.current = result;
       }
     }
     
+    // Reset cờ clearing sau khi đã xử lý xong
+    if (isClearingRef.current && !hasActiveFilters && !selectedPrice && !selectedSize) {
+      isClearingRef.current = false;
+    }
+    
     return result;
-  }, [aggregations?.price, priceBounds, selectedPrice]);
+  }, [aggregations?.price, priceBounds, selectedPrice, selected, selectedSize, hideProductTypesSelection]);
 
   const sizeBounds = useMemo(() => {
-    // Nếu đã có initial size bounds thì luôn trả về giá trị đó
-    if (initialSizeBoundsRef.current) {
+    // Kiểm tra có filter nào đang active không (không tính selectedSize vì đang xét cho size bounds)
+    // Loại trừ productTypes nếu hideProductTypesSelection = true (filter ẩn)
+    const hasActiveFilters = Object.entries(selected).some(([key, set]) => {
+      if (hideProductTypesSelection && key === 'productTypes') return false;
+      return set.size > 0;
+    }) || selectedPrice;
+    
+    // Nếu ĐÃ CÓ selectedSize (đang filter size), giữ nguyên bounds hiện tại (không update từ API)
+    if (selectedSize && initialSizeBoundsRef.current) {
+      return initialSizeBoundsRef.current;
+    }
+    
+    // Nếu không có filter nào, dùng initialSizeBoundsRef (bounds ban đầu)
+    if (!hasActiveFilters && initialSizeBoundsRef.current) {
       return initialSizeBoundsRef.current;
     }
     
@@ -358,27 +394,34 @@ function FilterBar({
     
     const result = { min: Math.min(min, max), max: Math.max(min, max) };
     
-    // Lưu bounds ban đầu CHỈ KHI có dữ liệu thực từ API (không phải default)
-    if (!selectedSize) {
+    // Lưu bounds CHỈ KHI:
+    // 1. Chưa có selectedSize (chưa filter size)
+    // 2. Không đang clearing
+    // 3. Có dữ liệu thực từ API
+    if (!selectedSize && !isClearingRef.current) {
       const hasRealData = Number.isFinite(apiMin);
-    // Reset initial bounds refs để lấy giá trị mới từ API
-    initialBoundsRef.current = null;
-    initialSizeBoundsRef.current = null;
+      
       if (hasRealData) {
         initialSizeBoundsRef.current = result;
       }
     }
     
     return result;
-  }, [aggregations, selectedSize]);
+  }, [aggregations, selectedSize, selected, selectedPrice, hideProductTypesSelection]);
 
   const clearAll = useCallback(() => {
+    // Đánh dấu đang clearing để không lưu bounds từ aggregations cũ
+    isClearingRef.current = true;
+    
     setSelected({});
     setSelectedPrice(null);
     setPreviewPrice(null);
     setSelectedSize(null);
     setPreviewSize(null);
     setExpandedKey(null); // Đóng panel khi clear all
+    // Reset initial bounds refs để bounds update lại từ API
+    initialBoundsRef.current = null;
+    initialSizeBoundsRef.current = null;
   }, []);
 
   const disabledPrice = bounds.min === bounds.max;
@@ -748,6 +791,8 @@ function FilterBar({
                   // Reset về giá ban đầu, không đóng panel
                   setSelectedPrice(null);
                   setPreviewPrice(null);
+                  // Reset bounds ref để update từ API
+                  initialBoundsRef.current = null;
                 }}
               >
                 <X className="!w-3 !h-3" />
@@ -769,6 +814,8 @@ function FilterBar({
                   e.stopPropagation();
                   setSelectedSize(null);
                   setPreviewSize(null);
+                  // Reset bounds ref để update từ API
+                  initialSizeBoundsRef.current = null;
                 }}
               >
                 <X className="!w-3 !h-3" />
